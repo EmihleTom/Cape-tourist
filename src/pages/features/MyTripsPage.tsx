@@ -1,0 +1,462 @@
+import React, { useState } from 'react';
+import {
+  BedDouble,
+  Bus,
+  CalendarCheck,
+  CheckSquare,
+  Compass,
+  Layers,
+  Plus,
+  Square,
+  Trash2,
+} from 'lucide-react';
+import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
+import { StatusText } from '@/src/components/common/StatusText';
+import type {
+  BookingItem,
+  DemoUser,
+  NavSectionId,
+  OfferingType,
+  TripActivity,
+} from '@/src/types/app';
+import { buildItineraryFromConfirmedBooking } from '@/src/utils/bookingCalculations';
+
+interface MyTripsPageProps {
+  user: DemoUser;
+  activities: TripActivity[];
+  bookings: BookingItem[];
+  onToggleActivity: (id: string) => void;
+  onAddActivity: (
+    activity: Omit<TripActivity, 'id' | 'completed' | 'dataOrigin'>
+  ) => Promise<void> | void;
+  onDeleteActivity?: (id: string) => Promise<void> | void;
+  onNavigate?: (section: NavSectionId) => void;
+}
+
+export const MyTripsPage: React.FC<MyTripsPageProps> = ({
+  user,
+  activities,
+  bookings,
+  onToggleActivity,
+  onAddActivity,
+  onDeleteActivity,
+  onNavigate,
+}) => {
+  const [title, setTitle] = useState('');
+  const [zone, setZone] = useState('City Bowl');
+  const [time, setTime] = useState('14:00');
+  const [day, setDay] = useState(1);
+  const [itemType, setItemType] = useState<OfferingType>('Activity');
+  const [typeFilter, setTypeFilter] = useState<'All' | OfferingType>('All');
+  const [combining, setCombining] = useState(false);
+  const [combineFeedback, setCombineFeedback] = useState('');
+
+  // Only Confirmed bookings can be locked into a combined trip itinerary
+  const confirmedBookings = bookings.filter((b) => b.status === 'Confirmed');
+  const pendingBookings = bookings.filter((b) => b.status === 'Pending Verification');
+
+  const linkedBookingIds = new Set(activities.map((a) => a.bookingId).filter(Boolean));
+  const unlinkedConfirmed = confirmedBookings.filter((b) => !linkedBookingIds.has(b.id));
+
+  const confirmedAccommodation = confirmedBookings.filter(
+    (b) => (b.offeringType || 'Activity') === 'Accommodation'
+  );
+  const confirmedTransport = confirmedBookings.filter(
+    (b) => (b.offeringType || 'Activity') === 'Transport'
+  );
+  const confirmedActivities = confirmedBookings.filter(
+    (b) => (b.offeringType || 'Activity') === 'Activity'
+  );
+
+  const days = Array.from(new Set(activities.map((a) => a.day))).sort((a, b) => a - b);
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (title.trim().length < 3) return;
+    await onAddActivity({
+      day,
+      dayLabel: `Day ${day} · Cape Peninsula Itinerary`,
+      time,
+      title: title.trim(),
+      zone,
+      itemType,
+      transportNote:
+        itemType === 'Transport'
+          ? 'Scheduled transit departure'
+          : itemType === 'Accommodation'
+          ? 'Check-in / hospitality base'
+          : 'Verified shuttle or MyCiTi route',
+      safetyNote: 'Daylight corridor recommended',
+    });
+    setTitle('');
+  };
+
+  const handleCombineConfirmed = async () => {
+    if (unlinkedConfirmed.length === 0) return;
+    setCombining(true);
+    setCombineFeedback('');
+    try {
+      const sorted = [...unlinkedConfirmed].sort((a, b) => a.date.localeCompare(b.date));
+      const baseDate = sorted[0]?.date;
+      const baseMs = baseDate ? Date.parse(`${baseDate}T00:00:00Z`) : NaN;
+
+      for (const bk of sorted) {
+        const bkMs = bk.date ? Date.parse(`${bk.date}T00:00:00Z`) : NaN;
+        const computedDay =
+          Number.isFinite(baseMs) && Number.isFinite(bkMs)
+            ? Math.max(1, Math.min(30, Math.round((bkMs - baseMs) / 86400000) + 1))
+            : 1;
+        const payload = buildItineraryFromConfirmedBooking(bk, computedDay);
+        await onAddActivity(payload);
+      }
+      setCombineFeedback(
+        `Combined ${sorted.length} confirmed booking(s) (Accommodation, Transport & Activities) into your chronological daily itinerary.`
+      );
+    } finally {
+      setCombining(false);
+    }
+  };
+
+  const handleCombineSingleBooking = async (booking: BookingItem, targetDay: number) => {
+    const payload = buildItineraryFromConfirmedBooking(booking, targetDay);
+    await onAddActivity(payload);
+    setCombineFeedback(`Added "${booking.title}" to Day ${targetDay}.`);
+  };
+
+  return (
+    <div className="space-y-6">
+      <DemoDataNotice
+        scope={
+          user.authMode === 'firebase' && user.emailVerified
+            ? 'Live Firestore My Trips Planner — confirmed Accommodation, Transport & Activity bookings sync into one daily itinerary'
+            : 'Interactive My Trips workspace with sample Cape Town itinerary & confirmed booking combiner'
+        }
+      />
+
+      {/* My Trips Overview KPI Strip */}
+      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Confirmed Stay</span>
+            <BedDouble className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+          </div>
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+            {confirmedAccommodation.length}
+          </p>
+          <p className="text-[11px] text-slate-500">Accommodation bookings</p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Confirmed Transport</span>
+            <Bus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+          </div>
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+            {confirmedTransport.length}
+          </p>
+          <p className="text-[11px] text-slate-500">Shuttles &amp; transfers</p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Confirmed Activities</span>
+            <Compass className="h-4 w-4 text-[#15803D]" aria-hidden="true" />
+          </div>
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+            {confirmedActivities.length}
+          </p>
+          <p className="text-[11px] text-slate-500">Tours &amp; excursions</p>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Awaiting Provider</span>
+            <CalendarCheck className="h-4 w-4 text-amber-700" aria-hidden="true" />
+          </div>
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+            {pendingBookings.length}
+          </p>
+          <p className="text-[11px] text-slate-500">Pending Verification (not locked)</p>
+        </div>
+      </section>
+
+      {/* Combine Confirmed Accommodation, Transport & Activity Bookings */}
+      <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+                Combine Confirmed Bookings into One Itinerary
+              </h2>
+            </div>
+            <p className="mt-0.5 text-xs text-slate-600">
+              Only provider-confirmed bookings appear here. Pending bookings remain on Smart Bookings until confirmed.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {unlinkedConfirmed.length > 0 && (
+              <button
+                type="button"
+                disabled={combining}
+                onClick={handleCombineConfirmed}
+                className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap"
+              >
+                {combining
+                  ? 'Combining...'
+                  : `Combine All (${unlinkedConfirmed.length}) Confirmed`}
+              </button>
+            )}
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate('bookings')}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50 transition-colors whitespace-nowrap"
+              >
+                Manage Bookings
+              </button>
+            )}
+          </div>
+        </div>
+
+        {combineFeedback && (
+          <p className="text-xs font-medium text-[#15803D]">{combineFeedback}</p>
+        )}
+
+        {unlinkedConfirmed.length === 0 ? (
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+            All {confirmedBookings.length} confirmed accommodation, transport, and activity booking(s) are already included in your daily itinerary below.
+          </p>
+        ) : (
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {unlinkedConfirmed.map((bk) => (
+              <div
+                key={bk.id}
+                className="flex flex-col justify-between rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[#0D9488]">
+                      {bk.offeringType || 'Activity'}
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-600 tabular-nums">
+                      {bk.date} {bk.timeSlot}
+                    </span>
+                  </div>
+                  <p className="font-semibold text-[#0B1F3A]">{bk.title}</p>
+                  <p className="text-[11px] text-slate-500">
+                    {bk.providerName} · {bk.endDate ? `Ends ${bk.endDate}` : `${bk.guests} guests`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCombineSingleBooking(bk, day)}
+                  className="mt-3 w-full rounded-md border border-[#0D9488] bg-white py-1.5 text-xs font-semibold text-[#0F766E] hover:bg-[#F0FDFA] transition-colors"
+                >
+                  Add to Day {day}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Manual Stop Composer + Type Filter */}
+      <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+              Daily Travel Itinerary
+            </h1>
+            <p className="mt-1 text-sm text-slate-600">
+              Combined accommodation check-ins, transport schedules, and guided activities.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+            {(['All', 'Accommodation', 'Transport', 'Activity'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTypeFilter(t)}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  typeFilter === t
+                    ? 'bg-[#0B1F3A] text-white'
+                    : 'text-slate-600 hover:text-[#0B1F3A]'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <form onSubmit={handleAdd} className="grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-12">
+          <div className="sm:col-span-4">
+            <label htmlFor="trip-title" className="sr-only">
+              Activity title
+            </label>
+            <input
+              id="trip-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Add stop (e.g., Green Point Urban Park)"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="trip-type" className="sr-only">
+              Type
+            </label>
+            <select
+              id="trip-type"
+              value={itemType}
+              onChange={(e) => setItemType(e.target.value as OfferingType)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            >
+              <option value="Activity">Activity</option>
+              <option value="Accommodation">Accommodation</option>
+              <option value="Transport">Transport</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="trip-zone" className="sr-only">
+              Zone
+            </label>
+            <input
+              id="trip-zone"
+              type="text"
+              value={zone}
+              onChange={(e) => setZone(e.target.value)}
+              placeholder="Precinct"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="trip-day" className="sr-only">
+              Day
+            </label>
+            <select
+              id="trip-day"
+              value={day}
+              onChange={(e) => setDay(Number(e.target.value))}
+              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            >
+              {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                <option key={d} value={d}>
+                  Day {d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-2 flex gap-2">
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              aria-label="Time"
+              className="w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#0D9488] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              Add
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Daily Timeline Cards */}
+      <div className="space-y-4">
+        {days.map((dayNum) => {
+          const dayItems = activities
+            .filter(
+              (a) =>
+                a.day === dayNum &&
+                (typeFilter === 'All' || (a.itemType || 'Activity') === typeFilter)
+            )
+            .sort((a, b) => a.time.localeCompare(b.time));
+
+          if (dayItems.length === 0) return null;
+          const heading = dayItems[0]?.dayLabel ?? `Day ${dayNum}`;
+
+          return (
+            <section key={dayNum} className="rounded-xl border border-slate-200 bg-white">
+              <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3">
+                <h2 className="font-display text-sm font-bold text-[#0B1F3A]">{heading}</h2>
+                <span className="font-mono text-[11px] text-slate-500 tabular-nums">
+                  {dayItems.length} stop(s)
+                </span>
+              </div>
+              <div className="divide-y divide-slate-200">
+                {dayItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onToggleActivity(item.id)}
+                      className="flex items-start gap-3 text-left"
+                    >
+                      {item.completed ? (
+                        <CheckSquare className="mt-0.5 h-4 w-4 text-[#15803D] shrink-0" aria-hidden="true" />
+                      ) : (
+                        <Square className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
+                      )}
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <span className="font-mono font-semibold tabular-nums text-[#0B1F3A]">
+                            {item.time}
+                          </span>
+                          <span className="rounded bg-[#F0FDFA] px-1.5 py-0.5 text-[10px] font-semibold text-[#0F766E]">
+                            {item.itemType || 'Activity'}
+                          </span>
+                          <span>{item.zone}</span>
+                          {item.bookingId && (
+                            <span className="rounded bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#15803D]">
+                              Linked Booking
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className={`mt-0.5 text-sm font-semibold ${
+                            item.completed ? 'line-through text-slate-400' : 'text-[#0B1F3A]'
+                          }`}
+                        >
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-slate-600">{item.transportNote}</p>
+                      </div>
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <StatusText
+                        label={item.completed ? 'Completed' : item.safetyNote}
+                        tone={item.completed ? 'nominal' : 'neutral'}
+                      />
+                      {onDeleteActivity && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteActivity(item.id)}
+                          aria-label={`Remove ${item.title}`}
+                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+    </div>
+  );
+};

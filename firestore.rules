@@ -1,0 +1,883 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Shared Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isVerifiedOwner(uid) {
+      return isVerified() && request.auth.uid == uid;
+    }
+
+    function isBootstrapAdmin() {
+      return isVerified() && request.auth.token.email == 'emihletom07@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrapAdmin() ||
+        (isVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))) ||
+        (isVerified() &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    function isSafetyPersonnel() {
+      return isAdmin() ||
+        (isVerified() &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'safety');
+    }
+
+    function isServiceProvider() {
+      return isAdmin() ||
+        (isVerified() &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'provider');
+    }
+
+    // --- Validation Blueprints (Anti-Update-Gap) ---
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'role', 'requestedRole',
+          'accessibilityPriority', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid', 'displayName', 'role', 'requestedRole', 'organization',
+          'location', 'photoUrl', 'accessibilityPriority', 'profileVisibility',
+          'shareLocationConsent', 'aiContextPersonalization', 'preferredLanguage',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 100 &&
+        data.role in ['tourist', 'admin', 'provider', 'safety'] &&
+        data.requestedRole in ['tourist', 'admin', 'provider', 'safety'] &&
+        (!('organization' in data) || (data.organization is string && data.organization.size() <= 140)) &&
+        (!('location' in data) || (data.location is string && data.location.size() <= 120)) &&
+        (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500)) &&
+        data.accessibilityPriority is bool &&
+        (!('profileVisibility' in data) || data.profileVisibility in ['public_guides', 'initials_only', 'private']) &&
+        (!('shareLocationConsent' in data) || data.shareLocationConsent is bool) &&
+        (!('aiContextPersonalization' in data) || data.aiContextPersonalization is bool) &&
+        (!('preferredLanguage' in data) || data.preferredLanguage in ['English', 'Afrikaans', 'isiXhosa']) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'emergencyContact', 'passId', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() <= 140)) &&
+        (!('passId' in data) || (data.passId is string && data.passId.size() <= 40)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTourismBusiness(data) {
+      return data.keys().hasAll([
+          'id', 'ownerId', 'businessName', 'category', 'zone',
+          'status', 'safetyChecklistComplete', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'ownerId', 'businessName', 'category', 'zone', 'complianceDocs',
+          'imageUrl', 'description', 'lat', 'lng', 'status', 'safetyChecklistComplete',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.ownerId) &&
+        data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 140 &&
+        data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 100 &&
+        (!('complianceDocs' in data) || (data.complianceDocs is string && data.complianceDocs.size() <= 240)) &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 500)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+        (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
+        (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
+        data.status in ['Pending Review', 'Approved', 'Action Required'] &&
+        data.safetyChecklistComplete is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll([
+          'userId', 'providerId', 'title', 'providerName', 'date',
+          'timeSlot', 'guests', 'priceZar', 'status', 'accessible', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'providerId', 'offeringId', 'offeringType', 'title', 'providerName',
+          'category', 'zone', 'date', 'timeSlot', 'durationUnit', 'durationValue',
+          'endDate', 'endTime', 'unitPriceZar', 'pricingModel', 'guests', 'priceZar',
+          'status', 'confirmedBy', 'cancellationReason', 'accessible', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        isValidId(data.providerId) &&
+        (!('offeringId' in data) || isValidId(data.offeringId)) &&
+        (!('offeringType' in data) || data.offeringType in ['Accommodation', 'Transport', 'Activity']) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 160 &&
+        data.providerName is string && data.providerName.size() >= 2 && data.providerName.size() <= 140 &&
+        (!('category' in data) || (data.category is string && data.category.size() <= 80)) &&
+        (!('zone' in data) || (data.zone is string && data.zone.size() <= 120)) &&
+        data.date is string && data.date.size() >= 4 && data.date.size() <= 32 &&
+        data.timeSlot is string && data.timeSlot.size() >= 2 && data.timeSlot.size() <= 32 &&
+        (!('durationUnit' in data) || data.durationUnit in ['hours', 'days', 'nights', 'sessions']) &&
+        (!('durationValue' in data) || (data.durationValue is int && data.durationValue >= 1 && data.durationValue <= 60)) &&
+        (!('endDate' in data) || (data.endDate is string && data.endDate.size() <= 32)) &&
+        (!('endTime' in data) || (data.endTime is string && data.endTime.size() <= 32)) &&
+        (!('unitPriceZar' in data) || (data.unitPriceZar is number && data.unitPriceZar >= 0 && data.unitPriceZar <= 500000)) &&
+        (!('pricingModel' in data) || data.pricingModel in ['per_guest', 'per_unit']) &&
+        data.guests is int && data.guests >= 1 && data.guests <= 50 &&
+        data.priceZar is number && data.priceZar >= 0 && data.priceZar <= 500000 &&
+        data.status in ['Pending Verification', 'Confirmed', 'Completed', 'Cancelled'] &&
+        (!('confirmedBy' in data) || (data.confirmedBy is string && data.confirmedBy.size() <= 120)) &&
+        (!('cancellationReason' in data) || (data.cancellationReason is string && data.cancellationReason.size() <= 300)) &&
+        data.accessible is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidIncident(data) {
+      return data.keys().hasAll([
+          'reporterId', 'zone', 'severity', 'title', 'summary',
+          'source', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'reporterId', 'category', 'zone', 'severity', 'title', 'summary',
+          'source', 'status', 'attachmentUrl', 'locationConsent', 'sharedLat',
+          'sharedLng', 'locationLabel', 'assignedOfficerId', 'assignedOfficerName',
+          'resolutionNotes', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.reporterId) &&
+        (!('category' in data) || (data.category is string && data.category in [
+          'Trail Hazard',
+          'Coastal / Marine',
+          'Transport & Transit',
+          'Theft / Suspicious Activity',
+          'Medical / Rescue',
+          'Infrastructure / Lighting',
+          'Safety Advisory'
+        ])) &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 120 &&
+        data.severity in ['Nominal', 'Advisory', 'Elevated'] &&
+        data.title is string && data.title.size() >= 4 && data.title.size() <= 160 &&
+        data.summary is string && data.summary.size() >= 8 && data.summary.size() <= 800 &&
+        data.source is string && data.source.size() >= 2 && data.source.size() <= 140 &&
+        data.status in ['Open', 'Acknowledged', 'Resolved'] &&
+        (!('attachmentUrl' in data) || (data.attachmentUrl is string && data.attachmentUrl.size() <= 500)) &&
+        (!('locationConsent' in data) || data.locationConsent is bool) &&
+        (!('sharedLat' in data) || (data.sharedLat is number && data.sharedLat >= -90 && data.sharedLat <= 90)) &&
+        (!('sharedLng' in data) || (data.sharedLng is number && data.sharedLng >= -180 && data.sharedLng <= 180)) &&
+        ((!('sharedLat' in data) && !('sharedLng' in data)) ||
+          (data.locationConsent == true && 'sharedLat' in data && 'sharedLng' in data)) &&
+        (!('locationLabel' in data) || (data.locationLabel is string && data.locationLabel.size() <= 160)) &&
+        (!('assignedOfficerId' in data) || isValidId(data.assignedOfficerId)) &&
+        (!('assignedOfficerName' in data) || (data.assignedOfficerName is string && data.assignedOfficerName.size() <= 100)) &&
+        (!('resolutionNotes' in data) || (data.resolutionNotes is string && data.resolutionNotes.size() <= 400)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidItineraryItem(data) {
+      return data.keys().hasAll([
+          'userId', 'day', 'dayLabel', 'time', 'title',
+          'zone', 'completed', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'day', 'dayLabel', 'time', 'title',
+          'zone', 'transportNote', 'safetyNote', 'itemType', 'bookingId',
+          'date', 'endDate', 'endTime', 'completed', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.day is int && data.day >= 1 && data.day <= 30 &&
+        data.dayLabel is string && data.dayLabel.size() >= 2 && data.dayLabel.size() <= 120 &&
+        data.time is string && data.time.size() >= 2 && data.time.size() <= 32 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 160 &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 100 &&
+        (!('transportNote' in data) || (data.transportNote is string && data.transportNote.size() <= 200)) &&
+        (!('safetyNote' in data) || (data.safetyNote is string && data.safetyNote.size() <= 200)) &&
+        (!('itemType' in data) || data.itemType in ['Accommodation', 'Transport', 'Activity']) &&
+        (!('bookingId' in data) || isValidId(data.bookingId)) &&
+        (!('date' in data) || (data.date is string && data.date.size() <= 32)) &&
+        (!('endDate' in data) || (data.endDate is string && data.endDate.size() <= 32)) &&
+        (!('endTime' in data) || (data.endTime is string && data.endTime.size() <= 32)) &&
+        data.completed is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll([
+          'userId', 'title', 'detail', 'category', 'read', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'title', 'detail', 'category', 'read', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 160 &&
+        data.detail is string && data.detail.size() >= 2 && data.detail.size() <= 500 &&
+        data.category in ['Safety', 'Booking', 'Transport', 'System'] &&
+        data.read is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidReview(data) {
+      return data.keys().hasAll([
+          'authorId', 'authorName', 'targetId', 'rating', 'comment', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'authorId', 'authorName', 'targetId', 'rating', 'comment', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.authorId) &&
+        data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 100 &&
+        isValidId(data.targetId) &&
+        data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+        data.comment is string && data.comment.size() >= 4 && data.comment.size() <= 600 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCommunityPost(data) {
+      return data.keys().hasAll([
+          'authorId', 'authorName', 'roleLabel', 'zone', 'content',
+          'verifiedGuide', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'authorId', 'authorName', 'roleLabel', 'zone', 'content',
+          'verifiedGuide', 'moderationStatus', 'flaggedBy', 'flagReason',
+          'moderatedBy', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.authorId) &&
+        data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 100 &&
+        data.roleLabel is string && data.roleLabel.size() >= 2 && data.roleLabel.size() <= 80 &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 100 &&
+        data.content is string && data.content.size() >= 6 && data.content.size() <= 800 &&
+        data.verifiedGuide is bool &&
+        (!('moderationStatus' in data) || data.moderationStatus in ['Approved', 'Under Review', 'Removed']) &&
+        (!('flaggedBy' in data) || isValidId(data.flaggedBy)) &&
+        (!('flagReason' in data) || (data.flagReason is string && data.flagReason.size() <= 240)) &&
+        (!('moderatedBy' in data) || isValidId(data.moderatedBy)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidChallengeProgress(data) {
+      return data.keys().hasAll([
+          'id', 'uid', 'title', 'progress', 'target', 'completed', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'uid', 'title', 'progress', 'target', 'completed', 'badgeTitle', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.uid) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.progress is int && data.progress >= 0 && data.progress <= 100 &&
+        data.target is int && data.target >= 1 && data.target <= 100 &&
+        data.completed is bool &&
+        (!('badgeTitle' in data) || (data.badgeTitle is string && data.badgeTitle.size() <= 80)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTravelBudget(data) {
+      return data.keys().hasAll([
+          'userId', 'date', 'description', 'category', 'amountZar',
+          'paymentMethod', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'date', 'description', 'category', 'amountZar',
+          'paymentMethod', 'bookingId', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.date is string && data.date.size() >= 4 && data.date.size() <= 32 &&
+        data.description is string && data.description.size() >= 2 && data.description.size() <= 160 &&
+        data.category in ['Accommodation', 'Tours & Passes', 'Transport', 'Dining'] &&
+        data.amountZar is number && data.amountZar > 0 && data.amountZar <= 1000000 &&
+        data.paymentMethod is string && data.paymentMethod.size() >= 2 && data.paymentMethod.size() <= 60 &&
+        (!('bookingId' in data) || isValidId(data.bookingId)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTouristCheckIn(data) {
+      return data.keys().hasAll([
+          'userId', 'touristName', 'route', 'startedAt', 'expectedReturn',
+          'status', 'emergencyContact', 'partySize', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'userId', 'touristName', 'route', 'startedAt', 'expectedReturn',
+          'expectedReturnIso', 'reminderMinutes', 'reminderSent', 'status',
+          'emergencyContact', 'trustedContactsSummary', 'partySize',
+          'locationConsent', 'sharedLat', 'sharedLng', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.userId) &&
+        data.touristName is string && data.touristName.size() >= 2 && data.touristName.size() <= 100 &&
+        data.route is string && data.route.size() >= 2 && data.route.size() <= 160 &&
+        data.startedAt is string && data.startedAt.size() >= 2 && data.startedAt.size() <= 40 &&
+        data.expectedReturn is string && data.expectedReturn.size() >= 2 && data.expectedReturn.size() <= 40 &&
+        (!('expectedReturnIso' in data) || (data.expectedReturnIso is string && data.expectedReturnIso.size() <= 40)) &&
+        (!('reminderMinutes' in data) || (data.reminderMinutes is int && data.reminderMinutes >= 5 && data.reminderMinutes <= 240)) &&
+        (!('reminderSent' in data) || data.reminderSent is bool) &&
+        data.status in ['Active', 'Overdue', 'Completed'] &&
+        data.emergencyContact is string && data.emergencyContact.size() >= 4 && data.emergencyContact.size() <= 140 &&
+        (!('trustedContactsSummary' in data) || (data.trustedContactsSummary is string && data.trustedContactsSummary.size() <= 300)) &&
+        data.partySize is int && data.partySize >= 1 && data.partySize <= 50 &&
+        (!('locationConsent' in data) || data.locationConsent is bool) &&
+        (!('sharedLat' in data) || (data.sharedLat is number && data.sharedLat >= -90 && data.sharedLat <= 90)) &&
+        (!('sharedLng' in data) || (data.sharedLng is number && data.sharedLng >= -180 && data.sharedLng <= 180)) &&
+        ((!('sharedLat' in data) && !('sharedLng' in data)) ||
+          (data.locationConsent == true && 'sharedLat' in data && 'sharedLng' in data)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTrustedContact(data) {
+      return data.keys().hasAll([
+          'uid', 'name', 'relationship', 'phone', 'notifyByDefault', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'uid', 'name', 'relationship', 'phone', 'email', 'notifyByDefault', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+        data.relationship is string && data.relationship.size() >= 2 && data.relationship.size() <= 60 &&
+        data.phone is string && data.phone.size() >= 4 && data.phone.size() <= 40 &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 160)) &&
+        data.notifyByDefault is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll([
+          'id', 'authorId', 'authorName', 'title', 'category', 'zone',
+          'body', 'priority', 'pinned', 'active', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'authorId', 'authorName', 'title', 'category', 'zone',
+          'body', 'priority', 'pinned', 'active', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.authorId) &&
+        data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 100 &&
+        data.title is string && data.title.size() >= 4 && data.title.size() <= 160 &&
+        data.category in [
+          'Park & Trail Notice',
+          'Transport & Airport',
+          'Weather & Coastal',
+          'Visitor Advisory',
+          'Cultural Event'
+        ] &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 120 &&
+        data.body is string && data.body.size() >= 8 && data.body.size() <= 1000 &&
+        data.priority in ['Info', 'Advisory', 'Urgent'] &&
+        data.pinned is bool &&
+        data.active is bool &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProviderOffering(data) {
+      return data.keys().hasAll([
+          'id', 'providerId', 'providerName', 'offeringType', 'experienceTitle',
+          'category', 'zone', 'durationUnit', 'defaultDurationValue', 'unitPriceZar',
+          'pricingModel', 'availableUnits', 'bookedUnits', 'nextDeparture',
+          'accessible', 'safetyChecklistComplete', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'providerId', 'providerName', 'offeringType', 'experienceTitle',
+          'category', 'zone', 'description', 'durationUnit', 'defaultDurationValue',
+          'unitPriceZar', 'pricingModel', 'availableUnits', 'bookedUnits',
+          'nextDeparture', 'accessible', 'safetyChecklistComplete', 'status',
+          'blockedDates', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.providerName is string && data.providerName.size() >= 2 && data.providerName.size() <= 140 &&
+        data.offeringType in ['Accommodation', 'Transport', 'Activity'] &&
+        data.experienceTitle is string && data.experienceTitle.size() >= 2 && data.experienceTitle.size() <= 160 &&
+        data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 120 &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+        data.durationUnit in ['hours', 'days', 'nights', 'sessions'] &&
+        data.defaultDurationValue is int && data.defaultDurationValue >= 1 && data.defaultDurationValue <= 60 &&
+        data.unitPriceZar is number && data.unitPriceZar >= 0 && data.unitPriceZar <= 500000 &&
+        data.pricingModel in ['per_guest', 'per_unit'] &&
+        data.availableUnits is int && data.availableUnits >= 1 && data.availableUnits <= 500 &&
+        data.bookedUnits is int && data.bookedUnits >= 0 && data.bookedUnits <= 500 &&
+        data.nextDeparture is string && data.nextDeparture.size() >= 2 && data.nextDeparture.size() <= 80 &&
+        data.accessible is bool &&
+        data.safetyChecklistComplete is bool &&
+        data.status in ['Active', 'Paused'] &&
+        (!('blockedDates' in data) || (
+          data.blockedDates is list &&
+          data.blockedDates.size() <= 30 &&
+          (data.blockedDates.size() == 0 || (data.blockedDates[0] is string && data.blockedDates[0].size() <= 20))
+        )) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // Bootstrap admins marker collection
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isBootstrapAdmin();
+      allow create, update, delete: if isValidId(adminId) && isBootstrapAdmin();
+    }
+
+    // 1. Users (Public minimal profile + RBAC role; PII split into /private subcollection)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isBootstrapAdmin();
+      allow create: if isValidId(userId) &&
+        isVerifiedOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().role == 'tourist' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) &&
+        isVerified() &&
+        isValidUserProfile(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'role', 'requestedRole', 'organization', 'location', 'updatedAt'
+          ])) ||
+          (isVerifiedOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayName', 'organization', 'location', 'photoUrl', 'accessibilityPriority',
+            'requestedRole', 'profileVisibility', 'shareLocationConsent',
+            'aiContextPersonalization', 'preferredLanguage', 'updatedAt'
+          ]))
+        );
+      allow delete: if isValidId(userId) && isAdmin();
+
+      // Isolated PII Subcollection (email, emergencyContact, passId)
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && (isOwner(userId) || isAdmin());
+        allow list: if isOwner(userId) || isBootstrapAdmin();
+        allow create: if isValidId(userId) && isValidId(docId) &&
+          isVerifiedOwner(userId) &&
+          isValidUserPrivateInfo(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(docId) &&
+          (isVerifiedOwner(userId) || isAdmin()) &&
+          isValidUserPrivateInfo(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'email', 'emergencyContact', 'passId', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(docId) && isAdmin();
+      }
+
+      // Trusted Contacts Subcollection for Tourist Check-In reminders
+      match /trusted_contacts/{contactId} {
+        allow get: if isValidId(userId) && isValidId(contactId) && (isOwner(userId) || isAdmin());
+        allow list: if isOwner(userId) || isBootstrapAdmin();
+        allow create: if isValidId(userId) && isValidId(contactId) &&
+          isVerifiedOwner(userId) &&
+          isValidTrustedContact(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(contactId) &&
+          (isVerifiedOwner(userId) || isAdmin()) &&
+          isValidTrustedContact(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'relationship', 'phone', 'email', 'notifyByDefault', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(contactId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+
+      // Challenge Progress & Achievement Badges Subcollection
+      match /challenge_progress/{challengeId} {
+        allow get: if isValidId(userId) && isValidId(challengeId) && (isOwner(userId) || isAdmin());
+        allow list: if isOwner(userId) || isBootstrapAdmin();
+        allow create: if isValidId(userId) && isValidId(challengeId) &&
+          isVerifiedOwner(userId) &&
+          isValidChallengeProgress(incoming()) &&
+          incoming().id == challengeId &&
+          incoming().uid == request.auth.uid &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(challengeId) &&
+          (isVerifiedOwner(userId) || isAdmin()) &&
+          isValidChallengeProgress(incoming()) &&
+          incoming().id == existing().id &&
+          incoming().uid == existing().uid &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'progress', 'completed', 'badgeTitle', 'updatedAt'
+          ]);
+        allow delete: if isValidId(userId) && isValidId(challengeId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+    }
+
+    // 2. Tourism Businesses
+    match /tourism_businesses/{businessId} {
+      allow get: if isValidId(businessId) && isSignedIn();
+      allow list: if isSignedIn() && existing().status in ['Pending Review', 'Approved', 'Action Required'];
+      allow create: if isValidId(businessId) &&
+        isVerified() &&
+        isValidTourismBusiness(incoming()) &&
+        incoming().id == businessId &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().status == 'Pending Review' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(businessId) &&
+        isVerified() &&
+        isValidTourismBusiness(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'status', 'complianceDocs', 'safetyChecklistComplete', 'description', 'lat', 'lng', 'updatedAt'
+          ])) ||
+          (existing().ownerId == request.auth.uid && isServiceProvider() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'businessName', 'category', 'zone', 'complianceDocs', 'imageUrl',
+              'description', 'lat', 'lng', 'safetyChecklistComplete', 'updatedAt'
+            ]))
+        );
+      allow delete: if isValidId(businessId) && isAdmin();
+    }
+
+    // 3. Bookings
+    match /bookings/{bookingId} {
+      allow get: if isValidId(bookingId) && isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        existing().providerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        existing().providerId == request.auth.uid ||
+        isBootstrapAdmin()
+      );
+      allow create: if isValidId(bookingId) &&
+        isVerified() &&
+        isValidBooking(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().status == 'Pending Verification' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(bookingId) &&
+        isVerified() &&
+        isValidBooking(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().providerId == existing().providerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().status != 'Completed' && existing().status != 'Cancelled' && (
+            (existing().userId == request.auth.uid &&
+              incoming().status == 'Cancelled' &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'cancellationReason', 'updatedAt'])) ||
+            (existing().providerId == request.auth.uid &&
+              incoming().status in ['Confirmed', 'Completed', 'Cancelled'] &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'confirmedBy', 'cancellationReason', 'updatedAt']))
+          ))
+        );
+      allow delete: if isValidId(bookingId) && isAdmin();
+    }
+
+    // 4. Incidents & Safety Advisories
+    match /incidents/{incidentId} {
+      allow get: if isValidId(incidentId) && isSignedIn();
+      allow list: if isSignedIn() && existing().status in ['Open', 'Acknowledged', 'Resolved'];
+      allow create: if isValidId(incidentId) &&
+        isVerified() &&
+        isValidIncident(incoming()) &&
+        incoming().reporterId == request.auth.uid &&
+        incoming().status == 'Open' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(incidentId) &&
+        isVerified() &&
+        isValidIncident(incoming()) &&
+        incoming().reporterId == existing().reporterId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().status != 'Resolved' && isSafetyPersonnel() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'severity', 'summary', 'status', 'assignedOfficerId',
+              'assignedOfficerName', 'resolutionNotes', 'updatedAt'
+            ])) ||
+          (existing().reporterId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'locationConsent', 'sharedLat', 'sharedLng', 'locationLabel', 'updatedAt'
+            ]))
+        );
+      allow delete: if isValidId(incidentId) && isAdmin();
+    }
+
+    // 5. Itineraries
+    match /itineraries/{itemId} {
+      allow get: if isValidId(itemId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(itemId) &&
+        isVerified() &&
+        isValidItineraryItem(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(itemId) &&
+        isVerified() &&
+        isValidItineraryItem(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().userId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'day', 'dayLabel', 'time', 'title', 'zone', 'transportNote', 'safetyNote',
+              'itemType', 'date', 'endDate', 'endTime', 'completed', 'updatedAt'
+            ]))
+        );
+      allow delete: if isValidId(itemId) && isVerified() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 6. Notifications
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(notificationId) &&
+        isVerified() &&
+        isValidNotification(incoming()) &&
+        (incoming().userId == request.auth.uid || isAdmin() || isSafetyPersonnel()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(notificationId) &&
+        isVerified() &&
+        isValidNotification(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().userId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']))
+        );
+      allow delete: if isValidId(notificationId) && isVerified() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 7. Reviews
+    match /reviews/{reviewId} {
+      allow get: if isValidId(reviewId) && isSignedIn();
+      allow list: if isSignedIn() && existing().rating >= 1 && existing().rating <= 5;
+      allow create: if isValidId(reviewId) &&
+        isVerified() &&
+        isValidReview(incoming()) &&
+        incoming().authorId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(reviewId) &&
+        isVerified() &&
+        isValidReview(incoming()) &&
+        incoming().authorId == existing().authorId &&
+        incoming().targetId == existing().targetId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().authorId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt']))
+        );
+      allow delete: if isValidId(reviewId) && isVerified() && (existing().authorId == request.auth.uid || isAdmin());
+    }
+
+    // 8. Community Posts (with pre-moderation, user flagging & Admin/Safety moderation queue)
+    match /community_posts/{postId} {
+      allow get: if isValidId(postId) && isSignedIn();
+      allow list: if isSignedIn() && existing().zone is string;
+      allow create: if isValidId(postId) &&
+        isVerified() &&
+        isValidCommunityPost(incoming()) &&
+        incoming().authorId == request.auth.uid &&
+        incoming().verifiedGuide == false &&
+        (!('moderationStatus' in incoming()) || incoming().moderationStatus in ['Approved', 'Under Review']) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(postId) &&
+        isVerified() &&
+        isValidCommunityPost(incoming()) &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (isSafetyPersonnel() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'moderationStatus', 'moderatedBy', 'flagReason', 'verifiedGuide', 'updatedAt'
+            ])) ||
+          (incoming().moderationStatus == 'Under Review' &&
+            incoming().flaggedBy == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'moderationStatus', 'flaggedBy', 'flagReason', 'updatedAt'
+            ])) ||
+          (existing().authorId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['zone', 'content', 'updatedAt']))
+        );
+      allow delete: if isValidId(postId) && isVerified() && (
+        existing().authorId == request.auth.uid || isAdmin() || isSafetyPersonnel()
+      );
+    }
+
+    // 9. Travel Budgets
+    match /travel_budgets/{expenseId} {
+      allow get: if isValidId(expenseId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(expenseId) &&
+        isVerified() &&
+        isValidTravelBudget(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(expenseId) &&
+        isVerified() &&
+        isValidTravelBudget(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().userId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'date', 'description', 'category', 'amountZar', 'paymentMethod', 'updatedAt'
+            ]))
+        );
+      allow delete: if isValidId(expenseId) && isVerified() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 10. Tourist Check-Ins
+    match /tourist_check_ins/{checkInId} {
+      allow get: if isValidId(checkInId) && isSignedIn() && (
+        existing().userId == request.auth.uid || isSafetyPersonnel()
+      );
+      allow list: if isSignedIn() && (
+        existing().userId == request.auth.uid || isBootstrapAdmin()
+      );
+      allow create: if isValidId(checkInId) &&
+        isVerified() &&
+        isValidTouristCheckIn(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().status == 'Active' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(checkInId) &&
+        isVerified() &&
+        isValidTouristCheckIn(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().status != 'Completed' && (
+            (existing().userId == request.auth.uid &&
+              incoming().status in ['Active', 'Completed'] &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'expectedReturn', 'expectedReturnIso', 'reminderMinutes',
+                'reminderSent', 'status', 'locationConsent', 'sharedLat',
+                'sharedLng', 'updatedAt'
+              ])) ||
+            (isSafetyPersonnel() &&
+              incoming().status in ['Active', 'Overdue', 'Completed'] &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'reminderSent', 'updatedAt']))
+          ))
+        );
+      allow delete: if isValidId(checkInId) && isAdmin();
+    }
+
+    // 11. Destination Announcements
+    match /announcements/{announcementId} {
+      allow get: if isValidId(announcementId) && isSignedIn();
+      allow list: if isSignedIn() && existing().active is bool;
+      allow create: if isValidId(announcementId) &&
+        isVerified() &&
+        (isAdmin() || isSafetyPersonnel()) &&
+        isValidAnnouncement(incoming()) &&
+        incoming().id == announcementId &&
+        incoming().authorId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(announcementId) &&
+        isVerified() &&
+        (isAdmin() || isSafetyPersonnel()) &&
+        isValidAnnouncement(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title', 'category', 'zone', 'body', 'priority', 'pinned', 'active', 'updatedAt'
+        ]);
+      allow delete: if isValidId(announcementId) && isAdmin();
+    }
+
+    // 12. Provider Offerings & Availability Inventory
+    match /provider_offerings/{offeringId} {
+      allow get: if isValidId(offeringId) && isSignedIn();
+      allow list: if isSignedIn() && existing().status in ['Active', 'Paused'];
+      allow create: if isValidId(offeringId) &&
+        isVerified() &&
+        isServiceProvider() &&
+        isValidProviderOffering(incoming()) &&
+        incoming().id == offeringId &&
+        incoming().providerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(offeringId) &&
+        isVerified() &&
+        isValidProviderOffering(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().providerId == existing().providerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() ||
+          (existing().providerId == request.auth.uid &&
+            isServiceProvider() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'offeringType', 'experienceTitle', 'category', 'zone', 'description',
+              'durationUnit', 'defaultDurationValue', 'unitPriceZar', 'pricingModel',
+              'availableUnits', 'bookedUnits', 'nextDeparture', 'accessible',
+              'safetyChecklistComplete', 'status', 'blockedDates', 'updatedAt'
+            ]))
+        );
+      allow delete: if isValidId(offeringId) && isVerified() && (
+        isAdmin() || (existing().providerId == request.auth.uid && isServiceProvider())
+      );
+    }
+  }
+}

@@ -1,0 +1,1020 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Publicly minimal user profile and RBAC role record for CapeSafe Connect 360.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "role": {
+          "type": "string",
+          "enum": ["tourist", "admin", "provider", "safety"]
+        },
+        "requestedRole": {
+          "type": "string",
+          "enum": ["tourist", "admin", "provider", "safety"]
+        },
+        "organization": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "accessibilityPriority": {
+          "type": "boolean"
+        },
+        "profileVisibility": {
+          "type": "string",
+          "enum": ["public_guides", "initials_only", "private"]
+        },
+        "shareLocationConsent": {
+          "type": "boolean"
+        },
+        "aiContextPersonalization": {
+          "type": "boolean"
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "enum": ["English", "Afrikaans", "isiXhosa"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "role", "requestedRole", "accessibilityPriority", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII document for user email, emergency contact, and digital pass ID.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "emergencyContact": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "passId": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "TourismBusiness": {
+      "title": "TourismBusiness",
+      "description": "Registered Cape Town tourism operator or attraction profile.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "businessName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "zone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "complianceDocs": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending Review", "Approved", "Action Required"]
+        },
+        "safetyChecklistComplete": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "businessName", "category", "zone", "status", "safetyChecklistComplete", "createdAt", "updatedAt"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Tourist reservation for a Cape Town experience.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "providerName": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "timeSlot": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "guests": {
+          "type": "integer"
+        },
+        "priceZar": {
+          "type": "number"
+        },
+        "offeringId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "offeringType": {
+          "type": "string",
+          "enum": ["Accommodation", "Transport", "Activity"]
+        },
+        "zone": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "durationUnit": {
+          "type": "string",
+          "enum": ["hours", "days", "nights", "sessions"]
+        },
+        "durationValue": {
+          "type": "integer"
+        },
+        "endDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "endTime": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "unitPriceZar": {
+          "type": "number"
+        },
+        "pricingModel": {
+          "type": "string",
+          "enum": ["per_guest", "per_unit"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending Verification", "Confirmed", "Completed", "Cancelled"]
+        },
+        "confirmedBy": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "cancellationReason": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "accessible": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "providerId", "title", "providerName", "date", "timeSlot", "guests", "priceZar", "status", "accessible", "createdAt", "updatedAt"]
+    },
+    "Incident": {
+      "title": "Incident",
+      "description": "Safety advisory or incident report across Cape Town precincts with optional photo and consented GPS location.",
+      "type": "object",
+      "properties": {
+        "reporterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "Trail Hazard",
+            "Coastal / Marine",
+            "Transport & Transit",
+            "Theft / Suspicious Activity",
+            "Medical / Rescue",
+            "Infrastructure / Lighting",
+            "Safety Advisory"
+          ],
+          "maxLength": 60
+        },
+        "zone": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["Nominal", "Advisory", "Elevated"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 160
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 800
+        },
+        "source": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Open", "Acknowledged", "Resolved"]
+        },
+        "attachmentUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "locationConsent": {
+          "type": "boolean"
+        },
+        "sharedLat": {
+          "type": "number"
+        },
+        "sharedLng": {
+          "type": "number"
+        },
+        "locationLabel": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "assignedOfficerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "assignedOfficerName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "resolutionNotes": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["reporterId", "zone", "severity", "title", "summary", "source", "status", "createdAt", "updatedAt"]
+    },
+    "ItineraryItem": {
+      "title": "ItineraryItem",
+      "description": "User-owned Cape Town trip activity.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "day": {
+          "type": "integer"
+        },
+        "dayLabel": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "time": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "zone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "transportNote": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "safetyNote": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "itemType": {
+          "type": "string",
+          "enum": ["Accommodation", "Transport", "Activity"]
+        },
+        "bookingId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "endDate": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "endTime": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "day", "dayLabel", "time", "title", "zone", "completed", "createdAt", "updatedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User-specific alert or booking notification.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Safety", "Booking", "Transport", "System"]
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "title", "detail", "category", "read", "createdAt", "updatedAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Verified tourist review for an attraction or tourism business.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "targetId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "rating": {
+          "type": "integer"
+        },
+        "comment": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 600
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["authorId", "authorName", "targetId", "rating", "comment", "createdAt", "updatedAt"]
+    },
+    "CommunityPost": {
+      "title": "CommunityPost",
+      "description": "Field note posted in the CapeSafe Community Hub.",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "roleLabel": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "zone": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "content": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 800
+        },
+        "verifiedGuide": {
+          "type": "boolean"
+        },
+        "moderationStatus": {
+          "type": "string",
+          "enum": ["Approved", "Under Review", "Removed"]
+        },
+        "flaggedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "flagReason": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "moderatedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["authorId", "authorName", "roleLabel", "zone", "content", "verifiedGuide", "createdAt", "updatedAt"]
+    },
+    "TravelBudget": {
+      "title": "TravelBudget",
+      "description": "User-owned ZAR travel expense record.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "description": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Accommodation", "Tours & Passes", "Transport", "Dining"]
+        },
+        "amountZar": {
+          "type": "number"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "bookingId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "date", "description", "category", "amountZar", "paymentMethod", "createdAt", "updatedAt"]
+    },
+    "TouristCheckIn": {
+      "title": "TouristCheckIn",
+      "description": "Timed safety check-in session with reminders, trusted contacts, and optional consented location.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "touristName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "route": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "startedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "expectedReturn": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "expectedReturnIso": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "reminderMinutes": {
+          "type": "integer"
+        },
+        "reminderSent": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "Overdue", "Completed"]
+        },
+        "emergencyContact": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "trustedContactsSummary": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "partySize": {
+          "type": "integer"
+        },
+        "locationConsent": {
+          "type": "boolean"
+        },
+        "sharedLat": {
+          "type": "number"
+        },
+        "sharedLng": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "touristName", "route", "startedAt", "expectedReturn", "status", "emergencyContact", "partySize", "createdAt", "updatedAt"]
+    },
+    "TrustedContact": {
+      "title": "TrustedContact",
+      "description": "Private trusted contact saved by a tourist for check-in reminders and welfare alerts.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "relationship": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "notifyByDefault": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "name", "relationship", "phone", "notifyByDefault", "createdAt", "updatedAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Official destination announcement published by Tourism Administrators or Safety Operations.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "title": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Park & Trail Notice", "Transport & Airport", "Weather & Coastal", "Visitor Advisory", "Cultural Event"],
+          "maxLength": 60
+        },
+        "zone": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "body": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 1000
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["Info", "Advisory", "Urgent"]
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "authorId", "authorName", "title", "category", "zone", "body", "priority", "pinned", "active", "createdAt", "updatedAt"]
+    },
+    "ProviderOffering": {
+      "title": "ProviderOffering",
+      "description": "Bookable Cape Town accommodation, transport, or activity inventory managed by an accredited service provider.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "providerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "providerName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 140
+        },
+        "offeringType": {
+          "type": "string",
+          "enum": ["Accommodation", "Transport", "Activity"]
+        },
+        "experienceTitle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "zone": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "durationUnit": {
+          "type": "string",
+          "enum": ["hours", "days", "nights", "sessions"]
+        },
+        "defaultDurationValue": {
+          "type": "integer"
+        },
+        "unitPriceZar": {
+          "type": "number"
+        },
+        "pricingModel": {
+          "type": "string",
+          "enum": ["per_guest", "per_unit"]
+        },
+        "availableUnits": {
+          "type": "integer"
+        },
+        "bookedUnits": {
+          "type": "integer"
+        },
+        "nextDeparture": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "accessible": {
+          "type": "boolean"
+        },
+        "safetyChecklistComplete": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "Paused"]
+        },
+        "blockedDates": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "providerId",
+        "providerName",
+        "offeringType",
+        "experienceTitle",
+        "category",
+        "zone",
+        "durationUnit",
+        "defaultDurationValue",
+        "unitPriceZar",
+        "pricingModel",
+        "availableUnits",
+        "bookedUnits",
+        "nextDeparture",
+        "accessible",
+        "safetyChecklistComplete",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChallengeProgress": {
+      "title": "ChallengeProgress",
+      "description": "User-owned CapeSafe Discover Cape Town challenge milestone progress and earned achievement badge status.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "progress": {
+          "type": "integer"
+        },
+        "target": {
+          "type": "integer"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "badgeTitle": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "uid", "title", "progress", "target", "completed", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Publicly minimal profile and role status for each authenticated user."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII (email, emergency contact, pass ID) readable only by owner or admin."
+    },
+    "/users/{userId}/trusted_contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/TrustedContact" },
+      "description": "Private trusted emergency contacts owned by userId for Tourist Check-In reminders."
+    },
+    "/users/{userId}/challenge_progress/{challengeId}": {
+      "schema": { "$ref": "#/entities/ChallengeProgress" },
+      "description": "Persisted sustainable tourism challenge progress and unlocked achievement badges owned by userId."
+    },
+    "/tourism_businesses/{businessId}": {
+      "schema": { "$ref": "#/entities/TourismBusiness" },
+      "description": "Accredited Cape Town service providers and attraction operators."
+    },
+    "/provider_offerings/{offeringId}": {
+      "schema": { "$ref": "#/entities/ProviderOffering" },
+      "description": "Bookable provider inventory with pricing, durations, capacity, and blocked dates."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Tourist reservations linked to userId and providerId."
+    },
+    "/incidents/{incidentId}": {
+      "schema": { "$ref": "#/entities/Incident" },
+      "description": "Safety incidents and corridor advisories monitored by Safety Management."
+    },
+    "/itineraries/{itemId}": {
+      "schema": { "$ref": "#/entities/ItineraryItem" },
+      "description": "Personal Cape Town trip activities owned by userId."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Private user notifications scoped to userId."
+    },
+    "/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/Review" },
+      "description": "Verified user reviews on Cape Town businesses and attractions."
+    },
+    "/community_posts/{postId}": {
+      "schema": { "$ref": "#/entities/CommunityPost" },
+      "description": "Community Hub field observations published by signed-in users."
+    },
+    "/travel_budgets/{expenseId}": {
+      "schema": { "$ref": "#/entities/TravelBudget" },
+      "description": "Private ZAR expense records owned by userId."
+    },
+    "/tourist_check_ins/{checkInId}": {
+      "schema": { "$ref": "#/entities/TouristCheckIn" },
+      "description": "Timed trail check-in sessions owned by userId and monitored by Safety Management."
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/Announcement" },
+      "description": "Official Cape Town destination announcements managed by Administrators and Safety Operations."
+    }
+  }
+}
