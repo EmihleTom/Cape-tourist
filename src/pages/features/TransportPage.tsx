@@ -28,6 +28,8 @@ export const TransportPage: React.FC<TransportPageProps> = ({
   const [serviceFilter, setServiceFilter] = useState<'All' | TransportRoute['service']>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [transportError, setTransportError] = useState('');
 
   const visible = routes.filter((r) => {
     const matchesAccessible = !accessibleOnly || r.accessible;
@@ -41,8 +43,18 @@ export const TransportPage: React.FC<TransportPageProps> = ({
 
   const handleAddToTrip = async (route: TransportRoute) => {
     if (!onAddRouteToTrip) return;
-    await onAddRouteToTrip(route);
-    setAddedId(route.id);
+    setTransportError('');
+    setAddingId(route.id);
+    try {
+      await onAddRouteToTrip(route);
+      setAddedId(route.id);
+    } catch (err) {
+      setTransportError(
+        err instanceof Error ? err.message : 'Unable to add transport route to My Trips.'
+      );
+    } finally {
+      setAddingId(null);
+    }
   };
 
   return (
@@ -61,6 +73,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
 
         <button
           type="button"
+          aria-pressed={accessibleOnly}
           onClick={() => setAccessibleOnly((v) => !v)}
           className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
             accessibleOnly
@@ -72,6 +85,12 @@ export const TransportPage: React.FC<TransportPageProps> = ({
           {accessibleOnly ? 'Step-Free Transit Only: On' : 'Filter Step-Free Transit'}
         </button>
       </div>
+
+      {transportError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium text-red-800">
+          {transportError}
+        </div>
+      )}
 
       {/* Weather Impact on Mountain & Coastal Shuttles */}
       {weather && (
@@ -101,6 +120,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
           <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
           <input
             type="text"
+            aria-label="Search Cape Town transport routes"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search route or corridor (e.g., Airport, Camps Bay)..."
@@ -121,6 +141,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
             <button
               key={svc}
               type="button"
+              aria-pressed={serviceFilter === svc}
               onClick={() => setServiceFilter(svc)}
               className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                 serviceFilter === svc
@@ -181,11 +202,16 @@ export const TransportPage: React.FC<TransportPageProps> = ({
                     <td className="px-5 py-3.5 text-right">
                       <button
                         type="button"
-                        onClick={() => handleAddToTrip(route)}
-                        className="inline-flex items-center gap-1 rounded-md border border-[#0D9488] bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E] hover:bg-teal-100 transition-colors whitespace-nowrap"
+                        disabled={addingId === route.id}
+                        onClick={() => void handleAddToTrip(route)}
+                        className="inline-flex items-center gap-1 rounded-md border border-[#0D9488] bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E] hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap"
                       >
                         <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                        {addedId === route.id ? 'Added to Trips' : 'Add to Trips'}
+                        {addingId === route.id
+                          ? 'Adding...'
+                          : addedId === route.id
+                          ? 'Added to Trips'
+                          : 'Add to Trips'}
                       </button>
                     </td>
                   )}

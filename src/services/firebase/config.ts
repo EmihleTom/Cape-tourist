@@ -28,6 +28,10 @@ export const FIREBASE_COLLECTIONS = {
   touristCheckIns: 'tourist_check_ins',
   announcements: 'announcements',
   providerOfferings: 'provider_offerings',
+  payments: 'payments',
+  savedPaymentMethods: 'saved_payment_methods',
+  providerPaymentSettings: 'provider_payment_settings',
+  paymentAuditLogs: 'payment_audit_logs',
 } as const;
 
 export function getFirebaseConfig(): FirebaseWebConfig {

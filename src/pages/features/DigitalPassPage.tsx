@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, QrCode, RefreshCw, ShieldAlert, Wifi } from 'lucid
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { StatusText } from '@/src/components/common/StatusText';
 import type { BookingItem, CheckInSession, DemoUser } from '@/src/types/app';
+import { isAwaitingBookingStatus } from '@/src/utils/bookingCalculations';
 
 interface DigitalPassPageProps {
   user: DemoUser;
@@ -30,12 +31,14 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
     }
   });
   const [syncingPass, setSyncingPass] = useState(false);
+  const [passFeedback, setPassFeedback] = useState('');
+  const [passError, setPassError] = useState('');
 
   const passCode = user.passId || 'CS360-884210';
 
-  // Strictly distinguish Confirmed bookings from Pending Verification bookings
+  // Strictly distinguish Confirmed bookings from Pending Verification / Awaiting Provider Confirmation
   const confirmedBookings = bookings.filter((b) => b.status === 'Confirmed');
-  const pendingBookings = bookings.filter((b) => b.status === 'Pending Verification');
+  const pendingBookings = bookings.filter((b) => isAwaitingBookingStatus(b.status));
   const activeCheckIn = checkIns.find((c) => c.status === 'Active');
 
   const validityWindow = useMemo(() => {
@@ -100,10 +103,16 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
 
   const handleRegeneratePassId = async () => {
     if (!onSyncPassId) return;
+    setPassFeedback('');
+    setPassError('');
     setSyncingPass(true);
     try {
       const randomNum = Math.floor(100000 + Math.random() * 899999);
-      await onSyncPassId(`CS360-${randomNum}`);
+      const nextCode = `CS360-${randomNum}`;
+      await onSyncPassId(nextCode);
+      setPassFeedback(`Updated pass code to ${nextCode}.`);
+    } catch (err) {
+      setPassError(err instanceof Error ? err.message : 'Unable to rotate pass code.');
     } finally {
       setSyncingPass(false);
     }
@@ -131,11 +140,15 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
           </div>
 
           <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
-            <div
-              className="rounded-xl bg-white p-3.5 shrink-0"
-              aria-label={`QR verification code ${passCode}`}
-            >
-              <svg width="132" height="132" viewBox="0 0 21 21" fill="none">
+            <div className="rounded-xl bg-white p-3.5 shrink-0">
+              <svg
+                role="img"
+                aria-label={`QR verification code ${passCode}`}
+                width="132"
+                height="132"
+                viewBox="0 0 21 21"
+                fill="none"
+              >
                 <rect width="21" height="21" fill="#FFFFFF" />
                 <rect x="1" y="1" width="6" height="6" stroke="#0B1F3A" strokeWidth="1.5" />
                 <rect x="3" y="3" width="2" height="2" fill="#0B1F3A" />
@@ -212,6 +225,16 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
               </button>
             </div>
           </div>
+          {passFeedback && (
+            <p role="status" className="mt-3 text-xs font-medium text-teal-300">
+              {passFeedback}
+            </p>
+          )}
+          {passError && (
+            <p role="alert" className="mt-3 text-xs font-medium text-red-300">
+              {passError}
+            </p>
+          )}
         </section>
 
         {/* Confirmed Booking Pass Entitlements */}
@@ -248,7 +271,18 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
                       <p className="font-semibold text-[#0B1F3A]">{bk.title}</p>
                       <p className="text-xs text-slate-500">
                         {bk.offeringType || bk.category} · {bk.providerName}
+                        {bk.bookingReference ? ` · ${bk.bookingReference}` : ''}
                       </p>
+                      {bk.paymentStatus && (
+                        <p className="text-[11px] text-slate-600">
+                          Payment: <strong>{bk.paymentStatus}</strong>
+                          {typeof bk.balanceDueInPersonZar === 'number' &&
+                          bk.balanceDueInPersonZar > 0 &&
+                          bk.paymentStatus !== 'Paid'
+                            ? ` · R ${bk.balanceDueInPersonZar.toLocaleString('en-ZA')} due in person`
+                            : ''}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right font-mono text-xs text-slate-700 whitespace-nowrap tabular-nums">
@@ -264,7 +298,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 space-y-1.5">
               <p className="flex items-center gap-1.5 font-semibold">
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                {pendingBookings.length} Reservation(s) Pending Provider Verification
+                {pendingBookings.length} Reservation(s) Awaiting Provider Confirmation
               </p>
               <p className="text-[11px]">
                 Excluded from active QR entry until confirmed by the tourism provider:
@@ -272,7 +306,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
               <ul className="list-disc pl-4 text-[11px]">
                 {pendingBookings.map((p) => (
                   <li key={p.id}>
-                    {p.title} ({p.date}) — Pending Verification
+                    {p.title} ({p.date}) — {p.status}
                   </li>
                 ))}
               </ul>

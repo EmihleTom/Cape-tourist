@@ -136,7 +136,9 @@ service cloud.firestore {
           'userId', 'providerId', 'offeringId', 'offeringType', 'title', 'providerName',
           'category', 'zone', 'date', 'timeSlot', 'durationUnit', 'durationValue',
           'endDate', 'endTime', 'unitPriceZar', 'pricingModel', 'guests', 'priceZar',
-          'status', 'confirmedBy', 'cancellationReason', 'accessible', 'createdAt', 'updatedAt'
+          'status', 'bookingReference', 'paymentStatus', 'paymentMethod', 'paymentPolicy',
+          'depositAmountZar', 'paidAmountZar', 'balanceDueInPersonZar', 'paymentId', 'paymentReference',
+          'confirmedBy', 'cancellationReason', 'accessible', 'createdAt', 'updatedAt'
         ]) &&
         isValidId(data.userId) &&
         isValidId(data.providerId) &&
@@ -156,7 +158,25 @@ service cloud.firestore {
         (!('pricingModel' in data) || data.pricingModel in ['per_guest', 'per_unit']) &&
         data.guests is int && data.guests >= 1 && data.guests <= 50 &&
         data.priceZar is number && data.priceZar >= 0 && data.priceZar <= 500000 &&
-        data.status in ['Pending Verification', 'Confirmed', 'Completed', 'Cancelled'] &&
+        data.status in [
+          'Pending', 'Pending Verification', 'Awaiting Provider Confirmation',
+          'Confirmed', 'Rejected', 'Completed', 'Cancelled'
+        ] &&
+        (!('bookingReference' in data) || (data.bookingReference is string && data.bookingReference.size() <= 40)) &&
+        (!('paymentStatus' in data) || data.paymentStatus in [
+          'Unpaid', 'Payment Pending', 'Processing', 'Paid',
+          'Failed', 'Partially Paid', 'Refunded', 'Partially Refunded'
+        ]) &&
+        (!('paymentMethod' in data) || data.paymentMethod in ['PayShap', 'Card', 'Pay in Person']) &&
+        (!('paymentPolicy' in data) || data.paymentPolicy in [
+          'reserve_pay_on_arrival', 'pay_full_online',
+          'deposit_online_balance_in_person', 'pay_in_person_before_service'
+        ]) &&
+        (!('depositAmountZar' in data) || (data.depositAmountZar is number && data.depositAmountZar >= 0 && data.depositAmountZar <= 500000)) &&
+        (!('paidAmountZar' in data) || (data.paidAmountZar is number && data.paidAmountZar >= 0 && data.paidAmountZar <= 500000)) &&
+        (!('balanceDueInPersonZar' in data) || (data.balanceDueInPersonZar is number && data.balanceDueInPersonZar >= 0 && data.balanceDueInPersonZar <= 500000)) &&
+        (!('paymentId' in data) || isValidId(data.paymentId)) &&
+        (!('paymentReference' in data) || (data.paymentReference is string && data.paymentReference.size() <= 80)) &&
         (!('confirmedBy' in data) || (data.confirmedBy is string && data.confirmedBy.size() <= 120)) &&
         (!('cancellationReason' in data) || (data.cancellationReason is string && data.cancellationReason.size() <= 300)) &&
         data.accessible is bool &&
@@ -445,6 +465,131 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidPayment(data) {
+      return data.keys().hasAll([
+          'id', 'bookingId', 'bookingReference', 'userId', 'providerId',
+          'providerName', 'serviceTitle', 'amount', 'currency',
+          'paymentMethod', 'paymentStatus', 'paymentReference', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'bookingId', 'bookingReference', 'userId', 'userName', 'providerId',
+          'providerName', 'serviceTitle', 'amount', 'bookingTotalZar', 'depositAmount',
+          'balanceDueInPerson', 'refundedAmount', 'currency', 'paymentMethod', 'paymentStatus',
+          'paymentReference', 'paymentProviderReference', 'providerVerified', 'paymentMode',
+          'inPersonMethodUsed', 'inPersonConfirmedBy', 'inPersonConfirmedAt',
+          'savedCardTokenId', 'cardBrand', 'cardLastFour', 'failureReason',
+          'receiptNumber', 'paidAtLabel', 'createdAt', 'updatedAt'
+        ]) &&
+        !data.keys().hasAny(['cardNumber', 'pan', 'cvv', 'cvc', 'securityCode']) &&
+        isValidId(data.id) &&
+        isValidId(data.bookingId) &&
+        data.bookingReference is string && data.bookingReference.size() >= 3 && data.bookingReference.size() <= 40 &&
+        isValidId(data.userId) &&
+        (!('userName' in data) || (data.userName is string && data.userName.size() <= 120)) &&
+        isValidId(data.providerId) &&
+        data.providerName is string && data.providerName.size() >= 2 && data.providerName.size() <= 140 &&
+        data.serviceTitle is string && data.serviceTitle.size() >= 2 && data.serviceTitle.size() <= 160 &&
+        data.amount is number && data.amount >= 0 && data.amount <= 500000 &&
+        (!('bookingTotalZar' in data) || (data.bookingTotalZar is number && data.bookingTotalZar >= 0 && data.bookingTotalZar <= 500000)) &&
+        (!('depositAmount' in data) || (data.depositAmount is number && data.depositAmount >= 0 && data.depositAmount <= 500000)) &&
+        (!('balanceDueInPerson' in data) || (data.balanceDueInPerson is number && data.balanceDueInPerson >= 0 && data.balanceDueInPerson <= 500000)) &&
+        (!('refundedAmount' in data) || (data.refundedAmount is number && data.refundedAmount >= 0 && data.refundedAmount <= 500000)) &&
+        data.currency == 'ZAR' &&
+        data.paymentMethod in ['PayShap', 'Card', 'Pay in Person'] &&
+        data.paymentStatus in [
+          'Unpaid', 'Payment Pending', 'Processing', 'Paid',
+          'Failed', 'Partially Paid', 'Refunded', 'Partially Refunded'
+        ] &&
+        data.paymentReference is string && data.paymentReference.size() >= 4 && data.paymentReference.size() <= 80 &&
+        (!('paymentProviderReference' in data) || (data.paymentProviderReference is string && data.paymentProviderReference.size() <= 120)) &&
+        (!('providerVerified' in data) || data.providerVerified is bool) &&
+        (!('paymentMode' in data) || data.paymentMode in ['live', 'demo']) &&
+        (!('inPersonMethodUsed' in data) || data.inPersonMethodUsed in ['Cash', 'Card Machine', 'EFT', 'SnapScan', 'Zapper']) &&
+        (!('inPersonConfirmedBy' in data) || (data.inPersonConfirmedBy is string && data.inPersonConfirmedBy.size() <= 120)) &&
+        (!('inPersonConfirmedAt' in data) || (data.inPersonConfirmedAt is string && data.inPersonConfirmedAt.size() <= 40)) &&
+        (!('savedCardTokenId' in data) || (data.savedCardTokenId is string && data.savedCardTokenId.size() <= 128)) &&
+        (!('cardBrand' in data) || (data.cardBrand is string && data.cardBrand.size() <= 32)) &&
+        (!('cardLastFour' in data) || (data.cardLastFour is string && data.cardLastFour.matches('^[0-9]{4}$'))) &&
+        (!('failureReason' in data) || (data.failureReason is string && data.failureReason.size() <= 240)) &&
+        (!('receiptNumber' in data) || (data.receiptNumber is string && data.receiptNumber.size() <= 60)) &&
+        (!('paidAtLabel' in data) || (data.paidAtLabel is string && data.paidAtLabel.size() <= 40)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSavedPaymentMethod(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'providerToken', 'cardBrand', 'cardholderName',
+          'lastFourDigits', 'expiryMonth', 'expiryYear', 'paymentMode', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'userId', 'providerToken', 'cardBrand', 'cardholderName',
+          'lastFourDigits', 'expiryMonth', 'expiryYear', 'paymentMode', 'createdAt', 'updatedAt'
+        ]) &&
+        !data.keys().hasAny(['cardNumber', 'pan', 'cvv', 'cvc', 'securityCode']) &&
+        isValidId(data.id) &&
+        isValidId(data.userId) &&
+        data.providerToken is string && data.providerToken.size() >= 6 && data.providerToken.size() <= 160 &&
+        data.cardBrand in ['Visa', 'Mastercard', 'Amex', 'Other'] &&
+        data.cardholderName is string && data.cardholderName.size() >= 2 && data.cardholderName.size() <= 100 &&
+        data.lastFourDigits is string && data.lastFourDigits.matches('^[0-9]{4}$') &&
+        data.expiryMonth is string && data.expiryMonth.matches('^(0[1-9]|1[0-2])$') &&
+        data.expiryYear is string && data.expiryYear.matches('^20[2-9][0-9]$') &&
+        data.paymentMode in ['live', 'demo'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidProviderPaymentSettings(data) {
+      return data.keys().hasAll([
+          'id', 'providerId', 'providerName', 'payInPersonEnabled', 'acceptedInPersonMethods',
+          'paymentInstructions', 'paymentLocation', 'paymentDueTiming',
+          'advancePaymentRequired', 'depositPercentage', 'paymentPolicy', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'providerId', 'providerName', 'payInPersonEnabled', 'acceptedInPersonMethods',
+          'paymentInstructions', 'paymentLocation', 'paymentDueTiming',
+          'advancePaymentRequired', 'depositPercentage', 'paymentPolicy', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.providerId) &&
+        data.providerName is string && data.providerName.size() >= 2 && data.providerName.size() <= 140 &&
+        data.payInPersonEnabled is bool &&
+        data.acceptedInPersonMethods is list && data.acceptedInPersonMethods.size() <= 5 &&
+        data.paymentInstructions is string && data.paymentInstructions.size() <= 600 &&
+        data.paymentLocation is string && data.paymentLocation.size() <= 200 &&
+        data.paymentDueTiming in ['On Arrival', 'Before Service Begins', 'Upon Check-in', 'Within 24 Hours Before Service'] &&
+        data.advancePaymentRequired is bool &&
+        data.depositPercentage is int && data.depositPercentage >= 5 && data.depositPercentage <= 95 &&
+        data.paymentPolicy in [
+          'reserve_pay_on_arrival', 'pay_full_online',
+          'deposit_online_balance_in_person', 'pay_in_person_before_service'
+        ] &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPaymentAuditLog(data) {
+      return data.keys().hasAll([
+          'id', 'paymentId', 'bookingId', 'actorId', 'actorRole',
+          'action', 'newStatus', 'amountZar', 'notes', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'paymentId', 'bookingId', 'actorId', 'actorRole',
+          'action', 'previousStatus', 'newStatus', 'amountZar', 'notes', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.paymentId) &&
+        isValidId(data.bookingId) &&
+        isValidId(data.actorId) &&
+        data.actorRole in ['tourist', 'admin', 'provider', 'safety'] &&
+        data.action is string && data.action.size() >= 3 && data.action.size() <= 80 &&
+        (!('previousStatus' in data) || (data.previousStatus is string && data.previousStatus.size() <= 40)) &&
+        data.newStatus is string && data.newStatus.size() >= 2 && data.newStatus.size() <= 40 &&
+        data.amountZar is number && data.amountZar >= 0 && data.amountZar <= 500000 &&
+        data.notes is string && data.notes.size() <= 400 &&
+        data.createdAt is timestamp;
+    }
+
     // --- Collection Rules ---
 
     // Bootstrap admins marker collection
@@ -594,7 +739,7 @@ service cloud.firestore {
         isVerified() &&
         isValidBooking(incoming()) &&
         incoming().userId == request.auth.uid &&
-        incoming().status == 'Pending Verification' &&
+        incoming().status in ['Pending Verification', 'Awaiting Provider Confirmation', 'Pending'] &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
       allow update: if isValidId(bookingId) &&
@@ -609,9 +754,18 @@ service cloud.firestore {
             (existing().userId == request.auth.uid &&
               incoming().status == 'Cancelled' &&
               incoming().diff(existing()).affectedKeys().hasOnly(['status', 'cancellationReason', 'updatedAt'])) ||
+            (existing().userId == request.auth.uid &&
+              incoming().status == existing().status &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'paymentStatus', 'paymentMethod', 'paidAmountZar', 'balanceDueInPersonZar',
+                'paymentId', 'paymentReference', 'updatedAt'
+              ])) ||
             (existing().providerId == request.auth.uid &&
-              incoming().status in ['Confirmed', 'Completed', 'Cancelled'] &&
-              incoming().diff(existing()).affectedKeys().hasOnly(['status', 'confirmedBy', 'cancellationReason', 'updatedAt']))
+              incoming().status in ['Confirmed', 'Rejected', 'Completed', 'Cancelled'] &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'status', 'confirmedBy', 'cancellationReason',
+                'paymentStatus', 'paidAmountZar', 'balanceDueInPersonZar', 'updatedAt'
+              ]))
           ))
         );
       allow delete: if isValidId(bookingId) && isAdmin();
@@ -878,6 +1032,136 @@ service cloud.firestore {
       allow delete: if isValidId(offeringId) && isVerified() && (
         isAdmin() || (existing().providerId == request.auth.uid && isServiceProvider())
       );
+    }
+
+    // 13. Payments (PayShap, Tokenised Card, and Pay in Person)
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        existing().providerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().userId == request.auth.uid ||
+        existing().providerId == request.auth.uid ||
+        isBootstrapAdmin() ||
+        isAdmin()
+      );
+      allow create: if isValidId(paymentId) &&
+        isVerified() &&
+        isValidPayment(incoming()) &&
+        incoming().id == paymentId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time && (
+          (incoming().paymentMethod == 'Pay in Person' &&
+            incoming().paymentStatus == 'Unpaid' &&
+            (!('providerVerified' in incoming()) || incoming().providerVerified == false)) ||
+          (incoming().paymentMethod in ['PayShap', 'Card'] && (
+            incoming().paymentStatus in ['Payment Pending', 'Processing', 'Failed'] ||
+            (incoming().paymentStatus in ['Paid', 'Partially Paid'] &&
+              incoming().providerVerified == true &&
+              'paymentProviderReference' in incoming())
+          ))
+        );
+      allow update: if isValidId(paymentId) &&
+        isVerified() &&
+        isValidPayment(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().bookingId == existing().bookingId &&
+        incoming().userId == existing().userId &&
+        incoming().providerId == existing().providerId &&
+        incoming().currency == existing().currency &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Owner updating online checkout attempt after PSP verification or failure
+          (existing().userId == request.auth.uid &&
+            existing().paymentMethod in ['PayShap', 'Card'] &&
+            incoming().paymentMethod in ['PayShap', 'Card'] &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'paymentStatus', 'paymentProviderReference', 'providerVerified',
+              'receiptNumber', 'paidAtLabel', 'failureReason', 'updatedAt'
+            ]) &&
+            (!(incoming().paymentStatus in ['Paid', 'Partially Paid']) ||
+              (incoming().providerVerified == true && 'paymentProviderReference' in incoming()))) ||
+          // Provider marking Pay in Person or remaining in-person deposit balance as settled
+          (existing().providerId == request.auth.uid &&
+            isServiceProvider() &&
+            (existing().paymentMethod == 'Pay in Person' ||
+              ('balanceDueInPerson' in existing() && existing().balanceDueInPerson > 0)) &&
+            incoming().paymentStatus == 'Paid' &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'paymentStatus', 'balanceDueInPerson', 'inPersonMethodUsed',
+              'inPersonConfirmedBy', 'inPersonConfirmedAt', 'receiptNumber', 'paidAtLabel', 'updatedAt'
+            ])) ||
+          // Admins may record policy-authorized refunds, NEVER mark an online payment as Paid
+          (isAdmin() &&
+            incoming().paymentStatus in ['Refunded', 'Partially Refunded'] &&
+            existing().paymentStatus in ['Paid', 'Partially Paid', 'Partially Refunded'] &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'paymentStatus', 'refundedAmount', 'updatedAt'
+            ]))
+        );
+      allow delete: if false;
+    }
+
+    // 14. Saved Payment Methods (Tokenised cards only — zero PAN/CVV)
+    match /saved_payment_methods/{cardId} {
+      allow get: if isValidId(cardId) && isSignedIn() && (
+        existing().userId == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().userId == request.auth.uid || isBootstrapAdmin()
+      );
+      allow create: if isValidId(cardId) &&
+        isVerified() &&
+        isValidSavedPaymentMethod(incoming()) &&
+        incoming().id == cardId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(cardId) && isVerified() && (
+        existing().userId == request.auth.uid || isAdmin()
+      );
+    }
+
+    // 15. Provider Payment Settings
+    match /provider_payment_settings/{providerId} {
+      allow get, list: if isSignedIn();
+      allow create: if isValidId(providerId) &&
+        isVerified() &&
+        (isServiceProvider() || isAdmin()) &&
+        isValidProviderPaymentSettings(incoming()) &&
+        incoming().id == providerId &&
+        incoming().providerId == request.auth.uid &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(providerId) &&
+        isVerified() &&
+        isValidProviderPaymentSettings(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().providerId == existing().providerId &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (existing().providerId == request.auth.uid && isServiceProvider())
+        );
+      allow delete: if isValidId(providerId) && isAdmin();
+    }
+
+    // 16. Immutable Payment Audit Logs
+    match /payment_audit_logs/{logId} {
+      allow get: if isValidId(logId) && isSignedIn() && (
+        existing().actorId == request.auth.uid || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().actorId == request.auth.uid || isBootstrapAdmin() || isAdmin()
+      );
+      allow create: if isValidId(logId) &&
+        isVerified() &&
+        isValidPaymentAuditLog(incoming()) &&
+        incoming().id == logId &&
+        incoming().actorId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
     }
   }
 }

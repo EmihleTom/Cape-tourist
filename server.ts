@@ -1,10 +1,97 @@
 import 'dotenv/config';
 import express from 'express';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 
 const MODEL_NAME = 'gemini-4-hydrogen';
+
+interface PaymentSessionRecord {
+  paymentReference: string;
+  paymentProviderReference: string;
+  bookingId: string;
+  bookingReference: string;
+  amount: number;
+  bookingTotalZar: number;
+  currency: 'ZAR';
+  paymentMethod: 'PayShap' | 'Card';
+  status: 'Payment Pending' | 'Processing' | 'Paid' | 'Failed' | 'Refunded' | 'Partially Refunded';
+  mode: 'live' | 'demo';
+  expiresAtMs: number;
+  idempotencyKey: string;
+  signature: string;
+  failureReason?: string;
+  payshapInstructions?: {
+    shapId: string;
+    bankName: string;
+    reference: string;
+    expiresInMinutes: number;
+  };
+  authorizationUrl?: string;
+  createdAtIso: string;
+}
+
+const paymentSessionsByRef = new Map<string, PaymentSessionRecord>();
+const paymentSessionsByIdempotency = new Map<string, PaymentSessionRecord>();
+const DEMO_SIGNING_SALT = crypto.randomBytes(16).toString('hex');
+
+function getPaymentProviderConfig() {
+  const paystackSecret = process.env.PAYSTACK_SECRET_KEY?.trim() || '';
+  const webhookSecret =
+    process.env.PAYSTACK_WEBHOOK_SECRET?.trim() ||
+    process.env.CAPESAFE_PSP_WEBHOOK_SECRET?.trim() ||
+    paystackSecret;
+  const liveProviderConfigured =
+    Boolean(paystackSecret) && paystackSecret !== 'MY_PAYSTACK_SECRET_KEY';
+
+  return {
+    mode: liveProviderConfigured ? ('live' as const) : ('demo' as const),
+    liveProviderConfigured,
+    providerName: liveProviderConfigured
+      ? 'Paystack South Africa (ZAR PayShap & Card)'
+      : 'CapeSafe Sandbox PSP (Demo Mode)',
+    supportedCurrencies: ['ZAR'],
+    supportedMethods: ['PayShap', 'Card', 'Pay in Person'],
+    webhookConfigured: Boolean(webhookSecret),
+    paystackSecret,
+    webhookSecret,
+  };
+}
+
+function signDemoPaymentPayload(ref: string, amount: number, status: string): string {
+  return crypto
+    .createHmac('sha256', DEMO_SIGNING_SALT)
+    .update(`${ref}|${amount}|${status}`)
+    .digest('hex');
+}
+
+export function detectCardBrand(digits: string): 'Visa' | 'Mastercard' | 'Amex' | 'Other' {
+  if (/^4/.test(digits)) return 'Visa';
+  if (/^(5[1-5]|2(2[2-9]|[3-6]\d|7[01]|720))/.test(digits)) return 'Mastercard';
+  if (/^3[47]/.test(digits)) return 'Amex';
+  return 'Other';
+}
+
+export function verifyWebhookSignature(
+  rawBody: string,
+  signatureHeader: string | undefined,
+  secret: string
+): boolean {
+  if (!signatureHeader || !secret) return false;
+  const normalized = signatureHeader.trim().toLowerCase();
+  const expectedSha512 = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+  const expectedSha256 = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');
+
+  for (const candidate of [expectedSha512, expectedSha256]) {
+    if (normalized.length === candidate.length) {
+      const a = Buffer.from(normalized, 'utf8');
+      const b = Buffer.from(candidate, 'utf8');
+      if (crypto.timingSafeEqual(a, b)) return true;
+    }
+  }
+  return false;
+}
 
 function getAiClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
@@ -473,6 +560,476 @@ export function createApiRouter() {
     }
   });
 
+  // 5. CapeSafe Secure Payment Gateway Proxy (PayShap + Tokenised Card + Webhooks + Refunds)
+  router.get('/payments/config', (_req, res) => {
+    const cfg = getPaymentProviderConfig();
+    res.json({
+      mode: cfg.mode,
+      liveProviderConfigured: cfg.liveProviderConfigured,
+      providerName: cfg.providerName,
+      supportedCurrencies: cfg.supportedCurrencies,
+      supportedMethods: cfg.supportedMethods,
+      webhookConfigured: cfg.webhookConfigured,
+    });
+  });
+
+  router.post('/payments/tokenize-card', (req, res) => {
+    const {
+      cardNumber,
+      expiryMonth,
+      expiryYear,
+      cvv,
+      cardholderName,
+    } = req.body as {
+      cardNumber?: string;
+      expiryMonth?: string;
+      expiryYear?: string;
+      cvv?: string;
+      cardholderName?: string;
+    };
+
+    const digits = String(cardNumber || '').replace(/\D/g, '');
+    const cleanCvv = String(cvv || '').replace(/\D/g, '');
+    const month = String(expiryMonth || '').padStart(2, '0');
+    const year = String(expiryYear || '').trim();
+    const holder = String(cardholderName || '').trim();
+
+    if (digits.length < 13 || digits.length > 19) {
+      res.status(400).json({ error: 'Enter a valid 13–19 digit Visa, Mastercard, or bank card number.' });
+      return;
+    }
+    if (!/^(0[1-9]|1[0-2])$/.test(month) || !/^20[2-9][0-9]$/.test(year)) {
+      res.status(400).json({ error: 'Enter a valid card expiry month (01–12) and 4-digit year.' });
+      return;
+    }
+    if (cleanCvv.length < 3 || cleanCvv.length > 4) {
+      res.status(400).json({ error: 'Enter a valid 3 or 4 digit security code (CVV).' });
+      return;
+    }
+    if (holder.length < 2) {
+      res.status(400).json({ error: 'Cardholder name is required.' });
+      return;
+    }
+
+    const cfg = getPaymentProviderConfig();
+    const cardBrand = detectCardBrand(digits);
+    const lastFourDigits = digits.slice(-4);
+    const providerToken = `tok_${cfg.mode}_${crypto.randomBytes(12).toString('hex')}`;
+
+    // Only tokenised metadata is returned — full PAN and CVV are immediately discarded and never persisted.
+    res.json({
+      providerToken,
+      cardBrand,
+      lastFourDigits,
+      expiryMonth: month,
+      expiryYear: year,
+      cardholderName: holder.slice(0, 100),
+      paymentMode: cfg.mode,
+    });
+  });
+
+  router.post('/payments/initiate', async (req, res) => {
+    const {
+      bookingId,
+      bookingReference,
+      amount,
+      bookingTotalZar,
+      currency = 'ZAR',
+      paymentMethod,
+      customerEmail,
+      idempotencyKey,
+      policy = 'reserve_pay_on_arrival',
+      depositPercentage = 30,
+    } = req.body as {
+      bookingId?: string;
+      bookingReference?: string;
+      amount?: number;
+      bookingTotalZar?: number;
+      currency?: string;
+      paymentMethod?: 'PayShap' | 'Card';
+      customerEmail?: string;
+      idempotencyKey?: string;
+      policy?: string;
+      depositPercentage?: number;
+    };
+
+    if (!bookingId || !bookingReference) {
+      res.status(400).json({ error: 'bookingId and bookingReference are required.' });
+      return;
+    }
+    if (currency !== 'ZAR') {
+      res.status(400).json({ error: 'Only South African Rand (ZAR) payments are supported.' });
+      return;
+    }
+    if (paymentMethod !== 'PayShap' && paymentMethod !== 'Card') {
+      res.status(400).json({ error: 'Online initiation supports PayShap or Card only.' });
+      return;
+    }
+
+    const numericAmount = Number(amount);
+    const numericTotal = Number(bookingTotalZar ?? amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 500000) {
+      res.status(400).json({ error: 'Invalid payment amount (ZAR).' });
+      return;
+    }
+    if (!Number.isFinite(numericTotal) || numericTotal <= 0) {
+      res.status(400).json({ error: 'Invalid booking total amount.' });
+      return;
+    }
+
+    // Server-side amount integrity validation against policy & booking total
+    const expectedMin =
+      policy === 'deposit_online_balance_in_person'
+        ? Math.max(1, Math.round((numericTotal * Math.min(90, Math.max(10, Number(depositPercentage) || 30))) / 100))
+        : Math.round(numericTotal);
+    if (Math.abs(Math.round(numericAmount) - expectedMin) > 2 && Math.round(numericAmount) !== Math.round(numericTotal)) {
+      res.status(400).json({
+        error: `Payment amount R ${Math.round(numericAmount)} does not match expected booking charge R ${expectedMin}.`,
+      });
+      return;
+    }
+
+    // Duplicate transaction guard via idempotencyKey
+    const cleanIdempotency = (idempotencyKey || `${bookingId}-${paymentMethod}-${Math.round(numericAmount)}`).slice(0, 120);
+    const existingSession = paymentSessionsByIdempotency.get(cleanIdempotency);
+    if (existingSession && existingSession.expiresAtMs > Date.now() && existingSession.status !== 'Failed') {
+      res.json({
+        duplicateProtected: true,
+        ...existingSession,
+      });
+      return;
+    }
+
+    const cfg = getPaymentProviderConfig();
+    const shortRand = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const paymentReference = `PAY-${paymentMethod === 'PayShap' ? 'PS' : 'CD'}-${Date.now().toString().slice(-6)}-${shortRand}`;
+    let paymentProviderReference = `PSP-${cfg.mode.toUpperCase()}-${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
+    let authorizationUrl: string | undefined;
+
+    if (cfg.liveProviderConfigured && customerEmail) {
+      try {
+        const initRes = await fetch('https://api.paystack.co/transaction/initialize', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${cfg.paystackSecret}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: customerEmail,
+            amount: Math.round(numericAmount * 100),
+            currency: 'ZAR',
+            reference: paymentReference,
+            channels: paymentMethod === 'PayShap' ? ['payshap', 'bank_transfer', 'eft'] : ['card'],
+            metadata: { bookingId, bookingReference, platform: 'CapeSafe Connect 360' },
+          }),
+        });
+        const initJson = (await initRes.json()) as {
+          status?: boolean;
+          message?: string;
+          data?: { authorization_url?: string; reference?: string };
+        };
+        if (!initRes.ok || !initJson.status) {
+          res.status(502).json({ error: initJson.message || 'Live South African PSP rejected transaction initialization.' });
+          return;
+        }
+        authorizationUrl = initJson.data?.authorization_url;
+        paymentProviderReference = initJson.data?.reference || paymentReference;
+      } catch (err) {
+        res.status(502).json({
+          error: err instanceof Error ? err.message : 'Unable to reach South African payment service provider.',
+        });
+        return;
+      }
+    }
+
+    const session: PaymentSessionRecord = {
+      paymentReference,
+      paymentProviderReference,
+      bookingId,
+      bookingReference,
+      amount: Math.round(numericAmount),
+      bookingTotalZar: Math.round(numericTotal),
+      currency: 'ZAR',
+      paymentMethod,
+      status: 'Payment Pending',
+      mode: cfg.mode,
+      expiresAtMs: Date.now() + 15 * 60 * 1000,
+      idempotencyKey: cleanIdempotency,
+      signature: signDemoPaymentPayload(paymentReference, Math.round(numericAmount), 'Payment Pending'),
+      ...(paymentMethod === 'PayShap'
+        ? {
+            payshapInstructions: {
+              shapId: 'capesafe.tours@payshap.co.za',
+              bankName: 'South African Instant EFT / PayShap Clearing',
+              reference: paymentReference,
+              expiresInMinutes: 15,
+            },
+          }
+        : {}),
+      ...(authorizationUrl ? { authorizationUrl } : {}),
+      createdAtIso: new Date().toISOString(),
+    };
+
+    paymentSessionsByRef.set(paymentReference, session);
+    paymentSessionsByIdempotency.set(cleanIdempotency, session);
+
+    res.json(session);
+  });
+
+  router.post('/payments/verify', async (req, res) => {
+    const {
+      paymentReference,
+      simulatedOutcome,
+      cardToken,
+    } = req.body as {
+      paymentReference?: string;
+      simulatedOutcome?: 'Paid' | 'Failed' | 'Payment Pending' | 'Expired' | 'Cancelled';
+      cardToken?: string;
+    };
+
+    if (!paymentReference) {
+      res.status(400).json({ error: 'paymentReference is required for verification.' });
+      return;
+    }
+
+    const cfg = getPaymentProviderConfig();
+    const session = paymentSessionsByRef.get(paymentReference);
+
+    if (cfg.liveProviderConfigured) {
+      try {
+        const verifyRes = await fetch(
+          `https://api.paystack.co/transaction/verify/${encodeURIComponent(paymentReference)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${cfg.paystackSecret}`,
+            },
+          }
+        );
+        const verifyJson = (await verifyRes.json()) as {
+          status?: boolean;
+          message?: string;
+          data?: {
+            status?: string;
+            reference?: string;
+            amount?: number;
+            currency?: string;
+            gateway_response?: string;
+          };
+        };
+        if (!verifyRes.ok || !verifyJson.status || !verifyJson.data) {
+          res.status(502).json({ error: verifyJson.message || 'Unable to verify payment with South African PSP.' });
+          return;
+        }
+        const gatewayStatus = verifyJson.data.status;
+        if (gatewayStatus === 'success') {
+          res.json({
+            verified: true,
+            paymentStatus: 'Paid',
+            paymentReference,
+            paymentProviderReference: verifyJson.data.reference || paymentReference,
+            mode: 'live',
+            message: verifyJson.data.gateway_response || 'Verified by Paystack South Africa.',
+          });
+          return;
+        }
+        if (gatewayStatus === 'pending' || gatewayStatus === 'ongoing') {
+          res.json({
+            verified: false,
+            paymentStatus: 'Payment Pending',
+            paymentReference,
+            mode: 'live',
+            message: 'Awaiting final confirmation from customer bank / PayShap.',
+          });
+          return;
+        }
+        res.json({
+          verified: false,
+          paymentStatus: 'Failed',
+          paymentReference,
+          mode: 'live',
+          failureReason: verifyJson.data.gateway_response || 'Payment was declined or cancelled at gateway.',
+        });
+        return;
+      } catch (err) {
+        res.status(502).json({
+          error: err instanceof Error ? err.message : 'Live payment verification failed.',
+        });
+        return;
+      }
+    }
+
+    if (!session) {
+      res.status(404).json({ error: 'Payment reference not found or session expired on server.' });
+      return;
+    }
+
+    if (Date.now() > session.expiresAtMs || simulatedOutcome === 'Expired') {
+      session.status = 'Failed';
+      session.failureReason = 'PayShap payment request expired after 15 minutes without bank confirmation.';
+      res.json({
+        verified: false,
+        paymentStatus: 'Failed',
+        expired: true,
+        paymentReference,
+        paymentProviderReference: session.paymentProviderReference,
+        mode: 'demo',
+        failureReason: session.failureReason,
+      });
+      return;
+    }
+
+    if (simulatedOutcome === 'Cancelled') {
+      session.status = 'Failed';
+      session.failureReason = 'Payment cancelled by customer before bank/card authorization completed.';
+      res.json({
+        verified: false,
+        paymentStatus: 'Failed',
+        cancelled: true,
+        paymentReference,
+        paymentProviderReference: session.paymentProviderReference,
+        mode: 'demo',
+        failureReason: session.failureReason,
+      });
+      return;
+    }
+
+    if (simulatedOutcome === 'Failed') {
+      session.status = 'Failed';
+      session.failureReason =
+        session.paymentMethod === 'Card'
+          ? 'Card authorization declined in Sandbox PSP test (insufficient funds / 3DS declined).'
+          : 'PayShap instant request rejected or timed out at banking app.';
+      res.json({
+        verified: false,
+        paymentStatus: 'Failed',
+        paymentReference,
+        paymentProviderReference: session.paymentProviderReference,
+        mode: 'demo',
+        failureReason: session.failureReason,
+      });
+      return;
+    }
+
+    if (simulatedOutcome === 'Payment Pending') {
+      session.status = 'Payment Pending';
+      res.json({
+        verified: false,
+        paymentStatus: 'Payment Pending',
+        paymentReference,
+        paymentProviderReference: session.paymentProviderReference,
+        mode: 'demo',
+        message: 'Awaiting customer authorization in banking app (Sandbox PSP Pending state).',
+      });
+      return;
+    }
+
+    if (session.paymentMethod === 'Card' && cardToken && !String(cardToken).startsWith('tok_')) {
+      res.status(400).json({ error: 'Invalid card token format.' });
+      return;
+    }
+
+    session.status = 'Paid';
+    session.signature = signDemoPaymentPayload(paymentReference, session.amount, 'Paid');
+
+    res.json({
+      verified: true,
+      paymentStatus:
+        session.amount < session.bookingTotalZar ? 'Partially Paid' : 'Paid',
+      paymentReference,
+      paymentProviderReference: session.paymentProviderReference,
+      mode: 'demo',
+      paidAtIso: new Date().toISOString(),
+      message: 'Verified in CapeSafe Sandbox PSP (Demo Mode). No real funds were charged.',
+    });
+  });
+
+  router.post('/payments/webhook', (req, res) => {
+    const cfg = getPaymentProviderConfig();
+    const signature =
+      req.header('x-paystack-signature') || req.header('x-capesafe-signature');
+    const rawBody = JSON.stringify(req.body ?? {});
+
+    if (!cfg.webhookSecret || !verifyWebhookSignature(rawBody, signature, cfg.webhookSecret)) {
+      res.status(401).json({ error: 'Invalid or missing payment provider webhook signature.' });
+      return;
+    }
+
+    const event = req.body as { event?: string; data?: { reference?: string; status?: string } };
+    const ref = event.data?.reference;
+    if (ref && paymentSessionsByRef.has(ref)) {
+      const existing = paymentSessionsByRef.get(ref)!;
+      if (event.event === 'charge.success' || event.data?.status === 'success') {
+        existing.status = 'Paid';
+      } else if (event.event === 'charge.failed' || event.data?.status === 'failed') {
+        existing.status = 'Failed';
+        existing.failureReason = 'Webhook notified payment failure.';
+      }
+    }
+
+    res.json({ received: true, verified: true });
+  });
+
+  router.post('/payments/refund', async (req, res) => {
+    const { paymentReference, amount, originalAmount, paymentStatus, reason } = req.body as {
+      paymentReference?: string;
+      amount?: number;
+      originalAmount?: number;
+      paymentStatus?: string;
+      reason?: string;
+    };
+
+    if (!paymentReference) {
+      res.status(400).json({ error: 'paymentReference is required.' });
+      return;
+    }
+    if (paymentStatus !== 'Paid' && paymentStatus !== 'Partially Paid' && paymentStatus !== 'Partially Refunded') {
+      res.status(400).json({ error: 'Only Paid or Partially Paid transactions are eligible for refund.' });
+      return;
+    }
+
+    const refundAmt = Number(amount);
+    const baseAmt = Number(originalAmount ?? amount);
+    if (!Number.isFinite(refundAmt) || refundAmt <= 0 || refundAmt > baseAmt) {
+      res.status(400).json({ error: 'Refund amount must be positive and cannot exceed the settled amount.' });
+      return;
+    }
+
+    const cfg = getPaymentProviderConfig();
+    if (cfg.liveProviderConfigured) {
+      try {
+        const refundRes = await fetch('https://api.paystack.co/refund', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${cfg.paystackSecret}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transaction: paymentReference,
+            amount: Math.round(refundAmt * 100),
+            merchant_note: reason || 'CapeSafe Connect 360 policy refund',
+          }),
+        });
+        const refundJson = (await refundRes.json()) as { status?: boolean; message?: string };
+        if (!refundRes.ok || !refundJson.status) {
+          res.status(502).json({ error: refundJson.message || 'Payment provider refund failed.' });
+          return;
+        }
+      } catch (err) {
+        res.status(502).json({ error: err instanceof Error ? err.message : 'Refund gateway error.' });
+        return;
+      }
+    }
+
+    const nextStatus = Math.round(refundAmt) >= Math.round(baseAmt) ? 'Refunded' : 'Partially Refunded';
+    res.json({
+      success: true,
+      paymentStatus: nextStatus,
+      refundedAmount: Math.round(refundAmt),
+      mode: cfg.mode,
+      refundReference: `RFND-${crypto.randomBytes(4).toString('hex').toUpperCase()}`,
+    });
+  });
+
   return router;
 }
 
@@ -489,7 +1046,7 @@ export async function createServer() {
   } else {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false },
       appType: 'spa',
     });
     app.use(vite.middlewares);

@@ -242,7 +242,40 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Pending Verification", "Confirmed", "Completed", "Cancelled"]
+          "enum": ["Pending", "Pending Verification", "Awaiting Provider Confirmation", "Confirmed", "Rejected", "Completed", "Cancelled"]
+        },
+        "bookingReference": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["Unpaid", "Payment Pending", "Processing", "Paid", "Failed", "Partially Paid", "Refunded", "Partially Refunded"]
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["PayShap", "Card", "Pay in Person"]
+        },
+        "paymentPolicy": {
+          "type": "string",
+          "enum": ["reserve_pay_on_arrival", "pay_full_online", "deposit_online_balance_in_person", "pay_in_person_before_service"]
+        },
+        "depositAmountZar": {
+          "type": "number"
+        },
+        "paidAmountZar": {
+          "type": "number"
+        },
+        "balanceDueInPersonZar": {
+          "type": "number"
+        },
+        "paymentId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "paymentReference": {
+          "type": "string",
+          "maxLength": 80
         },
         "confirmedBy": {
           "type": "string",
@@ -953,6 +986,120 @@
         }
       },
       "required": ["id", "uid", "title", "progress", "target", "completed", "updatedAt"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "CapeSafe Connect 360 booking payment record (PayShap, tokenised Card, or Pay in Person). Never stores raw card PAN or CVV.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "bookingId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "bookingReference": { "type": "string", "minLength": 3, "maxLength": 40 },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userName": { "type": "string", "maxLength": 120 },
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerName": { "type": "string", "maxLength": 140 },
+        "serviceTitle": { "type": "string", "maxLength": 160 },
+        "amount": { "type": "number" },
+        "bookingTotalZar": { "type": "number" },
+        "depositAmount": { "type": "number" },
+        "balanceDueInPerson": { "type": "number" },
+        "refundedAmount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["ZAR"] },
+        "paymentMethod": { "type": "string", "enum": ["PayShap", "Card", "Pay in Person"] },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["Unpaid", "Payment Pending", "Processing", "Paid", "Failed", "Partially Paid", "Refunded", "Partially Refunded"]
+        },
+        "paymentReference": { "type": "string", "minLength": 4, "maxLength": 80 },
+        "paymentProviderReference": { "type": "string", "maxLength": 120 },
+        "providerVerified": { "type": "boolean" },
+        "paymentMode": { "type": "string", "enum": ["live", "demo"] },
+        "inPersonMethodUsed": { "type": "string", "enum": ["Cash", "Card Machine", "EFT", "SnapScan", "Zapper"] },
+        "inPersonConfirmedBy": { "type": "string", "maxLength": 120 },
+        "inPersonConfirmedAt": { "type": "string", "maxLength": 40 },
+        "savedCardTokenId": { "type": "string", "maxLength": 128 },
+        "cardBrand": { "type": "string", "maxLength": 32 },
+        "cardLastFour": { "type": "string", "maxLength": 4 },
+        "failureReason": { "type": "string", "maxLength": 240 },
+        "receiptNumber": { "type": "string", "maxLength": 60 },
+        "paidAtLabel": { "type": "string", "maxLength": 40 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "bookingId", "bookingReference", "userId", "providerId",
+        "providerName", "serviceTitle", "amount", "currency",
+        "paymentMethod", "paymentStatus", "paymentReference", "createdAt", "updatedAt"
+      ]
+    },
+    "SavedPaymentMethod": {
+      "title": "SavedPaymentMethod",
+      "description": "Tokenised saved payment card metadata (provider token, brand, last 4 digits only; never PAN or CVV).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerToken": { "type": "string", "minLength": 6, "maxLength": 160 },
+        "cardBrand": { "type": "string", "enum": ["Visa", "Mastercard", "Amex", "Other"] },
+        "cardholderName": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "lastFourDigits": { "type": "string", "pattern": "^[0-9]{4}$" },
+        "expiryMonth": { "type": "string", "pattern": "^(0[1-9]|1[0-2])$" },
+        "expiryYear": { "type": "string", "pattern": "^20[2-9][0-9]$" },
+        "paymentMode": { "type": "string", "enum": ["live", "demo"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "userId", "providerToken", "cardBrand", "cardholderName",
+        "lastFourDigits", "expiryMonth", "expiryYear", "paymentMode", "createdAt", "updatedAt"
+      ]
+    },
+    "ProviderPaymentSettings": {
+      "title": "ProviderPaymentSettings",
+      "description": "Service provider payment policies, accepted in-person methods, and arrival/deposit rules.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "providerName": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "payInPersonEnabled": { "type": "boolean" },
+        "acceptedInPersonMethods": { "type": "array" },
+        "paymentInstructions": { "type": "string", "maxLength": 600 },
+        "paymentLocation": { "type": "string", "maxLength": 200 },
+        "paymentDueTiming": { "type": "string", "enum": ["On Arrival", "Before Service Begins", "Upon Check-in", "Within 24 Hours Before Service"] },
+        "advancePaymentRequired": { "type": "boolean" },
+        "depositPercentage": { "type": "integer" },
+        "paymentPolicy": {
+          "type": "string",
+          "enum": ["reserve_pay_on_arrival", "pay_full_online", "deposit_online_balance_in_person", "pay_in_person_before_service"]
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "providerId", "providerName", "payInPersonEnabled",
+        "acceptedInPersonMethods", "paymentInstructions", "paymentLocation",
+        "paymentDueTiming", "advancePaymentRequired", "depositPercentage", "paymentPolicy", "updatedAt"
+      ]
+    },
+    "PaymentAuditLog": {
+      "title": "PaymentAuditLog",
+      "description": "Immutable append-only audit log of CapeSafe Connect 360 payment events, in-person settlements, and refunds.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "paymentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "bookingId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorRole": { "type": "string", "enum": ["tourist", "admin", "provider", "safety"] },
+        "action": { "type": "string", "minLength": 3, "maxLength": 80 },
+        "previousStatus": { "type": "string", "maxLength": 40 },
+        "newStatus": { "type": "string", "minLength": 2, "maxLength": 40 },
+        "amountZar": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "paymentId", "bookingId", "actorId", "actorRole", "action", "newStatus", "amountZar", "notes", "createdAt"]
     }
   },
   "firestore": {
@@ -1015,6 +1162,22 @@
     "/announcements/{announcementId}": {
       "schema": { "$ref": "#/entities/Announcement" },
       "description": "Official Cape Town destination announcements managed by Administrators and Safety Operations."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Payment records for PayShap, tokenised Cards, and Pay in Person reservations."
+    },
+    "/saved_payment_methods/{cardId}": {
+      "schema": { "$ref": "#/entities/SavedPaymentMethod" },
+      "description": "Tokenised saved payment card metadata owned by userId (never stores full card number or CVV)."
+    },
+    "/provider_payment_settings/{providerId}": {
+      "schema": { "$ref": "#/entities/ProviderPaymentSettings" },
+      "description": "Payment policy and Pay in Person configuration owned by providerId."
+    },
+    "/payment_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/PaymentAuditLog" },
+      "description": "Immutable append-only payment and refund audit history."
     }
   }
 }

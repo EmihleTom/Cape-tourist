@@ -100,6 +100,8 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
   const [loadingChat, setLoadingChat] = useState(false);
   const [chatError, setChatError] = useState('');
   const [savedNotice, setSavedNotice] = useState('');
+  const [aiActionError, setAiActionError] = useState('');
+  const [savingAction, setSavingAction] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'init-1',
@@ -271,28 +273,78 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
   };
 
   const handleSaveRecommendation = async (rec: AiRecommendationItem) => {
-    await onAddAiStopToTrip({
-      day: 1,
-      dayLabel: 'Day 1 · AI Recommended Stop',
-      time: rec.bestTimeWindow.slice(0, 16) || '09:30',
-      title: rec.title,
-      zone: rec.precinct,
-      transportNote: rec.stepFree
-        ? 'Step-free MyCiTi or accessible shuttle recommended'
-        : 'Confirm MyCiTi or verified e-hailing bay',
-      safetyNote: rec.safetyNote,
-      itemType: 'Activity',
-      estimatedZar: rec.estimatedZar,
-    });
-    setSavedNotice(`Added "${rec.title}" to My Trips itinerary.`);
+    setAiActionError('');
+    setSavedNotice('');
+    setSavingAction(true);
+    try {
+      await onAddAiStopToTrip({
+        day: 1,
+        dayLabel: 'Day 1 · AI Recommended Stop',
+        time: rec.bestTimeWindow.slice(0, 16) || '09:30',
+        title: rec.title,
+        zone: rec.precinct,
+        transportNote: rec.stepFree
+          ? 'Step-free MyCiTi or accessible shuttle recommended'
+          : 'Confirm MyCiTi or verified e-hailing bay',
+        safetyNote: rec.safetyNote,
+        itemType: 'Activity',
+        estimatedZar: rec.estimatedZar,
+      });
+      setSavedNotice(`Added "${rec.title}" to My Trips itinerary.`);
+    } catch (err) {
+      setAiActionError(
+        err instanceof Error ? err.message : 'Unable to save recommendation to My Trips.'
+      );
+    } finally {
+      setSavingAction(false);
+    }
   };
 
   const handleSaveFullPlan = async () => {
     if (!planResult) return;
-    for (const stop of planResult.stops) {
-      await onAddAiStopToTrip(stop);
+    setAiActionError('');
+    setSavedNotice('');
+    setSavingAction(true);
+    try {
+      for (const stop of planResult.stops) {
+        await onAddAiStopToTrip(stop);
+      }
+      setSavedNotice(`Saved all ${planResult.stops.length} AI planner stops to My Trips.`);
+    } catch (err) {
+      setAiActionError(
+        err instanceof Error ? err.message : 'Unable to save full AI plan to My Trips.'
+      );
+    } finally {
+      setSavingAction(false);
     }
-    setSavedNotice(`Saved all ${planResult.stops.length} AI planner stops to My Trips.`);
+  };
+
+  const handleAddSingleStop = async (stop: AiPlannerStop) => {
+    setAiActionError('');
+    setSavedNotice('');
+    setSavingAction(true);
+    try {
+      await onAddAiStopToTrip(stop);
+      setSavedNotice(`Added "${stop.title}" to My Trips itinerary.`);
+    } catch (err) {
+      setAiActionError(
+        err instanceof Error ? err.message : 'Unable to add planner stop to My Trips.'
+      );
+    } finally {
+      setSavingAction(false);
+    }
+  };
+
+  const handleLanguageChange = async (next: PreferredLanguage) => {
+    setAiActionError('');
+    setLanguage(next);
+    try {
+      await onUpdateLanguage(next);
+    } catch (err) {
+      setAiActionError(
+        err instanceof Error ? err.message : 'Unable to update language preference.'
+      );
+    }
   };
 
   const toggleInterest = (item: string) => {
@@ -329,11 +381,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
             <select
               id="ai-pref-lang"
               value={language}
-              onChange={(e) => {
-                const next = e.target.value as PreferredLanguage;
-                setLanguage(next);
-                void onUpdateLanguage(next);
-              }}
+              onChange={(e) => void handleLanguageChange(e.target.value as PreferredLanguage)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] focus:border-[#0D9488] focus:outline-none"
             >
               <option value="English">English</option>
@@ -420,7 +468,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         )}
 
         {savedNotice && (
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-900">
+          <div role="status" className="mt-4 flex items-center justify-between rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 text-xs font-medium text-emerald-900">
             <span>{savedNotice}</span>
             <button
               type="button"
@@ -431,12 +479,19 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
             </button>
           </div>
         )}
+
+        {aiActionError && (
+          <div role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs font-medium text-red-800">
+            {aiActionError}
+          </div>
+        )}
       </section>
 
       {/* 3 Feature Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         <button
           type="button"
+          aria-pressed={activeTab === 'concierge'}
           onClick={() => setActiveTab('concierge')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'concierge'
@@ -449,6 +504,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         </button>
         <button
           type="button"
+          aria-pressed={activeTab === 'planner'}
           onClick={() => setActiveTab('planner')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'planner'
@@ -461,6 +517,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         </button>
         <button
           type="button"
+          aria-pressed={activeTab === 'language'}
           onClick={() => setActiveTab('language')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'language'
@@ -551,8 +608,9 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                               </span>
                               <button
                                 type="button"
+                                disabled={savingAction}
                                 onClick={() => void handleSaveRecommendation(rec)}
-                                className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA]"
+                                className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
                               >
                                 <CalendarPlus className="h-3 w-3" aria-hidden="true" />
                                 Add to Trips
@@ -567,12 +625,12 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               ))}
 
               {loadingChat && (
-                <p className="text-xs font-medium text-[#0D9488]">
+                <p role="status" className="text-xs font-medium text-[#0D9488]">
                   Consulting CapeSafe AI &amp; destination conditions...
                 </p>
               )}
               {chatError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
                   {chatError}
                 </p>
               )}
@@ -694,6 +752,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                       <button
                         key={item}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => toggleInterest(item)}
                         className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
                           selected
@@ -722,7 +781,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               </label>
 
               {planError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
                   {planError}
                 </p>
               )}
@@ -745,11 +804,12 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               {planResult && (
                 <button
                   type="button"
+                  disabled={savingAction}
                   onClick={() => void handleSaveFullPlan()}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#132f57]"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#132f57] disabled:opacity-50"
                 >
                   <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
-                  Save All Stops to My Trips
+                  {savingAction ? 'Saving...' : 'Save All Stops to My Trips'}
                 </button>
               )}
             </div>
@@ -795,8 +855,9 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => void onAddAiStopToTrip(stop)}
-                        className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA]"
+                        disabled={savingAction}
+                        onClick={() => void handleAddSingleStop(stop)}
+                        className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
                       >
                         Add Stop
                       </button>
@@ -889,7 +950,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               </div>
 
               {translateError && (
-                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
                   {translateError}
                 </p>
               )}

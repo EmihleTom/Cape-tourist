@@ -532,6 +532,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <StatusText label={readiness.storageReady ? 'Configured' : 'Inactive'} tone="nominal" />
               </div>
               <div className="flex items-center justify-between">
+                <span className="text-slate-600">Config Source</span>
+                <span className="font-mono text-[#15803D]">
+                  {(import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env?.VITE_FIREBASE_PROJECT_ID
+                    ? 'VITE_FIREBASE_* override'
+                    : 'Auto-loaded (firebase-applet-config.json)'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-slate-600">Active Session Mode</span>
                 <span className="font-mono font-semibold text-[#0B1F3A]">
                   {user.authMode === 'firebase' ? 'Firebase Auth' : 'Demo Session'}

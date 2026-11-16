@@ -11,7 +11,7 @@ import type { UserRole } from './src/types/app.ts';
 const rulesContent = fs.readFileSync('firestore.rules', 'utf8');
 const blueprint = JSON.parse(fs.readFileSync('firebase-blueprint.json', 'utf8'));
 
-// 1. Verify all 12 required collections + subcollections exist in both blueprint and firestore.rules
+// 1. Verify all 16 domain collections + subcollections exist in both blueprint and firestore.rules
 const requiredCollections = [
   'users',
   'tourism_businesses',
@@ -25,6 +25,10 @@ const requiredCollections = [
   'tourist_check_ins',
   'announcements',
   'provider_offerings',
+  'payments',
+  'saved_payment_methods',
+  'provider_payment_settings',
+  'payment_audit_logs',
 ];
 
 for (const col of requiredCollections) {
@@ -101,11 +105,11 @@ assert.ok(
 
 // 4. Verify Booking Confirmation & Provider Offering Availability Rules
 assert.ok(
-  rulesContent.includes("incoming().status == 'Pending Verification'") &&
+  rulesContent.includes("incoming().status in ['Pending Verification', 'Awaiting Provider Confirmation', 'Pending']") &&
     rulesContent.includes("incoming().status == 'Cancelled'") &&
     rulesContent.includes("'confirmedBy'") &&
     rulesContent.includes("'cancellationReason'"),
-  'Booking strict Pending Verification create and tourist-cancellation-only rules missing in firestore.rules'
+  'Booking strict Pending/Awaiting Confirmation create and tourist-cancellation-only rules missing in firestore.rules'
 );
 assert.ok(
   rulesContent.includes('function isValidProviderOffering(data)') &&
@@ -138,12 +142,31 @@ assert.ok(
   'Missing community moderation and flagging rules in firestore.rules'
 );
 
-// 6. Verify all 4 User Roles map to distinct role dashboards
+// 6. Verify Payment Security Rules (Zero PAN/CVV, Awaiting Provider Confirmation, Refund-Only Admin, Immutable Audit Log)
+assert.ok(
+  rulesContent.includes("!data.keys().hasAny(['cardNumber', 'pan', 'cvv', 'cvc', 'securityCode'])"),
+  'Payments & saved_payment_methods must explicitly reject raw card numbers and CVV/security codes'
+);
+assert.ok(
+  rulesContent.includes("'Awaiting Provider Confirmation'"),
+  'Bookings rules must permit Awaiting Provider Confirmation status for Pay in Person reservations'
+);
+assert.ok(
+  rulesContent.includes("incoming().paymentStatus in ['Refunded', 'Partially Refunded']"),
+  'Admin payment updates must be restricted to policy-authorized refunds only'
+);
+assert.ok(
+  rulesContent.includes('match /payment_audit_logs/{logId}') &&
+    rulesContent.includes('allow update, delete: if false;'),
+  'payment_audit_logs must be strictly append-only (no update or delete)'
+);
+
+// 7. Verify all 4 User Roles map to distinct role dashboards
 const roles: UserRole[] = ['tourist', 'admin', 'provider', 'safety'];
 const titles = new Set(roles.map((r) => ROLE_LABELS[r].dashboardTitle));
 assert.equal(titles.size, 4, 'Each of the 4 roles must map to a unique dashboard');
 
 console.log(
-  'PASSED: All 12 Firestore collections, trusted_contacts & challenge_progress subcollections, privacy controls, community moderation, location consent, booking confirmation & offering availability invariants, and 4 RBAC role mappings verified.'
+  'PASSED: All 16 Firestore collections, zero-PAN/CVV payment rules, refund-only admin governance, immutable audit logs, trusted_contacts & challenge_progress subcollections, privacy controls, community moderation, location consent, booking confirmation & offering availability invariants, and 4 RBAC role mappings verified.'
 );
 

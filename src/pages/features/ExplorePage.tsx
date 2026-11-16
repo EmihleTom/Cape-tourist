@@ -16,8 +16,8 @@ interface ExplorePageProps {
   businesses: ProviderApplication[];
   advisories: SafetyAdvisory[];
   reviews: ReviewItem[];
-  onAddToTrip: (attraction: AttractionItem) => void;
-  onAddReview: (targetId: string, rating: number, comment: string) => void;
+  onAddToTrip: (attraction: AttractionItem) => Promise<void> | void;
+  onAddReview: (targetId: string, rating: number, comment: string) => Promise<void> | void;
 }
 
 export const ExplorePage: React.FC<ExplorePageProps> = ({
@@ -38,6 +38,9 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   const [reviewTargetId, setReviewTargetId] = useState(attractions[0]?.id || 'attr-waterfront');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewNotice, setReviewNotice] = useState('');
+  const [exploreError, setExploreError] = useState('');
 
   const q = query.trim().toLowerCase();
 
@@ -82,16 +85,34 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
     return { avg: avg.toFixed(1), count: matching.length };
   };
 
-  const handleAdd = (item: AttractionItem) => {
-    onAddToTrip(item);
-    setAddedIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+  const handleAdd = async (item: AttractionItem) => {
+    setExploreError('');
+    try {
+      await onAddToTrip(item);
+      setAddedIds((prev) => (prev.includes(item.id) ? prev : [...prev, item.id]));
+    } catch (err) {
+      setExploreError(err instanceof Error ? err.message : 'Unable to add attraction to trip.');
+    }
   };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (reviewComment.trim().length < 4) return;
-    onAddReview(reviewTargetId, reviewRating, reviewComment.trim());
-    setReviewComment('');
+    setReviewNotice('');
+    setExploreError('');
+    if (reviewComment.trim().length < 4) {
+      setExploreError('Please write at least 4 characters before submitting a review.');
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await onAddReview(reviewTargetId, reviewRating, reviewComment.trim());
+      setReviewComment('');
+      setReviewNotice('Review published.');
+    } catch (err) {
+      setExploreError(err instanceof Error ? err.message : 'Unable to submit review.');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const handleMarkerSelect = (marker: MapMarkerItem) => {
@@ -158,6 +179,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
             <button
               key={cat}
               type="button"
+              aria-pressed={category === cat}
               onClick={() => setCategory(cat)}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                 category === cat
@@ -182,6 +204,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
               <button
                 key={tab.id}
                 type="button"
+                aria-pressed={discoveryMode === tab.id}
                 onClick={() => setDiscoveryMode(tab.id)}
                 className={`rounded-md px-2.5 py-1 transition-colors ${
                   discoveryMode === tab.id
@@ -196,6 +219,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
 
           <button
             type="button"
+            aria-pressed={stepFreeOnly}
             onClick={() => setStepFreeOnly((prev) => !prev)}
             className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
               stepFreeOnly
@@ -208,6 +232,12 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           </button>
         </div>
       </div>
+
+      {exploreError && (
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+          {exploreError}
+        </p>
+      )}
 
       {/* Attractions Grid */}
       {visibleAttractions.length > 0 && (
@@ -471,11 +501,17 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
               />
             </div>
+            {reviewNotice && (
+              <p role="status" className="text-xs font-medium text-[#15803D]">
+                {reviewNotice}
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors"
+              disabled={submittingReview}
+              className="w-full rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
             >
-              Submit Review
+              {submittingReview ? 'Submitting...' : 'Submit Review'}
             </button>
           </form>
         </div>

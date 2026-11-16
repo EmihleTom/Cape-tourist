@@ -24,9 +24,13 @@ import {
   DEMO_COMMUNITY_POSTS,
   DEMO_EXPENSES,
   DEMO_NOTIFICATIONS,
+  DEMO_PAYMENT_AUDIT_LOGS,
+  DEMO_PAYMENTS,
   DEMO_PROVIDER_APPLICATIONS,
   DEMO_PROVIDER_LISTINGS,
+  DEMO_PROVIDER_PAYMENT_SETTINGS,
   DEMO_SAFETY_ADVISORIES,
+  DEMO_SAVED_CARDS,
   DEMO_TRANSPORT_ROUTES,
   DEMO_TRIP_ACTIVITIES,
   DEMO_TRUSTED_CONTACTS,
@@ -34,6 +38,7 @@ import {
 import type {
   AnnouncementCategory,
   BookingItem,
+  BookingStatus,
   BudgetExpense,
   ChallengeItem,
   CheckInSession,
@@ -42,16 +47,25 @@ import type {
   DestinationAnnouncement,
   DurationUnit,
   IncidentCategory,
+  InPersonPaymentMethod,
   ModerationStatus,
   NotificationItem,
   OfferingType,
+  PaymentAuditLog,
+  PaymentDueTiming,
+  PaymentMethodType,
+  PaymentRecord,
+  PaymentStatus,
   PreferredLanguage,
   PricingModel,
   ProfileVisibility,
   ProviderApplication,
   ProviderListing,
+  ProviderPaymentPolicy,
+  ProviderPaymentSettings,
   ReviewItem,
   SafetyAdvisory,
+  SavedPaymentMethod,
   TripActivity,
   TrustedContact,
   UserRole,
@@ -92,6 +106,10 @@ export const dataService = {
       providerListings: DEMO_PROVIDER_LISTINGS,
       trustedContacts: DEMO_TRUSTED_CONTACTS,
       announcements: DEMO_ANNOUNCEMENTS,
+      payments: DEMO_PAYMENTS,
+      savedCards: DEMO_SAVED_CARDS,
+      providerPaymentSettings: DEMO_PROVIDER_PAYMENT_SETTINGS,
+      paymentAuditLogs: DEMO_PAYMENT_AUDIT_LOGS,
     };
   },
 
@@ -397,6 +415,7 @@ export const dataService = {
   mapBookingDoc(id: string, data: Record<string, unknown>): BookingItem {
     return {
       id,
+      bookingReference: data.bookingReference ? String(data.bookingReference) : undefined,
       userId: String(data.userId || ''),
       providerId: String(data.providerId || ''),
       offeringId: data.offeringId ? String(data.offeringId) : undefined,
@@ -415,7 +434,17 @@ export const dataService = {
       pricingModel: data.pricingModel ? (data.pricingModel as PricingModel) : undefined,
       guests: Number(data.guests || 1),
       priceZar: Number(data.priceZar || 0),
-      status: (data.status as BookingItem['status']) || 'Pending Verification',
+      status: (data.status as BookingStatus) || 'Pending Verification',
+      paymentStatus: data.paymentStatus ? (data.paymentStatus as PaymentStatus) : undefined,
+      paymentMethod: data.paymentMethod ? (data.paymentMethod as PaymentMethodType) : undefined,
+      paymentPolicy: data.paymentPolicy ? (data.paymentPolicy as ProviderPaymentPolicy) : undefined,
+      depositAmountZar:
+        typeof data.depositAmountZar === 'number' ? data.depositAmountZar : undefined,
+      paidAmountZar: typeof data.paidAmountZar === 'number' ? data.paidAmountZar : undefined,
+      balanceDueInPersonZar:
+        typeof data.balanceDueInPersonZar === 'number' ? data.balanceDueInPersonZar : undefined,
+      paymentId: data.paymentId ? String(data.paymentId) : undefined,
+      paymentReference: data.paymentReference ? String(data.paymentReference) : undefined,
       confirmedBy: data.confirmedBy ? String(data.confirmedBy) : undefined,
       cancellationReason: data.cancellationReason ? String(data.cancellationReason) : undefined,
       safetyVerified: true,
@@ -459,10 +488,20 @@ export const dataService = {
     );
   },
 
-  async createBooking(uid: string, item: Omit<BookingItem, 'id' | 'status' | 'dataOrigin'>): Promise<void> {
-    const path = FIREBASE_COLLECTIONS.bookings;
+  async createBooking(
+    uid: string,
+    item: Omit<BookingItem, 'id' | 'status' | 'dataOrigin'> & {
+      initialStatus?: 'Pending Verification' | 'Awaiting Provider Confirmation' | 'Pending';
+    }
+  ): Promise<string> {
+    const ref = doc(collection(db, FIREBASE_COLLECTIONS.bookings));
+    const path = `${FIREBASE_COLLECTIONS.bookings}/${ref.id}`;
+    const safeInitialStatus =
+      item.initialStatus === 'Awaiting Provider Confirmation' || item.initialStatus === 'Pending'
+        ? item.initialStatus
+        : 'Pending Verification';
     try {
-      await addDoc(collection(db, path), {
+      await setDoc(ref, {
         userId: uid,
         providerId: item.providerId || uid,
         ...(item.offeringId ? { offeringId: clamp(item.offeringId, 128) } : {}),
@@ -479,25 +518,53 @@ export const dataService = {
           : {}),
         ...(item.endDate ? { endDate: clamp(item.endDate, 32) } : {}),
         ...(item.endTime ? { endTime: clamp(item.endTime, 32) } : {}),
-        ...(typeof item.unitPriceZar === 'number' ? { unitPriceZar: Math.max(0, Number(item.unitPriceZar)) } : {}),
+        ...(typeof item.unitPriceZar === 'number'
+          ? { unitPriceZar: Math.max(0, Number(item.unitPriceZar)) }
+          : {}),
         ...(item.pricingModel ? { pricingModel: item.pricingModel } : {}),
         guests: Math.max(1, Math.min(50, Math.round(item.guests))),
         priceZar: Math.max(0, Number(item.priceZar)),
-        // Strict invariant: new bookings always start Pending Verification until confirmed by provider/admin
-        status: 'Pending Verification',
+        // Strict invariant: new bookings ALWAYS enter awaiting confirmation state until provider confirms
+        status: safeInitialStatus,
+        ...(item.bookingReference ? { bookingReference: clamp(item.bookingReference, 40) } : {}),
+        ...(item.paymentStatus ? { paymentStatus: item.paymentStatus } : {}),
+        ...(item.paymentMethod ? { paymentMethod: item.paymentMethod } : {}),
+        ...(item.paymentPolicy ? { paymentPolicy: item.paymentPolicy } : {}),
+        ...(typeof item.depositAmountZar === 'number'
+          ? { depositAmountZar: Math.max(0, Number(item.depositAmountZar)) }
+          : {}),
+        ...(typeof item.paidAmountZar === 'number'
+          ? { paidAmountZar: Math.max(0, Number(item.paidAmountZar)) }
+          : {}),
+        ...(typeof item.balanceDueInPersonZar === 'number'
+          ? { balanceDueInPersonZar: Math.max(0, Number(item.balanceDueInPersonZar)) }
+          : {}),
+        ...(item.paymentId ? { paymentId: clamp(item.paymentId, 128) } : {}),
+        ...(item.paymentReference ? { paymentReference: clamp(item.paymentReference, 80) } : {}),
         accessible: Boolean(item.accessible),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      return ref.id;
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
+      return ref.id;
     }
   },
 
   async updateBookingStatus(
     bookingId: string,
     status: BookingItem['status'],
-    meta?: { confirmedBy?: string; cancellationReason?: string }
+    meta?: {
+      confirmedBy?: string;
+      cancellationReason?: string;
+      paymentStatus?: PaymentStatus;
+      paymentMethod?: PaymentMethodType;
+      paidAmountZar?: number;
+      balanceDueInPersonZar?: number;
+      paymentId?: string;
+      paymentReference?: string;
+    }
   ): Promise<void> {
     const path = `${FIREBASE_COLLECTIONS.bookings}/${bookingId}`;
     const payload: Record<string, unknown> = {
@@ -506,6 +573,49 @@ export const dataService = {
     };
     if (meta?.confirmedBy) payload.confirmedBy = clamp(meta.confirmedBy, 120);
     if (meta?.cancellationReason) payload.cancellationReason = clamp(meta.cancellationReason, 300);
+    if (meta?.paymentStatus) payload.paymentStatus = meta.paymentStatus;
+    if (meta?.paymentMethod) payload.paymentMethod = meta.paymentMethod;
+    if (typeof meta?.paidAmountZar === 'number') {
+      payload.paidAmountZar = Math.max(0, Number(meta.paidAmountZar));
+    }
+    if (typeof meta?.balanceDueInPersonZar === 'number') {
+      payload.balanceDueInPersonZar = Math.max(0, Number(meta.balanceDueInPersonZar));
+    }
+    if (meta?.paymentId) payload.paymentId = clamp(meta.paymentId, 128);
+    if (meta?.paymentReference) payload.paymentReference = clamp(meta.paymentReference, 80);
+
+    try {
+      await updateDoc(doc(db, FIREBASE_COLLECTIONS.bookings, bookingId), payload);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async updateBookingPaymentFields(
+    bookingId: string,
+    updates: {
+      paymentStatus: PaymentStatus;
+      paymentMethod?: PaymentMethodType;
+      paidAmountZar?: number;
+      balanceDueInPersonZar?: number;
+      paymentId?: string;
+      paymentReference?: string;
+    }
+  ): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.bookings}/${bookingId}`;
+    const payload: Record<string, unknown> = {
+      paymentStatus: updates.paymentStatus,
+      updatedAt: serverTimestamp(),
+    };
+    if (updates.paymentMethod) payload.paymentMethod = updates.paymentMethod;
+    if (typeof updates.paidAmountZar === 'number') {
+      payload.paidAmountZar = Math.max(0, Number(updates.paidAmountZar));
+    }
+    if (typeof updates.balanceDueInPersonZar === 'number') {
+      payload.balanceDueInPersonZar = Math.max(0, Number(updates.balanceDueInPersonZar));
+    }
+    if (updates.paymentId) payload.paymentId = clamp(updates.paymentId, 128);
+    if (updates.paymentReference) payload.paymentReference = clamp(updates.paymentReference, 80);
 
     try {
       await updateDoc(doc(db, FIREBASE_COLLECTIONS.bookings, bookingId), payload);
@@ -1318,6 +1428,377 @@ export const dataService = {
       await deleteDoc(doc(db, FIREBASE_COLLECTIONS.announcements, id));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  // --- 12. Payments, Saved Tokenised Cards, Provider Payment Settings & Audit Logs ---
+  mapPaymentDoc(id: string, data: Record<string, unknown>): PaymentRecord {
+    return {
+      id,
+      bookingId: String(data.bookingId || ''),
+      bookingReference: String(data.bookingReference || ''),
+      userId: String(data.userId || ''),
+      userName: data.userName ? String(data.userName) : undefined,
+      providerId: String(data.providerId || ''),
+      providerName: String(data.providerName || ''),
+      serviceTitle: String(data.serviceTitle || ''),
+      amount: Number(data.amount || 0),
+      bookingTotalZar: Number(data.bookingTotalZar ?? data.amount ?? 0),
+      depositAmount: typeof data.depositAmount === 'number' ? data.depositAmount : undefined,
+      balanceDueInPerson:
+        typeof data.balanceDueInPerson === 'number' ? data.balanceDueInPerson : undefined,
+      refundedAmount: typeof data.refundedAmount === 'number' ? data.refundedAmount : undefined,
+      currency: 'ZAR',
+      paymentMethod: (data.paymentMethod as PaymentMethodType) || 'PayShap',
+      paymentStatus: (data.paymentStatus as PaymentStatus) || 'Payment Pending',
+      paymentReference: String(data.paymentReference || ''),
+      paymentProviderReference: data.paymentProviderReference
+        ? String(data.paymentProviderReference)
+        : undefined,
+      providerVerified: Boolean(data.providerVerified),
+      paymentMode: data.paymentMode === 'live' ? 'live' : 'demo',
+      inPersonMethodUsed: data.inPersonMethodUsed
+        ? (data.inPersonMethodUsed as InPersonPaymentMethod)
+        : undefined,
+      inPersonConfirmedBy: data.inPersonConfirmedBy
+        ? String(data.inPersonConfirmedBy)
+        : undefined,
+      inPersonConfirmedAt: data.inPersonConfirmedAt
+        ? String(data.inPersonConfirmedAt)
+        : undefined,
+      savedCardTokenId: data.savedCardTokenId ? String(data.savedCardTokenId) : undefined,
+      cardBrand: data.cardBrand ? String(data.cardBrand) : undefined,
+      cardLastFour: data.cardLastFour ? String(data.cardLastFour) : undefined,
+      failureReason: data.failureReason ? String(data.failureReason) : undefined,
+      receiptNumber: data.receiptNumber ? String(data.receiptNumber) : undefined,
+      paidAtLabel: data.paidAtLabel ? String(data.paidAtLabel) : undefined,
+      createdAtLabel: formatTimestamp(data.createdAt),
+      updatedAtLabel: formatTimestamp(data.updatedAt),
+      dataOrigin: 'live',
+    };
+  },
+
+  subscribeUserPayments(uid: string, onData: (items: PaymentRecord[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.payments;
+    const q = query(collection(db, path), where('userId', '==', uid));
+    return onSnapshot(
+      q,
+      (snap) => {
+        onData(snap.docs.map((d) => this.mapPaymentDoc(d.id, d.data())));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  subscribeProviderPayments(providerId: string, onData: (items: PaymentRecord[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.payments;
+    const q = query(collection(db, path), where('providerId', '==', providerId));
+    return onSnapshot(
+      q,
+      (snap) => {
+        onData(snap.docs.map((d) => this.mapPaymentDoc(d.id, d.data())));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  subscribeAllPaymentsAdmin(onData: (items: PaymentRecord[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.payments;
+    return onSnapshot(
+      collection(db, path),
+      (snap) => {
+        onData(snap.docs.map((d) => this.mapPaymentDoc(d.id, d.data())));
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async createPaymentRecord(
+    uid: string,
+    record: Omit<PaymentRecord, 'id' | 'createdAtLabel' | 'updatedAtLabel' | 'dataOrigin'> & {
+      id?: string;
+    }
+  ): Promise<string> {
+    const ref = record.id
+      ? doc(db, FIREBASE_COLLECTIONS.payments, record.id)
+      : doc(collection(db, FIREBASE_COLLECTIONS.payments));
+    const path = `${FIREBASE_COLLECTIONS.payments}/${ref.id}`;
+    try {
+      await setDoc(ref, {
+        id: ref.id,
+        bookingId: clamp(record.bookingId, 128),
+        bookingReference: clamp(record.bookingReference, 40),
+        userId: uid,
+        ...(record.userName ? { userName: clamp(record.userName, 120) } : {}),
+        providerId: clamp(record.providerId, 128),
+        providerName: clamp(record.providerName, 140),
+        serviceTitle: clamp(record.serviceTitle, 160),
+        amount: Math.max(0, Number(record.amount)),
+        bookingTotalZar: Math.max(0, Number(record.bookingTotalZar)),
+        ...(typeof record.depositAmount === 'number'
+          ? { depositAmount: Math.max(0, Number(record.depositAmount)) }
+          : {}),
+        ...(typeof record.balanceDueInPerson === 'number'
+          ? { balanceDueInPerson: Math.max(0, Number(record.balanceDueInPerson)) }
+          : {}),
+        currency: 'ZAR',
+        paymentMethod: record.paymentMethod,
+        paymentStatus: record.paymentStatus,
+        paymentReference: clamp(record.paymentReference, 80),
+        ...(record.paymentProviderReference
+          ? { paymentProviderReference: clamp(record.paymentProviderReference, 120) }
+          : {}),
+        providerVerified: Boolean(record.providerVerified),
+        paymentMode: record.paymentMode === 'live' ? 'live' : 'demo',
+        ...(record.savedCardTokenId
+          ? { savedCardTokenId: clamp(record.savedCardTokenId, 128) }
+          : {}),
+        ...(record.cardBrand ? { cardBrand: clamp(record.cardBrand, 32) } : {}),
+        ...(record.cardLastFour && /^\d{4}$/.test(record.cardLastFour)
+          ? { cardLastFour: record.cardLastFour }
+          : {}),
+        ...(record.failureReason ? { failureReason: clamp(record.failureReason, 240) } : {}),
+        ...(record.receiptNumber ? { receiptNumber: clamp(record.receiptNumber, 60) } : {}),
+        ...(record.paidAtLabel ? { paidAtLabel: clamp(record.paidAtLabel, 40) } : {}),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return ref.id;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+      return ref.id;
+    }
+  },
+
+  async updatePaymentRecord(
+    paymentId: string,
+    updates: {
+      paymentStatus: PaymentStatus;
+      paymentProviderReference?: string;
+      providerVerified?: boolean;
+      receiptNumber?: string;
+      paidAtLabel?: string;
+      failureReason?: string;
+      balanceDueInPerson?: number;
+      inPersonMethodUsed?: InPersonPaymentMethod;
+      inPersonConfirmedBy?: string;
+      inPersonConfirmedAt?: string;
+      refundedAmount?: number;
+    }
+  ): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.payments}/${paymentId}`;
+    const payload: Record<string, unknown> = {
+      paymentStatus: updates.paymentStatus,
+      updatedAt: serverTimestamp(),
+    };
+    if (updates.paymentProviderReference) {
+      payload.paymentProviderReference = clamp(updates.paymentProviderReference, 120);
+    }
+    if (typeof updates.providerVerified === 'boolean') {
+      payload.providerVerified = updates.providerVerified;
+    }
+    if (updates.receiptNumber) payload.receiptNumber = clamp(updates.receiptNumber, 60);
+    if (updates.paidAtLabel) payload.paidAtLabel = clamp(updates.paidAtLabel, 40);
+    if (updates.failureReason !== undefined) {
+      payload.failureReason = clamp(updates.failureReason, 240);
+    }
+    if (typeof updates.balanceDueInPerson === 'number') {
+      payload.balanceDueInPerson = Math.max(0, Number(updates.balanceDueInPerson));
+    }
+    if (updates.inPersonMethodUsed) payload.inPersonMethodUsed = updates.inPersonMethodUsed;
+    if (updates.inPersonConfirmedBy) {
+      payload.inPersonConfirmedBy = clamp(updates.inPersonConfirmedBy, 120);
+    }
+    if (updates.inPersonConfirmedAt) {
+      payload.inPersonConfirmedAt = clamp(updates.inPersonConfirmedAt, 40);
+    }
+    if (typeof updates.refundedAmount === 'number') {
+      payload.refundedAmount = Math.max(0, Number(updates.refundedAmount));
+    }
+
+    try {
+      await updateDoc(doc(db, FIREBASE_COLLECTIONS.payments, paymentId), payload);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  subscribeSavedCards(uid: string, onData: (items: SavedPaymentMethod[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.savedPaymentMethods;
+    const q = query(collection(db, path), where('userId', '==', uid));
+    return onSnapshot(
+      q,
+      (snap) => {
+        const items: SavedPaymentMethod[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            userId: String(data.userId || uid),
+            providerToken: String(data.providerToken || ''),
+            cardBrand: (data.cardBrand as SavedPaymentMethod['cardBrand']) || 'Other',
+            cardholderName: String(data.cardholderName || ''),
+            lastFourDigits: String(data.lastFourDigits || '0000'),
+            expiryMonth: String(data.expiryMonth || '01'),
+            expiryYear: String(data.expiryYear || '2029'),
+            paymentMode: data.paymentMode === 'live' ? 'live' : 'demo',
+            createdAtLabel: formatTimestamp(data.createdAt),
+            dataOrigin: 'live',
+          };
+        });
+        onData(items);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async saveTokenisedCard(
+    uid: string,
+    card: Omit<SavedPaymentMethod, 'id' | 'userId' | 'createdAtLabel' | 'dataOrigin'>
+  ): Promise<string> {
+    const ref = doc(collection(db, FIREBASE_COLLECTIONS.savedPaymentMethods));
+    const path = `${FIREBASE_COLLECTIONS.savedPaymentMethods}/${ref.id}`;
+    try {
+      // Security invariant: ONLY provider token + non-sensitive metadata; never PAN or CVV
+      await setDoc(ref, {
+        id: ref.id,
+        userId: uid,
+        providerToken: clamp(card.providerToken, 160),
+        cardBrand: card.cardBrand,
+        cardholderName: clamp(card.cardholderName, 100),
+        lastFourDigits: card.lastFourDigits.slice(-4),
+        expiryMonth: card.expiryMonth,
+        expiryYear: card.expiryYear,
+        paymentMode: card.paymentMode === 'live' ? 'live' : 'demo',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return ref.id;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+      return ref.id;
+    }
+  },
+
+  async deleteSavedCard(cardId: string): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.savedPaymentMethods}/${cardId}`;
+    try {
+      await deleteDoc(doc(db, FIREBASE_COLLECTIONS.savedPaymentMethods, cardId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  subscribeProviderPaymentSettings(
+    onData: (items: ProviderPaymentSettings[]) => void
+  ): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.providerPaymentSettings;
+    return onSnapshot(
+      collection(db, path),
+      (snap) => {
+        const items: ProviderPaymentSettings[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            providerId: String(data.providerId || d.id),
+            providerName: String(data.providerName || 'CapeSafe Partner'),
+            payInPersonEnabled: Boolean(data.payInPersonEnabled),
+            acceptedInPersonMethods: Array.isArray(data.acceptedInPersonMethods)
+              ? (data.acceptedInPersonMethods as InPersonPaymentMethod[])
+              : ['Cash', 'Card Machine'],
+            paymentInstructions: String(data.paymentInstructions || ''),
+            paymentLocation: String(data.paymentLocation || ''),
+            paymentDueTiming: (data.paymentDueTiming as PaymentDueTiming) || 'Before Service Begins',
+            advancePaymentRequired: Boolean(data.advancePaymentRequired),
+            depositPercentage: Number(data.depositPercentage || 30),
+            paymentPolicy:
+              (data.paymentPolicy as ProviderPaymentPolicy) || 'reserve_pay_on_arrival',
+            updatedAtLabel: formatTimestamp(data.updatedAt),
+            dataOrigin: 'live',
+          };
+        });
+        onData(items);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async upsertProviderPaymentSettings(
+    providerId: string,
+    settings: Omit<ProviderPaymentSettings, 'id' | 'providerId' | 'updatedAtLabel' | 'dataOrigin'>
+  ): Promise<void> {
+    const ref = doc(db, FIREBASE_COLLECTIONS.providerPaymentSettings, providerId);
+    const path = `${FIREBASE_COLLECTIONS.providerPaymentSettings}/${providerId}`;
+    try {
+      await setDoc(ref, {
+        id: providerId,
+        providerId,
+        providerName: clamp(settings.providerName, 140),
+        payInPersonEnabled: Boolean(settings.payInPersonEnabled),
+        acceptedInPersonMethods: (settings.acceptedInPersonMethods || []).slice(0, 5),
+        paymentInstructions: clamp(settings.paymentInstructions || '', 600),
+        paymentLocation: clamp(settings.paymentLocation || '', 200),
+        paymentDueTiming: settings.paymentDueTiming || 'Before Service Begins',
+        advancePaymentRequired: Boolean(settings.advancePaymentRequired),
+        depositPercentage: Math.max(5, Math.min(95, Math.round(settings.depositPercentage || 30))),
+        paymentPolicy: settings.paymentPolicy || 'reserve_pay_on_arrival',
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
+    }
+  },
+
+  subscribePaymentAuditLogs(onData: (items: PaymentAuditLog[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.paymentAuditLogs;
+    const q = query(collection(db, path), orderBy('createdAt', 'desc'));
+    return onSnapshot(
+      q,
+      (snap) => {
+        const items: PaymentAuditLog[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            paymentId: String(data.paymentId || ''),
+            bookingId: String(data.bookingId || ''),
+            actorId: String(data.actorId || ''),
+            actorRole: (data.actorRole as UserRole) || 'tourist',
+            action: String(data.action || ''),
+            previousStatus: data.previousStatus ? (data.previousStatus as PaymentStatus) : undefined,
+            newStatus: (data.newStatus as PaymentStatus) || 'Payment Pending',
+            amountZar: Number(data.amountZar || 0),
+            notes: String(data.notes || ''),
+            timestampLabel: formatTimestamp(data.createdAt),
+            dataOrigin: 'live',
+          };
+        });
+        onData(items);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async appendPaymentAuditLog(
+    actorId: string,
+    entry: Omit<PaymentAuditLog, 'id' | 'actorId' | 'timestampLabel' | 'dataOrigin'>
+  ): Promise<void> {
+    const ref = doc(collection(db, FIREBASE_COLLECTIONS.paymentAuditLogs));
+    const path = `${FIREBASE_COLLECTIONS.paymentAuditLogs}/${ref.id}`;
+    try {
+      await setDoc(ref, {
+        id: ref.id,
+        paymentId: clamp(entry.paymentId, 128),
+        bookingId: clamp(entry.bookingId, 128),
+        actorId,
+        actorRole: entry.actorRole,
+        action: clamp(entry.action, 80),
+        ...(entry.previousStatus ? { previousStatus: entry.previousStatus } : {}),
+        newStatus: entry.newStatus,
+        amountZar: Math.max(0, Number(entry.amountZar)),
+        notes: clamp(entry.notes, 400),
+        createdAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
     }
   },
 };

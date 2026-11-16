@@ -82,6 +82,22 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revokeError, setRevokeError] = useState('');
+
+  const handleRevokeLocation = async (incidentId: string) => {
+    setRevokeError('');
+    setRevokingId(incidentId);
+    try {
+      await onRevokeIncidentLocation(incidentId);
+    } catch (err) {
+      setRevokeError(
+        err instanceof Error ? err.message : 'Unable to revoke GPS consent for this incident.'
+      );
+    } finally {
+      setRevokingId(null);
+    }
+  };
 
   const filtered = advisories.filter((adv) => {
     const matchesSeverity = severityFilter === 'All' || adv.severity === severityFilter;
@@ -459,10 +475,10 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
             </div>
 
             {submitMessage && (
-              <p className="text-xs font-medium text-[#15803D]">{submitMessage}</p>
+              <p role="status" className="text-xs font-medium text-[#15803D]">{submitMessage}</p>
             )}
             {submitError && (
-              <p className="text-xs font-medium text-red-700">{submitError}</p>
+              <p role="alert" className="text-xs font-medium text-red-700">{submitError}</p>
             )}
 
             <button
@@ -531,6 +547,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
               <button
                 key={level}
                 type="button"
+                aria-pressed={severityFilter === level}
                 onClick={() => setSeverityFilter(level)}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                   severityFilter === level
@@ -544,6 +561,12 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
           </div>
         </div>
       </div>
+
+      {revokeError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium text-red-800">
+          {revokeError}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {filtered.map((adv) => {
@@ -623,10 +646,11 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 {hasConsentedCoords && isReporter && (
                   <button
                     type="button"
-                    onClick={() => onRevokeIncidentLocation(adv.id)}
-                    className="text-xs font-semibold text-red-700 hover:underline"
+                    disabled={revokingId === adv.id}
+                    onClick={() => void handleRevokeLocation(adv.id)}
+                    className="text-xs font-semibold text-red-700 hover:underline disabled:opacity-50"
                   >
-                    Revoke GPS Consent
+                    {revokingId === adv.id ? 'Revoking GPS...' : 'Revoke GPS Consent'}
                   </button>
                 )}
               </div>

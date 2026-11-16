@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Award, CheckCircle2, ShieldCheck, Trophy } from 'lucide-react';
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import type {
@@ -27,6 +27,22 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
   onIncrementChallenge,
 }) => {
   const isLive = user.authMode === 'firebase' && Boolean(user.emailVerified);
+  const [busyChallengeId, setBusyChallengeId] = useState<string | null>(null);
+  const [challengeError, setChallengeError] = useState('');
+
+  const handleIncrement = async (id: string) => {
+    setChallengeError('');
+    setBusyChallengeId(id);
+    try {
+      await onIncrementChallenge(id);
+    } catch (err) {
+      setChallengeError(
+        err instanceof Error ? err.message : 'Unable to save challenge progress right now.'
+      );
+    } finally {
+      setBusyChallengeId(null);
+    }
+  };
 
   const earnedBadges = useMemo(() => {
     const challengeBadges = challenges
@@ -99,6 +115,12 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
           Complete low-carbon transit rides, timed trail safety check-ins, inclusive exploration, and accredited local guide experiences to unlock achievement badges.
         </p>
       </div>
+
+      {challengeError && (
+        <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-medium text-red-800">
+          {challengeError}
+        </div>
+      )}
 
       {/* Achievement Badges Showcase */}
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
@@ -176,12 +198,14 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
 
               <button
                 type="button"
-                disabled={complete}
-                onClick={() => void onIncrementChallenge(ch.id)}
+                disabled={complete || busyChallengeId === ch.id}
+                onClick={() => void handleIncrement(ch.id)}
                 className="mt-5 w-full rounded-lg border border-slate-300 bg-slate-50 py-2 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-60 transition-colors"
               >
                 {complete
                   ? `Completed · ${ch.badgeTitle || 'Badge Earned'}`
+                  : busyChallengeId === ch.id
+                  ? 'Saving Milestone...'
                   : isLive
                   ? 'Log Verified Milestone (Save to Cloud)'
                   : 'Log Milestone'}

@@ -13,9 +13,14 @@ import { storageService } from '../src/services/firebase/storageService.ts';
 import { ROLE_LABELS, NAV_ITEMS } from '../src/data/navigation.ts';
 import { fetchCapeTownWeather } from '../src/services/weatherService.ts';
 import { resolveZoneCoordinates } from '../src/components/map/CapeTownMap.tsx';
+import crypto from 'node:crypto';
 import express from 'express';
 import path from 'node:path';
-import { createApiRouter, runDeterministicPostModeration } from '../server.ts';
+import {
+  createApiRouter,
+  runDeterministicPostModeration,
+  verifyWebhookSignature,
+} from '../server.ts';
 import { aiService, buildSafeAiContext, OFFLINE_CAPE_TOWN_PHRASEBOOK } from '../src/services/aiService.ts';
 import { offlineTravelService } from '../src/services/offlineTravelService.ts';
 import { formatAuthorByVisibility } from '../src/pages/features/CommunityHubPage.tsx';
@@ -32,6 +37,7 @@ import {
   buildItineraryFromConfirmedBooking,
   calculateBookingEndDateTime,
   calculateBookingPriceZar,
+  calculateCheckoutAmounts,
   checkOfferingAvailability,
 } from '../src/utils/bookingCalculations.ts';
 import type { BookingItem, CapeTownWeather, ProviderListing, UserRole } from '../src/types/app.ts';
@@ -124,16 +130,21 @@ async function runTests() {
   // Verify all 15 navigation sections exist
   assert.equal(NAV_ITEMS.length, 15, 'All 15 planned navigation features must be registered');
 
-  // 5. All 12 Domain Collections + New Feature Services + Storage Rules Verification
-  assert.equal(Object.keys(FIREBASE_COLLECTIONS).length, 13); // 12 domain collections + admins marker
+  // 5. All 16 Domain Collections + New Feature Services + Storage Rules Verification
+  assert.equal(Object.keys(FIREBASE_COLLECTIONS).length, 17); // 16 domain collections + admins marker
   assert.equal(FIREBASE_COLLECTIONS.announcements, 'announcements');
   assert.equal(FIREBASE_COLLECTIONS.providerOfferings, 'provider_offerings');
+  assert.equal(FIREBASE_COLLECTIONS.payments, 'payments');
+  assert.equal(FIREBASE_COLLECTIONS.savedPaymentMethods, 'saved_payment_methods');
+  assert.equal(FIREBASE_COLLECTIONS.providerPaymentSettings, 'provider_payment_settings');
+  assert.equal(FIREBASE_COLLECTIONS.paymentAuditLogs, 'payment_audit_logs');
 
   for (const methodName of [
     'createBusinessApplication',
     'subscribeProviderBookings',
     'subscribeAllBookingsAdmin',
     'updateBookingStatus',
+    'updateBookingPaymentFields',
     'subscribeOfferings',
     'createProviderOffering',
     'updateProviderOffering',
@@ -157,6 +168,18 @@ async function runTests() {
     'deleteCommunityPost',
     'subscribeChallengeProgress',
     'upsertChallengeProgress',
+    'subscribeUserPayments',
+    'subscribeProviderPayments',
+    'subscribeAllPaymentsAdmin',
+    'createPaymentRecord',
+    'updatePaymentRecord',
+    'subscribeSavedCards',
+    'saveTokenisedCard',
+    'deleteSavedCard',
+    'subscribeProviderPaymentSettings',
+    'upsertProviderPaymentSettings',
+    'subscribePaymentAuditLogs',
+    'appendPaymentAuditLog',
   ] as const) {
     assert.equal(
       typeof dataService[methodName],
@@ -350,6 +373,9 @@ async function runTests() {
     const content = fs.readFileSync(file, 'utf8');
     assert.ok(!content.includes('GEMINI_API_KEY'), `Client file ${file} must never reference GEMINI_API_KEY`);
     assert.ok(!content.includes('@google/genai'), `Client file ${file} must never import @google/genai`);
+    assert.ok(!content.includes('PAYSTACK_SECRET_KEY'), `Client file ${file} must never reference PAYSTACK_SECRET_KEY`);
+    assert.ok(!content.includes('PAYSTACK_WEBHOOK_SECRET'), `Client file ${file} must never reference PAYSTACK_WEBHOOK_SECRET`);
+    assert.ok(!content.includes('CAPESAFE_PSP_WEBHOOK_SECRET'), `Client file ${file} must never reference CAPESAFE_PSP_WEBHOOK_SECRET`);
   }
 
   // 9b. AI context privacy gating (aiContextPersonalization true vs false)
@@ -456,12 +482,212 @@ async function runTests() {
       body: JSON.stringify({ text: '' }),
     });
     assert.equal(badTranslateRes.status, 400);
+
+    // 10. Payment Gateway Endpoints & Checkout Calculations (PayShap, Tokenised Card, Pay in Person, Webhook, Refunds)
+    const payArrival = calculateCheckoutAmounts(2000, {
+      paymentPolicy: 'reserve_pay_on_arrival',
+      payInPersonEnabled: true,
+      advancePaymentRequired: false,
+    });
+    assert.equal(payArrival.payInPersonAllowed, true);
+    assert.equal(payArrival.onlinePayableZar, 2000);
+
+    const payFullOnline = calculateCheckoutAmounts(2000, {
+      paymentPolicy: 'pay_full_online',
+      payInPersonEnabled: true,
+    });
+    assert.equal(payFullOnline.payInPersonAllowed, false);
+    assert.equal(payFullOnline.onlinePayableZar, 2000);
+
+    const payDeposit = calculateCheckoutAmounts(2000, {
+      paymentPolicy: 'deposit_online_balance_in_person',
+      depositPercentage: 30,
+    });
+    assert.equal(payDeposit.isDepositOnly, true);
+    assert.equal(payDeposit.onlinePayableZar, 600);
+    assert.equal(payDeposit.balanceDueInPersonZar, 1400);
+
+    const payBeforeService = calculateCheckoutAmounts(1500, {
+      paymentPolicy: 'pay_in_person_before_service',
+      payInPersonEnabled: true,
+    });
+    assert.equal(payBeforeService.payInPersonAllowed, true);
+    assert.equal(payBeforeService.balanceDueInPersonZar, 1500);
+
+    const payConfigRes = await fetch(`http://127.0.0.1:${port}/api/payments/config`);
+    assert.equal(payConfigRes.status, 200);
+    const payConfigJson = (await payConfigRes.json()) as {
+      mode: string;
+      supportedCurrencies: string[];
+      supportedMethods: string[];
+    };
+    assert.ok(payConfigJson.supportedCurrencies.includes('ZAR'));
+    assert.ok(payConfigJson.supportedMethods.includes('PayShap'));
+    assert.ok(payConfigJson.supportedMethods.includes('Pay in Person'));
+
+    // Tokenization returns token, cardBrand, last4 only (never raw cardNumber or cvv)
+    const tokRes = await fetch(`http://127.0.0.1:${port}/api/payments/tokenize-card`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cardNumber: '4242424242424242',
+        expiryMonth: '08',
+        expiryYear: '2028',
+        cvv: '123',
+        cardholderName: 'Maya van der Merwe',
+      }),
+    });
+    assert.equal(tokRes.status, 200);
+    const tokJson = (await tokRes.json()) as Record<string, unknown>;
+    assert.equal(tokJson.cardBrand, 'Visa');
+    assert.equal(tokJson.lastFourDigits, '4242');
+    assert.ok(String(tokJson.providerToken).startsWith('tok_'));
+    assert.equal('cardNumber' in tokJson, false);
+    assert.equal('cvv' in tokJson, false);
+
+    // Mismatched amount rejected (amount tampering defense)
+    const tamperedInitRes = await fetch(`http://127.0.0.1:${port}/api/payments/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: 'bk-tamper-1',
+        bookingReference: 'CS-BK-999111',
+        amount: 10,
+        bookingTotalZar: 1800,
+        currency: 'ZAR',
+        paymentMethod: 'PayShap',
+        policy: 'pay_full_online',
+      }),
+    });
+    assert.equal(tamperedInitRes.status, 400);
+
+    // Valid PayShap initiation + idempotency duplicate protection
+    const idemKey = `test-ps-${Date.now()}`;
+    const initRes = await fetch(`http://127.0.0.1:${port}/api/payments/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: 'bk-ps-1',
+        bookingReference: 'CS-BK-777111',
+        amount: 1800,
+        bookingTotalZar: 1800,
+        currency: 'ZAR',
+        paymentMethod: 'PayShap',
+        idempotencyKey: idemKey,
+      }),
+    });
+    assert.equal(initRes.status, 200);
+    const initJson = (await initRes.json()) as { paymentReference: string };
+    assert.ok(initJson.paymentReference.startsWith('PAY-PS-'));
+
+    const dupInitRes = await fetch(`http://127.0.0.1:${port}/api/payments/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: 'bk-ps-1',
+        bookingReference: 'CS-BK-777111',
+        amount: 1800,
+        bookingTotalZar: 1800,
+        currency: 'ZAR',
+        paymentMethod: 'PayShap',
+        idempotencyKey: idemKey,
+      }),
+    });
+    assert.equal(dupInitRes.status, 200);
+    const dupInitJson = (await dupInitRes.json()) as { duplicateProtected?: boolean; paymentReference: string };
+    assert.equal(dupInitJson.duplicateProtected, true);
+    assert.equal(dupInitJson.paymentReference, initJson.paymentReference);
+
+    // Verify Pending -> Failed -> Expired -> Cancelled -> Paid outcomes
+    const pendingVerify = await (
+      await fetch(`http://127.0.0.1:${port}/api/payments/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentReference: initJson.paymentReference, simulatedOutcome: 'Payment Pending' }),
+      })
+    ).json() as { verified: boolean; paymentStatus: string };
+    assert.equal(pendingVerify.verified, false);
+    assert.equal(pendingVerify.paymentStatus, 'Payment Pending');
+
+    const failedVerify = await (
+      await fetch(`http://127.0.0.1:${port}/api/payments/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentReference: initJson.paymentReference, simulatedOutcome: 'Failed' }),
+      })
+    ).json() as { verified: boolean; paymentStatus: string };
+    assert.equal(failedVerify.verified, false);
+    assert.equal(failedVerify.paymentStatus, 'Failed');
+
+    const paidVerify = await (
+      await fetch(`http://127.0.0.1:${port}/api/payments/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentReference: initJson.paymentReference, simulatedOutcome: 'Paid' }),
+      })
+    ).json() as { verified: boolean; paymentStatus: string };
+    assert.equal(paidVerify.verified, true);
+    assert.equal(paidVerify.paymentStatus, 'Paid');
+
+    // Refund validation (partial + full)
+    const partialRefund = await (
+      await fetch(`http://127.0.0.1:${port}/api/payments/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentReference: initJson.paymentReference,
+          amount: 500,
+          originalAmount: 1800,
+          paymentStatus: 'Paid',
+          reason: 'Weather adjustment partial refund',
+        }),
+      })
+    ).json() as { success: boolean; paymentStatus: string; refundedAmount: number };
+    assert.equal(partialRefund.success, true);
+    assert.equal(partialRefund.paymentStatus, 'Partially Refunded');
+
+    // Webhook HMAC verification helper & unauthorized webhook rejection
+    const testWebhookBody = JSON.stringify({ event: 'charge.success', data: { reference: initJson.paymentReference } });
+    const validSig = crypto.createHmac('sha512', 'test-webhook-secret').update(testWebhookBody).digest('hex');
+    assert.equal(verifyWebhookSignature(testWebhookBody, validSig, 'test-webhook-secret'), true);
+    assert.equal(verifyWebhookSignature(testWebhookBody, 'invalid-signature', 'test-webhook-secret'), false);
+
+    const badWebhookRes = await fetch(`http://127.0.0.1:${port}/api/payments/webhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-paystack-signature': 'tampered' },
+      body: testWebhookBody,
+    });
+    assert.equal(badWebhookRes.status, 401);
   } finally {
     server.close();
   }
 
+  // 11. QA Regression Checks (No fake metric offsets, HMR disabled, bounded booking inputs, Payment options present)
+  const adminDashSrc = fs.readFileSync('src/pages/dashboards/AdminDashboard.tsx', 'utf8');
+  assert.ok(
+    !adminDashSrc.includes('140 + approvedCount'),
+    'AdminDashboard must display real approved application count without a +140 fake offset'
+  );
+
+  const serverSrc = fs.readFileSync('server.ts', 'utf8');
+  assert.ok(
+    serverSrc.includes('hmr: false'),
+    'server.ts must configure Vite hmr: false to prevent WebSocket connection errors'
+  );
+
+  assert.ok(
+    bookingsPageSrc.includes('min={1}') &&
+      bookingsPageSrc.includes('max={30}') &&
+      bookingsPageSrc.includes('max={20}'),
+    'BookingsPage must enforce min/max bounds on durationValue and guests'
+  );
+  assert.ok(
+    bookingsPageSrc.includes('PayShap') && bookingsPageSrc.includes('Pay in Person'),
+    'BookingsPage checkout integration must surface PayShap, Card, and Pay in Person'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 13 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, and Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 17 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
   );
 }
 

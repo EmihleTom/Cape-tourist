@@ -43,13 +43,22 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
   const [expenseDate, setExpenseDate] = useState('2026-11-15');
   const [categoryFilter, setCategoryFilter] = useState<'All' | BudgetExpense['category']>('All');
   const [syncMessage, setSyncMessage] = useState('');
+  const [budgetError, setBudgetError] = useState('');
+  const [submittingExpense, setSubmittingExpense] = useState(false);
+  const [syncingBookings, setSyncingBookings] = useState(false);
 
   const totalSpent = expenses.reduce((sum, e) => sum + e.amountZar, 0);
   const remaining = Math.max(0, targetBudgetZar - totalSpent);
   const overBudget = totalSpent > targetBudgetZar;
   const utilizationPct = Math.min(100, Math.round((totalSpent / Math.max(1, targetBudgetZar)) * 100));
 
-  const confirmedBookings = bookings.filter((b) => b.status === 'Confirmed');
+  const confirmedBookings = bookings.filter(
+    (b) =>
+      b.status === 'Confirmed' &&
+      b.paymentStatus !== 'Unpaid' &&
+      b.paymentStatus !== 'Failed' &&
+      b.paymentStatus !== 'Refunded'
+  );
   const loggedBookingIds = new Set(expenses.map((e) => e.bookingId).filter(Boolean));
   const unsyncedBookings = confirmedBookings.filter((b) => !loggedBookingIds.has(b.id));
 
@@ -66,38 +75,64 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBudgetError('');
+    setSyncMessage('');
     const numeric = Number(amountZar);
-    if (!description.trim() || !numeric || numeric <= 0) return;
-    await onAddExpense({
-      date: expenseDate || '2026-11-15',
-      description: description.trim(),
-      category,
-      amountZar: Math.round(numeric),
-      paymentMethod,
-    });
-    setDescription('');
-    setAmountZar('');
+    if (!description.trim() || !Number.isFinite(numeric) || numeric <= 0) {
+      setBudgetError('Enter an expense description and a positive ZAR amount.');
+      return;
+    }
+    setSubmittingExpense(true);
+    try {
+      await onAddExpense({
+        date: expenseDate || '2026-11-15',
+        description: description.trim(),
+        category,
+        amountZar: Math.max(1, Math.min(1000000, Math.round(numeric))),
+        paymentMethod,
+      });
+      setDescription('');
+      setAmountZar('');
+      setSyncMessage('Expense saved to travel ledger.');
+    } catch (err) {
+      setBudgetError(err instanceof Error ? err.message : 'Unable to save expense.');
+    } finally {
+      setSubmittingExpense(false);
+    }
   };
 
   const handleSyncConfirmedBookings = async () => {
     if (unsyncedBookings.length === 0) return;
-    for (const bk of unsyncedBookings) {
-      const mappedCat: BudgetExpense['category'] =
-        bk.offeringType === 'Accommodation'
-          ? 'Accommodation'
-          : bk.offeringType === 'Transport'
-          ? 'Transport'
-          : 'Tours & Passes';
-      await onAddExpense({
-        date: bk.date || '2026-11-15',
-        description: `${bk.title} (${bk.providerName})`,
-        category: mappedCat,
-        amountZar: Math.max(1, Math.round(bk.priceZar)),
-        paymentMethod: 'Confirmed Booking',
-        bookingId: bk.id,
-      });
+    setBudgetError('');
+    setSyncMessage('');
+    setSyncingBookings(true);
+    try {
+      for (const bk of unsyncedBookings) {
+        const mappedCat: BudgetExpense['category'] =
+          bk.offeringType === 'Accommodation'
+            ? 'Accommodation'
+            : bk.offeringType === 'Transport'
+            ? 'Transport'
+            : 'Tours & Passes';
+        const settledAmt =
+          typeof bk.paidAmountZar === 'number' && bk.paidAmountZar > 0
+            ? bk.paidAmountZar
+            : bk.priceZar;
+        await onAddExpense({
+          date: bk.date || '2026-11-15',
+          description: `${bk.title} (${bk.providerName})`,
+          category: mappedCat,
+          amountZar: Math.max(1, Math.min(1000000, Math.round(settledAmt))),
+          paymentMethod: bk.paymentMethod || 'Confirmed Booking',
+          bookingId: bk.id,
+        });
+      }
+      setSyncMessage(`Synced ${unsyncedBookings.length} confirmed booking(s) to your ZAR ledger.`);
+    } catch (err) {
+      setBudgetError(err instanceof Error ? err.message : 'Unable to import confirmed bookings.');
+    } finally {
+      setSyncingBookings(false);
     }
-    setSyncMessage(`Synced ${unsyncedBookings.length} confirmed booking(s) to your ZAR ledger.`);
   };
 
   return (
@@ -109,6 +144,15 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             : 'Sample ZAR travel ledger — sign in with Firebase to persist expenses & booking totals'
         }
       />
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5">
+        <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+          Cape Town Travel Budget &amp; Expense Ledger
+        </h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Track ZAR trip expenses, compare category spend against your target ceiling, and import confirmed reservations.
+        </p>
+      </div>
 
       {/* Budget KPI Cards + Progress */}
       <div className="grid gap-4 sm:grid-cols-3">
@@ -170,11 +214,18 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
           <div className="flex items-center gap-2.5 text-xs text-[#0B1F3A]">
             <CalendarCheck className="h-4 w-4 shrink-0 text-[#0D9488]" aria-hidden="true" />
             <span>
-              <strong>{unsyncedBookings.length} Confirmed Booking(s)</strong> (totalling{' '}
+              <strong>{unsyncedBookings.length} Confirmed Paid Booking(s)</strong> (totalling{' '}
               <span className="font-mono font-bold">
                 R{' '}
                 {unsyncedBookings
-                  .reduce((s, b) => s + b.priceZar, 0)
+                  .reduce(
+                    (s, b) =>
+                      s +
+                      (typeof b.paidAmountZar === 'number' && b.paidAmountZar > 0
+                        ? b.paidAmountZar
+                        : b.priceZar),
+                    0
+                  )
                   .toLocaleString('en-ZA')}
               </span>
               ) are not yet imported into your expense ledger.
@@ -182,21 +233,31 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
           </div>
           <button
             type="button"
+            disabled={syncingBookings}
             onClick={handleSyncConfirmedBookings}
-            className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors whitespace-nowrap"
+            className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap"
           >
-            Import Confirmed Bookings
+            {syncingBookings ? 'Importing...' : 'Import Confirmed Bookings'}
           </button>
         </div>
       )}
 
-      {syncMessage && <p className="text-xs font-medium text-[#15803D]">{syncMessage}</p>}
+      {syncMessage && (
+        <p role="status" className="text-xs font-medium text-[#15803D]">
+          {syncMessage}
+        </p>
+      )}
+      {budgetError && (
+        <p role="alert" className="text-xs font-medium text-red-700">
+          {budgetError}
+        </p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-4 space-y-5">
           <div className="flex items-center gap-2">
             <Wallet className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h1 className="font-display text-base font-bold text-[#0B1F3A]">Log Trip Expense</h1>
+            <h2 className="font-display text-base font-bold text-[#0B1F3A]">Log Trip Expense</h2>
           </div>
 
           <form onSubmit={handleAdd} className="space-y-3">
@@ -239,6 +300,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   id="exp-amt"
                   type="number"
                   min={1}
+                  max={1000000}
                   value={amountZar}
                   onChange={(e) => setAmountZar(e.target.value)}
                   placeholder="250"
@@ -280,10 +342,11 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors"
+              disabled={submittingExpense}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              Add Expense
+              {submittingExpense ? 'Saving...' : 'Add Expense'}
             </button>
           </form>
 
@@ -311,6 +374,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   <button
                     key={cat}
                     type="button"
+                    aria-pressed={categoryFilter === cat}
                     onClick={() => setCategoryFilter(cat)}
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                       categoryFilter === cat
@@ -353,7 +417,16 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => onDeleteExpense(exp.id)}
+                          onClick={async () => {
+                            setBudgetError('');
+                            try {
+                              await onDeleteExpense(exp.id);
+                            } catch (err) {
+                              setBudgetError(
+                                err instanceof Error ? err.message : 'Unable to delete expense.'
+                              );
+                            }
+                          }}
                           aria-label={`Delete ${exp.description}`}
                           className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-red-700"
                         >

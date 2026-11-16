@@ -24,7 +24,7 @@ interface SafetyManagementDashboardProps {
   user: DemoUser;
   checkIns: CheckInSession[];
   advisories: SafetyAdvisory[];
-  onResolveCheckIn: (id: string) => void;
+  onResolveCheckIn: (id: string) => Promise<void> | void;
   onPublishAdvisory: (advisory: Omit<SafetyAdvisory, 'id' | 'updatedAt' | 'dataOrigin'>) => Promise<void> | void;
   onUpdateIncident: (
     incidentId: string,
@@ -73,6 +73,8 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [triageMessage, setTriageMessage] = useState('');
+  const [triageError, setTriageError] = useState('');
+  const [resolvingCheckInId, setResolvingCheckInId] = useState<string | null>(null);
 
   const overdueCount = checkIns.filter((c) => c.status === 'Overdue').length;
   const activeCount = checkIns.filter((c) => c.status === 'Active').length;
@@ -128,6 +130,7 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
 
   const handleSaveTriage = async (inc: SafetyAdvisory) => {
     setTriageMessage('');
+    setTriageError('');
     setSavingId(inc.id);
     const nextOfficerName =
       draftAssignments[inc.id] ?? inc.assignedOfficerName ?? RESPONSE_UNITS[0];
@@ -142,6 +145,8 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
         resolutionNotes: nextNotes,
       });
       setTriageMessage(`Updated "${inc.title}" -> ${nextStatus} (${nextOfficerName}).`);
+    } catch (err) {
+      setTriageError(err instanceof Error ? err.message : 'Unable to save incident triage update.');
     } finally {
       setSavingId(null);
     }
@@ -237,6 +242,7 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
               <button
                 key={tab}
                 type="button"
+                aria-pressed={statusFilter === tab}
                 onClick={() => setStatusFilter(tab)}
                 className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
                   statusFilter === tab
@@ -251,8 +257,19 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
         </div>
 
         {triageMessage && (
-          <div className="border-b border-slate-200 bg-[#F0FDF4] px-5 py-2.5 text-xs font-medium text-[#15803D]">
+          <div
+            role="status"
+            className="border-b border-slate-200 bg-[#F0FDF4] px-5 py-2.5 text-xs font-medium text-[#15803D]"
+          >
             {triageMessage}
+          </div>
+        )}
+        {triageError && (
+          <div
+            role="alert"
+            className="border-b border-red-200 bg-red-50 px-5 py-2.5 text-xs font-medium text-red-700"
+          >
+            {triageError}
           </div>
         )}
 
@@ -320,10 +337,14 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                 ) : (
                   <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12 sm:items-end">
                     <div className="sm:col-span-3">
-                      <label className="block text-[11px] font-semibold text-slate-600">
+                      <label
+                        htmlFor={`safety-unit-${inc.id}`}
+                        className="block text-[11px] font-semibold text-slate-600"
+                      >
                         Assigned Officer / Unit
                       </label>
                       <select
+                        id={`safety-unit-${inc.id}`}
                         value={selectedUnit}
                         onChange={(e) =>
                           setDraftAssignments((prev) => ({ ...prev, [inc.id]: e.target.value }))
@@ -340,10 +361,14 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                     </div>
 
                     <div className="sm:col-span-2">
-                      <label className="block text-[11px] font-semibold text-slate-600">
+                      <label
+                        htmlFor={`safety-status-${inc.id}`}
+                        className="block text-[11px] font-semibold text-slate-600"
+                      >
                         Status
                       </label>
                       <select
+                        id={`safety-status-${inc.id}`}
                         value={selectedStatus}
                         onChange={(e) =>
                           setDraftStatuses((prev) => ({
@@ -360,10 +385,14 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                     </div>
 
                     <div className="sm:col-span-5">
-                      <label className="block text-[11px] font-semibold text-slate-600">
+                      <label
+                        htmlFor={`safety-note-${inc.id}`}
+                        className="block text-[11px] font-semibold text-slate-600"
+                      >
                         Dispatch / Resolution Notes
                       </label>
                       <input
+                        id={`safety-note-${inc.id}`}
                         type="text"
                         value={noteVal}
                         onChange={(e) =>
@@ -431,11 +460,24 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                 {session.status !== 'Completed' && (
                   <button
                     type="button"
-                    onClick={() => onResolveCheckIn(session.id)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors whitespace-nowrap shrink-0"
+                    disabled={resolvingCheckInId === session.id}
+                    onClick={async () => {
+                      setTriageError('');
+                      setResolvingCheckInId(session.id);
+                      try {
+                        await onResolveCheckIn(session.id);
+                      } catch (err) {
+                        setTriageError(
+                          err instanceof Error ? err.message : 'Unable to confirm safe return.'
+                        );
+                      } finally {
+                        setResolvingCheckInId(null);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap shrink-0"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    Confirm Safe Return
+                    {resolvingCheckInId === session.id ? 'Confirming...' : 'Confirm Safe Return'}
                   </button>
                 )}
               </div>

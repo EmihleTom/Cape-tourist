@@ -14,6 +14,7 @@ import {
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { ImageWithFallback } from '@/src/components/common/ImageWithFallback';
 import { StatusText } from '@/src/components/common/StatusText';
+import { MyPaymentsSection } from '@/src/components/payments/MyPaymentsSection';
 import { CAPE_TOWN_DESTINATION_INFO, KIRSTENBOSCH_IMAGE_URL } from '@/src/data/demoData';
 import type {
   AttractionItem,
@@ -24,7 +25,10 @@ import type {
   DemoUser,
   DestinationAnnouncement,
   NavSectionId,
+  PaymentRecord,
+  ProviderPaymentSettings,
   SafetyAdvisory,
+  SavedPaymentMethod,
   TripActivity,
 } from '@/src/types/app';
 
@@ -38,6 +42,10 @@ interface TouristDashboardProps {
   weather: CapeTownWeather;
   checkIns: CheckInSession[];
   expenses: BudgetExpense[];
+  payments: PaymentRecord[];
+  savedCards: SavedPaymentMethod[];
+  providerPaymentSettings: ProviderPaymentSettings[];
+  onRemoveSavedCard: (cardId: string) => Promise<void> | void;
   onNavigate: (section: NavSectionId) => void;
 }
 
@@ -51,6 +59,10 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
   weather,
   checkIns,
   expenses,
+  payments,
+  savedCards,
+  providerPaymentSettings,
+  onRemoveSavedCard,
   onNavigate,
 }) => {
   const confirmedBookings = bookings.filter((b) => b.status === 'Confirmed');
@@ -131,6 +143,18 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             >
               <Bot className="h-4 w-4 text-[#0B1F3A]" aria-hidden="true" />
               Ask CapeSafe AI
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById('my-payments-section')
+                  ?.scrollIntoView({ behavior: 'smooth' })
+              }
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50 transition-colors whitespace-nowrap"
+            >
+              <Wallet className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+              My Payments &amp; Receipts
             </button>
           </div>
         </div>
@@ -448,6 +472,17 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             </button>
           </div>
         </section>
+      </div>
+
+      {/* Tourist Payments, Receipts & Saved Cards */}
+      <div id="my-payments-section">
+        <MyPaymentsSection
+          payments={payments}
+          savedCards={savedCards}
+          providerSettingsList={providerPaymentSettings}
+          onRemoveSavedCard={onRemoveSavedCard}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );

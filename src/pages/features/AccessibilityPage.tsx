@@ -38,6 +38,8 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'Step-Free Verified' | 'Assisted Access'>('All');
   const [notice, setNotice] = useState('');
+  const [accessError, setAccessError] = useState('');
+  const [addingAttrId, setAddingAttrId] = useState<string | null>(null);
 
   const filteredRoutes = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -84,13 +86,39 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
   );
 
   const handleTogglePriority = async (checked: boolean) => {
+    const previous = stepFreeDefault;
+    setAccessError('');
+    setNotice('');
     setStepFreeDefault(checked);
-    await onToggleAccessibilityPriority(checked);
-    setNotice(
-      checked
-        ? 'Step-Free Priority saved — CapeSafe AI and Discover cards will prioritize accessible routes.'
-        : 'Step-Free Priority turned off.'
-    );
+    try {
+      await onToggleAccessibilityPriority(checked);
+      setNotice(
+        checked
+          ? 'Step-Free Priority saved — CapeSafe AI and Discover cards will prioritize accessible routes.'
+          : 'Step-Free Priority turned off.'
+      );
+    } catch (err) {
+      setStepFreeDefault(previous);
+      setAccessError(
+        err instanceof Error ? err.message : 'Unable to save accessibility priority preference.'
+      );
+    }
+  };
+
+  const handleAddAccessibleStop = async (attr: AttractionItem) => {
+    setAccessError('');
+    setNotice('');
+    setAddingAttrId(attr.id);
+    try {
+      await onAddToTrip(attr);
+      setNotice(`Added "${attr.title}" to My Trips.`);
+    } catch (err) {
+      setAccessError(
+        err instanceof Error ? err.message : 'Unable to add accessible attraction to My Trips.'
+      );
+    } finally {
+      setAddingAttrId(null);
+    }
   };
 
   return (
@@ -115,8 +143,13 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
         </p>
 
         {notice && (
-          <p className="mt-3 rounded-lg border border-teal-200 bg-[#F0FDFA] px-3 py-2 text-xs font-medium text-[#0F766E]">
+          <p role="status" className="mt-3 rounded-lg border border-teal-200 bg-[#F0FDFA] px-3 py-2 text-xs font-medium text-[#0F766E]">
             {notice}
+          </p>
+        )}
+        {accessError && (
+          <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-800">
+            {accessError}
           </p>
         )}
 
@@ -166,6 +199,7 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
             <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
             <input
               type="text"
+              aria-label="Search accessible routes and facilities"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search boardwalks, ramps, Kirstenbosch, Sea Point, or sensory hours..."
@@ -248,14 +282,12 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
                   <p className="text-sm font-semibold text-[#0B1F3A]">{attr.title}</p>
                   <button
                     type="button"
-                    onClick={async () => {
-                      await onAddToTrip(attr);
-                      setNotice(`Added "${attr.title}" to My Trips.`);
-                    }}
-                    className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA]"
+                    disabled={addingAttrId === attr.id}
+                    onClick={() => void handleAddAccessibleStop(attr)}
+                    className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
                   >
                     <CalendarPlus className="h-3 w-3" aria-hidden="true" />
-                    Add to Trip
+                    {addingAttrId === attr.id ? 'Adding...' : 'Add to Trip'}
                   </button>
                 </div>
                 <p className={`${largeTextMode ? 'text-sm' : 'text-xs'} text-slate-600`}>

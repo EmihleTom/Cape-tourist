@@ -51,6 +51,8 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null);
+  const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [flaggingId, setFlaggingId] = useState<string | null>(null);
   const [flagReason, setFlagReason] = useState('');
 
@@ -140,13 +142,66 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
 
   const handleConfirmFlag = async (postId: string) => {
     const reason = flagReason.trim() || 'Flagged by community member for safety or accuracy review';
-    await onFlagPost(postId, reason);
-    setFlaggingId(null);
-    setFlagReason('');
-    setFeedback({
-      tone: 'warn',
-      text: 'Post flagged and moved to Safety/Admin moderation queue.',
-    });
+    setBusyPostId(postId);
+    setActionFeedback(null);
+    try {
+      await onFlagPost(postId, reason);
+      setFlaggingId(null);
+      setFlagReason('');
+      setActionFeedback({
+        tone: 'ok',
+        text: 'Post flagged and moved to Safety/Admin moderation queue.',
+      });
+    } catch (err) {
+      setActionFeedback({
+        tone: 'warn',
+        text: err instanceof Error ? err.message : 'Unable to flag post for moderation.',
+      });
+    } finally {
+      setBusyPostId(null);
+    }
+  };
+
+  const handleModerateAction = async (
+    postId: string,
+    status: ModerationStatus,
+    verifiedGuide?: boolean
+  ) => {
+    setBusyPostId(postId);
+    setActionFeedback(null);
+    try {
+      await onModeratePost(postId, status, verifiedGuide);
+      setActionFeedback({
+        tone: 'ok',
+        text: `Moderation updated (${status}).`,
+      });
+    } catch (err) {
+      setActionFeedback({
+        tone: 'warn',
+        text: err instanceof Error ? err.message : 'Unable to update post moderation status.',
+      });
+    } finally {
+      setBusyPostId(null);
+    }
+  };
+
+  const handleDeleteAction = async (postId: string) => {
+    setBusyPostId(postId);
+    setActionFeedback(null);
+    try {
+      await onDeletePost(postId);
+      setActionFeedback({
+        tone: 'ok',
+        text: 'Community post deleted.',
+      });
+    } catch (err) {
+      setActionFeedback({
+        tone: 'warn',
+        text: err instanceof Error ? err.message : 'Unable to delete community post.',
+      });
+    } finally {
+      setBusyPostId(null);
+    }
   };
 
   return (
@@ -210,6 +265,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
 
             {feedback && (
               <div
+                role={feedback.tone === 'warn' ? 'alert' : 'status'}
                 className={`rounded-lg border px-3 py-2 text-xs ${
                   feedback.tone === 'ok'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
@@ -232,6 +288,19 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
 
         {/* Feed & Moderation Queue */}
         <section className="space-y-4 lg:col-span-7">
+          {actionFeedback && (
+            <div
+              role={actionFeedback.tone === 'warn' ? 'alert' : 'status'}
+              className={`rounded-lg border px-3.5 py-2.5 text-xs ${
+                actionFeedback.tone === 'ok'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : 'border-red-200 bg-red-50 text-red-900'
+              }`}
+            >
+              {actionFeedback.text}
+            </div>
+          )}
+
           {isModerator && moderationQueue.length > 0 && (
             <div className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
@@ -271,29 +340,33 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                     <div className="flex flex-wrap gap-2 pt-1">
                       <button
                         type="button"
-                        onClick={() => void onModeratePost(post.id, 'Approved', post.verifiedGuide)}
-                        className="rounded bg-[#15803D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800"
+                        disabled={busyPostId === post.id}
+                        onClick={() => void handleModerateAction(post.id, 'Approved', post.verifiedGuide)}
+                        className="rounded bg-[#15803D] px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
                       >
                         Approve
                       </button>
                       <button
                         type="button"
-                        onClick={() => void onModeratePost(post.id, 'Approved', true)}
-                        className="rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA]"
+                        disabled={busyPostId === post.id}
+                        onClick={() => void handleModerateAction(post.id, 'Approved', true)}
+                        className="rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
                       >
                         Approve + Verified Guide
                       </button>
                       <button
                         type="button"
-                        onClick={() => void onModeratePost(post.id, 'Removed')}
-                        className="rounded border border-amber-400 px-2.5 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+                        disabled={busyPostId === post.id}
+                        onClick={() => void handleModerateAction(post.id, 'Removed')}
+                        className="rounded border border-amber-400 px-2.5 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50"
                       >
                         Hide / Remove
                       </button>
                       <button
                         type="button"
-                        onClick={() => void onDeletePost(post.id)}
-                        className="rounded border border-red-300 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
+                        disabled={busyPostId === post.id}
+                        onClick={() => void handleDeleteAction(post.id)}
+                        className="rounded border border-red-300 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
                       >
                         Delete
                       </button>
@@ -310,6 +383,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
               <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
               <input
                 type="text"
+                aria-label="Search field observations"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search field observations..."
@@ -379,11 +453,12 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                   {(isAuthor || isModerator) && (
                     <button
                       type="button"
-                      onClick={() => void onDeletePost(post.id)}
-                      className="inline-flex items-center gap-1 font-medium text-red-600 hover:text-red-800"
+                      disabled={busyPostId === post.id}
+                      onClick={() => void handleDeleteAction(post.id)}
+                      className="inline-flex items-center gap-1 font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
                       <Trash2 className="h-3 w-3" aria-hidden="true" />
-                      Delete
+                      {busyPostId === post.id ? 'Working...' : 'Delete'}
                     </button>
                   )}
                 </div>
@@ -392,6 +467,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                   <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:flex-row">
                     <input
                       type="text"
+                      aria-label="Flag reason"
                       value={flagReason}
                       onChange={(e) => setFlagReason(e.target.value)}
                       placeholder="Reason for moderation review..."
@@ -399,10 +475,11 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                     />
                     <button
                       type="button"
+                      disabled={busyPostId === post.id}
                       onClick={() => void handleConfirmFlag(post.id)}
-                      className="rounded bg-amber-800 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-900"
+                      className="rounded bg-amber-800 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-900 disabled:opacity-50"
                     >
-                      Submit Flag
+                      {busyPostId === post.id ? 'Submitting...' : 'Submit Flag'}
                     </button>
                   </div>
                 )}

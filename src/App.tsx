@@ -26,7 +26,9 @@ import { useOnlineStatus } from '@/src/hooks/useOnlineStatus';
 import { authService } from '@/src/services/firebase/authService';
 import { dataService } from '@/src/services/firebase/dataService';
 import { offlineTravelService } from '@/src/services/offlineTravelService';
+import { paymentService } from '@/src/services/paymentService';
 import { fetchCapeTownWeather } from '@/src/services/weatherService';
+import type { CheckoutCompletionPayload } from '@/src/components/payments/CheckoutPaymentStep';
 import type {
   AiPlannerStop,
   AnnouncementCategory,
@@ -39,19 +41,26 @@ import type {
   CommunityPost,
   DemoUser,
   DestinationAnnouncement,
+  InPersonPaymentMethod,
   ModerationStatus,
   NavSectionId,
   OfflineTravelBundle,
+  PaymentAuditLog,
+  PaymentRecord,
+  PaymentStatus,
   PreferredLanguage,
   ProviderApplication,
   ProviderListing,
+  ProviderPaymentSettings,
   ReviewItem,
   SafetyAdvisory,
+  SavedPaymentMethod,
   TransportRoute,
   TripActivity,
   TrustedContact,
   UserRole,
 } from '@/src/types/app';
+import { generateReceiptNumber } from '@/src/utils/bookingCalculations';
 
 export default function App() {
   const initialSnapshot = dataService.getInitialSnapshot();
@@ -99,6 +108,14 @@ export default function App() {
   );
   const [announcements, setAnnouncements] = useState<DestinationAnnouncement[]>(
     initialSnapshot.announcements
+  );
+  const [payments, setPayments] = useState<PaymentRecord[]>(initialSnapshot.payments);
+  const [savedCards, setSavedCards] = useState<SavedPaymentMethod[]>(initialSnapshot.savedCards);
+  const [providerPaymentSettings, setProviderPaymentSettings] = useState<
+    ProviderPaymentSettings[]
+  >(initialSnapshot.providerPaymentSettings);
+  const [paymentAuditLogs, setPaymentAuditLogs] = useState<PaymentAuditLog[]>(
+    initialSnapshot.paymentAuditLogs
   );
   const [weather, setWeather] = useState<CapeTownWeather>({
     temperatureC: 21,
@@ -159,76 +176,148 @@ export default function App() {
 
     const unsubscribers: Array<() => void> = [];
 
+    const mergeOrClearLive = <T extends { dataOrigin: 'live' | 'demo' }>(
+      setter: React.Dispatch<React.SetStateAction<T[]>>,
+      liveItems: T[]
+    ) => {
+      setter((prev) =>
+        liveItems.length > 0 ? liveItems : prev.some((item) => item.dataOrigin === 'live') ? [] : prev
+      );
+    };
+
     unsubscribers.push(
       dataService.subscribeUserBookings(currentUser.id, (liveBookings) => {
-        if (liveBookings.length > 0) setBookings(liveBookings);
+        setBookings((prev) => {
+          const liveIds = new Set(liveBookings.map((b) => b.id));
+          const preservedOtherLive = prev.filter(
+            (b) => b.dataOrigin === 'live' && b.userId !== currentUser.id
+          );
+          if (liveBookings.length > 0) {
+            const map = new Map<string, BookingItem>();
+            preservedOtherLive.forEach((b) => map.set(b.id, b));
+            liveBookings.forEach((b) => map.set(b.id, b));
+            return Array.from(map.values());
+          }
+          const hadOwnLive = prev.some(
+            (b) => b.dataOrigin === 'live' && b.userId === currentUser.id && !liveIds.has(b.id)
+          );
+          if (hadOwnLive || preservedOtherLive.length > 0) {
+            return preservedOtherLive;
+          }
+          return prev;
+        });
       }),
-      dataService.subscribeItineraries(currentUser.id, (liveTrips) => {
-        if (liveTrips.length > 0) setTripActivities(liveTrips);
-      }),
-      dataService.subscribeNotifications(currentUser.id, (liveNotes) => {
-        if (liveNotes.length > 0) setNotifications(liveNotes);
-      }),
-      dataService.subscribeTravelBudgets(currentUser.id, (liveBudgets) => {
-        if (liveBudgets.length > 0) setExpenses(liveBudgets);
-      }),
-      dataService.subscribeUserCheckIns(currentUser.id, (liveCheckIns) => {
-        if (liveCheckIns.length > 0) setCheckIns(liveCheckIns);
-      }),
-      dataService.subscribeTrustedContacts(currentUser.id, (liveContacts) => {
-        if (liveContacts.length > 0) setTrustedContacts(liveContacts);
-      }),
-      dataService.subscribeIncidents((liveIncidents) => {
-        if (liveIncidents.length > 0) setAdvisories(liveIncidents);
-      }),
-      dataService.subscribeAnnouncements((liveAnnouncements) => {
-        if (liveAnnouncements.length > 0) setAnnouncements(liveAnnouncements);
-      }),
-      dataService.subscribeCommunityPosts((livePosts) => {
-        if (livePosts.length > 0) setCommunityPosts(livePosts);
-      }),
-      dataService.subscribeReviews((liveReviews) => {
-        if (liveReviews.length > 0) setReviews(liveReviews);
-      }),
-      dataService.subscribeBusinesses((liveBusinesses) => {
-        if (liveBusinesses.length > 0) setProviderApplications(liveBusinesses);
-      }),
+      dataService.subscribeItineraries(currentUser.id, (liveTrips) =>
+        mergeOrClearLive(setTripActivities, liveTrips)
+      ),
+      dataService.subscribeNotifications(currentUser.id, (liveNotes) =>
+        mergeOrClearLive(setNotifications, liveNotes)
+      ),
+      dataService.subscribeTravelBudgets(currentUser.id, (liveBudgets) =>
+        mergeOrClearLive(setExpenses, liveBudgets)
+      ),
+      dataService.subscribeUserCheckIns(currentUser.id, (liveCheckIns) =>
+        mergeOrClearLive(setCheckIns, liveCheckIns)
+      ),
+      dataService.subscribeTrustedContacts(currentUser.id, (liveContacts) =>
+        mergeOrClearLive(setTrustedContacts, liveContacts)
+      ),
+      dataService.subscribeIncidents((liveIncidents) =>
+        mergeOrClearLive(setAdvisories, liveIncidents)
+      ),
+      dataService.subscribeAnnouncements((liveAnnouncements) =>
+        mergeOrClearLive(setAnnouncements, liveAnnouncements)
+      ),
+      dataService.subscribeCommunityPosts((livePosts) =>
+        mergeOrClearLive(setCommunityPosts, livePosts)
+      ),
+      dataService.subscribeReviews((liveReviews) => mergeOrClearLive(setReviews, liveReviews)),
+      dataService.subscribeBusinesses((liveBusinesses) =>
+        mergeOrClearLive(setProviderApplications, liveBusinesses)
+      ),
       dataService.subscribeOfferings((liveOfferings) => {
-        if (liveOfferings.length > 0) {
-          setProviderListings((prev) => {
-            const demoOnes = prev.filter((item) => item.dataOrigin === 'demo');
-            const liveIds = new Set(liveOfferings.map((item) => item.id));
-            return [...liveOfferings, ...demoOnes.filter((d) => !liveIds.has(d.id))];
-          });
-        }
+        setProviderListings((prev) => {
+          const demoOnes = prev.filter((item) => item.dataOrigin === 'demo');
+          if (liveOfferings.length === 0) {
+            return prev.some((item) => item.dataOrigin === 'live') ? demoOnes : prev;
+          }
+          const liveIds = new Set(liveOfferings.map((item) => item.id));
+          return [...liveOfferings, ...demoOnes.filter((d) => !liveIds.has(d.id))];
+        });
       }),
       dataService.subscribeChallengeProgress(currentUser.id, (progressMap) => {
-        if (Object.keys(progressMap).length > 0) {
-          setChallenges((prev) =>
-            prev.map((ch) =>
-              progressMap[ch.id]
-                ? {
-                    ...ch,
-                    progress: Math.min(ch.target, progressMap[ch.id].progress),
-                    dataOrigin: 'live',
-                  }
-                : ch
-            )
+        setChallenges((prev) =>
+          prev.map((ch) =>
+            progressMap[ch.id]
+              ? {
+                  ...ch,
+                  progress: Math.min(ch.target, progressMap[ch.id].progress),
+                  dataOrigin: 'live',
+                }
+              : ch.dataOrigin === 'live'
+              ? { ...ch, progress: 0, dataOrigin: 'demo' }
+              : ch
+          )
+        );
+      }),
+      dataService.subscribeUserPayments(currentUser.id, (livePayments) => {
+        setPayments((prev) => {
+          const otherLive = prev.filter(
+            (p) => p.dataOrigin === 'live' && p.userId !== currentUser.id
           );
-        }
-      })
+          if (livePayments.length > 0) {
+            const map = new Map<string, PaymentRecord>();
+            otherLive.forEach((p) => map.set(p.id, p));
+            livePayments.forEach((p) => map.set(p.id, p));
+            return Array.from(map.values());
+          }
+          return prev.some((p) => p.dataOrigin === 'live' && p.userId === currentUser.id)
+            ? otherLive
+            : prev;
+        });
+      }),
+      dataService.subscribeSavedCards(currentUser.id, (liveCards) =>
+        mergeOrClearLive(setSavedCards, liveCards)
+      ),
+      dataService.subscribeProviderPaymentSettings((liveSettings) =>
+        setProviderPaymentSettings((prev) => {
+          const demoOnes = prev.filter((item) => item.dataOrigin === 'demo');
+          if (liveSettings.length === 0) {
+            return prev.some((item) => item.dataOrigin === 'live') ? demoOnes : prev;
+          }
+          const liveIds = new Set(liveSettings.map((item) => item.id));
+          return [...liveSettings, ...demoOnes.filter((d) => !liveIds.has(d.id))];
+        })
+      )
     );
 
     if (currentUser.role === 'provider') {
       unsubscribers.push(
         dataService.subscribeProviderBookings(currentUser.id, (providerLive) => {
-          if (providerLive.length > 0) {
-            setBookings((prev) => {
-              const map = new Map(prev.map((b) => [b.id, b]));
-              providerLive.forEach((b) => map.set(b.id, b));
-              return Array.from(map.values());
-            });
-          }
+          setBookings((prev) => {
+            const liveIds = new Set(providerLive.map((b) => b.id));
+            const remaining = prev.filter(
+              (b) =>
+                b.dataOrigin === 'live' &&
+                !(b.providerId === currentUser.id && !liveIds.has(b.id))
+            );
+            const map = new Map(remaining.map((b) => [b.id, b]));
+            providerLive.forEach((b) => map.set(b.id, b));
+            return Array.from(map.values());
+          });
+        }),
+        dataService.subscribeProviderPayments(currentUser.id, (providerPays) => {
+          setPayments((prev) => {
+            const liveIds = new Set(providerPays.map((p) => p.id));
+            const remaining = prev.filter(
+              (p) =>
+                p.dataOrigin === 'live' &&
+                !(p.providerId === currentUser.id && !liveIds.has(p.id))
+            );
+            const map = new Map(remaining.map((p) => [p.id, p]));
+            providerPays.forEach((p) => map.set(p.id, p));
+            return Array.from(map.values());
+          });
         })
       );
     }
@@ -239,13 +328,13 @@ export default function App() {
           if (liveUsers.length > 0) setManagedUsers(liveUsers);
         }),
         dataService.subscribeAllBookingsAdmin((adminLiveBookings) => {
-          if (adminLiveBookings.length > 0) {
-            setBookings((prev) => {
-              const map = new Map(prev.map((b) => [b.id, b]));
-              adminLiveBookings.forEach((b) => map.set(b.id, b));
-              return Array.from(map.values());
-            });
-          }
+          mergeOrClearLive(setBookings, adminLiveBookings);
+        }),
+        dataService.subscribeAllPaymentsAdmin((adminLivePayments) => {
+          mergeOrClearLive(setPayments, adminLivePayments);
+        }),
+        dataService.subscribePaymentAuditLogs((liveAuditLogs) => {
+          mergeOrClearLive(setPaymentAuditLogs, liveAuditLogs);
         })
       );
     }
@@ -314,8 +403,27 @@ export default function App() {
     if (currentUser.authMode === 'firebase') {
       await authService.signOutFirebase();
     }
+    const freshSnapshot = dataService.getInitialSnapshot();
+    setBookings(freshSnapshot.bookings);
+    setTripActivities(freshSnapshot.tripActivities);
+    setAdvisories(freshSnapshot.advisories);
+    setCheckIns(freshSnapshot.checkIns);
+    setExpenses(freshSnapshot.expenses);
+    setCommunityPosts(freshSnapshot.communityPosts);
+    setChallenges(freshSnapshot.challenges);
+    setNotifications(freshSnapshot.notifications);
+    setProviderApplications(freshSnapshot.providerApplications);
+    setProviderListings(freshSnapshot.providerListings);
+    setManagedUsers(DEMO_USERS);
+    setTrustedContacts(freshSnapshot.trustedContacts);
+    setAnnouncements(freshSnapshot.announcements);
+    setPayments(freshSnapshot.payments);
+    setSavedCards(freshSnapshot.savedCards);
+    setProviderPaymentSettings(freshSnapshot.providerPaymentSettings);
+    setPaymentAuditLogs(freshSnapshot.paymentAuditLogs);
     setAdminPreviewRole(null);
     setCurrentUser({ ...DEMO_USERS[0], authMode: 'demo', emailVerified: true });
+    setActiveSection('dashboard');
     setView('login');
     window.scrollTo({ top: 0 });
   };
@@ -419,7 +527,12 @@ export default function App() {
 
     if (isFirebaseVerified && target && target.dataOrigin === 'live') {
       await dataService.updateBookingStatus(bookingId, status, meta);
-      if (linkedOffering && linkedOffering.dataOrigin === 'live' && (isConfirming || isCancellingConfirmed)) {
+      if (
+        linkedOffering &&
+        linkedOffering.dataOrigin === 'live' &&
+        (isConfirming || isCancellingConfirmed) &&
+        (linkedOffering.providerId === currentUser.id || currentUser.role === 'admin')
+      ) {
         const nextBooked = isConfirming
           ? Math.min(linkedOffering.capacity, linkedOffering.bookedSeats + unitsDelta)
           : Math.max(0, linkedOffering.bookedSeats - unitsDelta);
@@ -491,6 +604,491 @@ export default function App() {
     await handleUpdateBookingStatus(bookingId, 'Cancelled', {
       cancellationReason: reason || 'Cancelled by tourist',
     });
+  };
+
+  // --- Payment & Secure Checkout Handlers ---
+  const handleCompleteCheckout = async (
+    payload: CheckoutCompletionPayload
+  ): Promise<PaymentRecord> => {
+    const { draft } = payload;
+    const isSettled =
+      payload.paymentStatus === 'Paid' || payload.paymentStatus === 'Partially Paid';
+    const receiptNumber = isSettled
+      ? payload.receiptNumber || generateReceiptNumber()
+      : undefined;
+    const paidAtLabel = isSettled ? 'Just now' : undefined;
+    const paidAmountZar = isSettled ? payload.amountZar : 0;
+
+    // 1. Save tokenised card if tourist opted in (zero PAN/CVV stored)
+    let savedCardTokenId = payload.savedCardTokenId;
+    if (payload.cardToSave) {
+      if (isFirebaseVerified) {
+        savedCardTokenId = await dataService.saveTokenisedCard(currentUser.id, payload.cardToSave);
+      } else {
+        const localCardId = `card-${Date.now()}`;
+        savedCardTokenId = localCardId;
+        setSavedCards((prev) => [
+          {
+            ...payload.cardToSave!,
+            id: localCardId,
+            userId: currentUser.id,
+            createdAtLabel: 'Just now',
+            dataOrigin: 'demo',
+          },
+          ...prev,
+        ]);
+      }
+    }
+
+    // 2. Create or update Booking (never auto-confirmed)
+    let bookingId = draft.existingBookingId || '';
+    const initialBookingStatus =
+      payload.paymentMethod === 'Pay in Person'
+        ? ('Awaiting Provider Confirmation' as const)
+        : ('Pending Verification' as const);
+
+    if (bookingId) {
+      const existingBooking = bookings.find((b) => b.id === bookingId);
+      if (isFirebaseVerified && existingBooking?.dataOrigin === 'live') {
+        await dataService.updateBookingPaymentFields(bookingId, {
+          paymentStatus: payload.paymentStatus,
+          paymentMethod: payload.paymentMethod,
+          paidAmountZar,
+          balanceDueInPersonZar: payload.balanceDueInPersonZar,
+          paymentReference: payload.paymentReference,
+        });
+      } else {
+        setBookings((prev) =>
+          prev.map((b) =>
+            b.id === bookingId
+              ? {
+                  ...b,
+                  paymentStatus: payload.paymentStatus,
+                  paymentMethod: payload.paymentMethod,
+                  paidAmountZar,
+                  balanceDueInPersonZar: payload.balanceDueInPersonZar,
+                  paymentReference: payload.paymentReference,
+                }
+              : b
+          )
+        );
+      }
+    } else if (isFirebaseVerified) {
+      bookingId = await dataService.createBooking(currentUser.id, {
+        bookingReference: payload.bookingReference,
+        userId: currentUser.id,
+        providerId: draft.providerId,
+        offeringId: draft.offeringId,
+        offeringType: draft.offeringType,
+        title: draft.title,
+        providerName: draft.providerName,
+        category: draft.category,
+        zone: draft.zone,
+        date: draft.date,
+        timeSlot: draft.timeSlot,
+        durationUnit: draft.durationUnit,
+        durationValue: draft.durationValue,
+        endDate: draft.endDate,
+        endTime: draft.endTime,
+        unitPriceZar: draft.unitPriceZar,
+        pricingModel: draft.pricingModel,
+        guests: draft.guests,
+        priceZar: draft.totalZar,
+        paymentStatus: payload.paymentStatus,
+        paymentMethod: payload.paymentMethod,
+        paymentPolicy: payload.paymentPolicy,
+        depositAmountZar: payload.depositAmountZar,
+        paidAmountZar,
+        balanceDueInPersonZar: payload.balanceDueInPersonZar,
+        paymentReference: payload.paymentReference,
+        safetyVerified: draft.safetyVerified,
+        accessible: draft.accessible,
+        initialStatus: initialBookingStatus,
+      });
+    } else {
+      bookingId = `bk-${Date.now()}`;
+      const newBooking: BookingItem = {
+        id: bookingId,
+        bookingReference: payload.bookingReference,
+        userId: currentUser.id,
+        providerId: draft.providerId,
+        offeringId: draft.offeringId,
+        offeringType: draft.offeringType,
+        title: draft.title,
+        providerName: draft.providerName,
+        category: draft.category,
+        zone: draft.zone,
+        date: draft.date,
+        timeSlot: draft.timeSlot,
+        durationUnit: draft.durationUnit,
+        durationValue: draft.durationValue,
+        endDate: draft.endDate,
+        endTime: draft.endTime,
+        unitPriceZar: draft.unitPriceZar,
+        pricingModel: draft.pricingModel,
+        guests: draft.guests,
+        priceZar: draft.totalZar,
+        status: initialBookingStatus,
+        paymentStatus: payload.paymentStatus,
+        paymentMethod: payload.paymentMethod,
+        paymentPolicy: payload.paymentPolicy,
+        depositAmountZar: payload.depositAmountZar,
+        paidAmountZar,
+        balanceDueInPersonZar: payload.balanceDueInPersonZar,
+        paymentReference: payload.paymentReference,
+        safetyVerified: draft.safetyVerified,
+        accessible: draft.accessible,
+        dataOrigin: 'demo',
+      };
+      setBookings((prev) => [newBooking, ...prev]);
+    }
+
+    // 3. Create or update Payment record
+    let paymentId = draft.existingPaymentId || '';
+    const recordBase: Omit<PaymentRecord, 'id' | 'createdAtLabel' | 'updatedAtLabel' | 'dataOrigin'> = {
+      bookingId,
+      bookingReference: payload.bookingReference,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      providerId: draft.providerId,
+      providerName: draft.providerName,
+      serviceTitle: draft.title,
+      amount: payload.amountZar,
+      bookingTotalZar: draft.totalZar,
+      depositAmount: payload.depositAmountZar,
+      balanceDueInPerson: payload.balanceDueInPersonZar,
+      currency: 'ZAR',
+      paymentMethod: payload.paymentMethod,
+      paymentStatus: payload.paymentStatus,
+      paymentReference: payload.paymentReference,
+      paymentProviderReference: payload.paymentProviderReference,
+      providerVerified: payload.providerVerified,
+      paymentMode: payload.paymentMode,
+      savedCardTokenId,
+      cardBrand: payload.cardBrand,
+      cardLastFour: payload.cardLastFour,
+      failureReason: payload.failureReason,
+      receiptNumber,
+      paidAtLabel,
+    };
+
+    if (isFirebaseVerified) {
+      if (paymentId && payments.some((p) => p.id === paymentId && p.dataOrigin === 'live')) {
+        await dataService.updatePaymentRecord(paymentId, {
+          paymentStatus: payload.paymentStatus,
+          paymentProviderReference: payload.paymentProviderReference,
+          providerVerified: payload.providerVerified,
+          receiptNumber,
+          paidAtLabel,
+          failureReason: payload.failureReason,
+        });
+      } else {
+        paymentId = await dataService.createPaymentRecord(currentUser.id, recordBase);
+      }
+      await dataService.updateBookingPaymentFields(bookingId, {
+        paymentStatus: payload.paymentStatus,
+        paymentMethod: payload.paymentMethod,
+        paidAmountZar,
+        balanceDueInPersonZar: payload.balanceDueInPersonZar,
+        paymentId,
+        paymentReference: payload.paymentReference,
+      });
+      await dataService.appendPaymentAuditLog(currentUser.id, {
+        paymentId,
+        bookingId,
+        actorRole: currentUser.role,
+        action:
+          payload.paymentMethod === 'Pay in Person'
+            ? 'PAY_IN_PERSON_RESERVED'
+            : `${payload.paymentMethod.toUpperCase()}_${payload.paymentStatus.replace(/\s+/g, '_').toUpperCase()}`,
+        newStatus: payload.paymentStatus,
+        amountZar: payload.amountZar,
+        notes: `${payload.paymentMethod} (${payload.paymentMode} mode) · Ref ${payload.paymentReference}`,
+      });
+      await dataService.createNotification(currentUser.id, {
+        title: `Booking ${payload.bookingReference}: ${payload.paymentStatus}`,
+        detail: `${draft.title} (${draft.date}) · Method: ${payload.paymentMethod}. Booking Status: ${initialBookingStatus}.`,
+        category: 'Booking',
+      });
+    } else {
+      if (!paymentId) {
+        paymentId = `pay-${Date.now()}`;
+      }
+      const createdRecord: PaymentRecord = {
+        ...recordBase,
+        id: paymentId,
+        createdAtLabel: 'Just now',
+        updatedAtLabel: 'Just now',
+        dataOrigin: 'demo',
+      };
+      setPayments((prev) => {
+        const exists = prev.some((p) => p.id === paymentId);
+        if (exists) {
+          return prev.map((p) => (p.id === paymentId ? createdRecord : p));
+        }
+        return [createdRecord, ...prev];
+      });
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, paymentId } : b))
+      );
+      setPaymentAuditLogs((prev) => [
+        {
+          id: `aud-${Date.now()}`,
+          paymentId,
+          bookingId,
+          actorId: currentUser.id,
+          actorRole: currentUser.role,
+          action:
+            payload.paymentMethod === 'Pay in Person'
+              ? 'PAY_IN_PERSON_RESERVED'
+              : `${payload.paymentMethod.toUpperCase()}_${payload.paymentStatus.replace(/\s+/g, '_').toUpperCase()}`,
+          newStatus: payload.paymentStatus,
+          amountZar: payload.amountZar,
+          notes: `${payload.paymentMethod} (${payload.paymentMode} mode) · Ref ${payload.paymentReference}`,
+          timestampLabel: 'Just now',
+          dataOrigin: 'demo',
+        },
+        ...prev,
+      ]);
+      setNotifications((prev) => [
+        {
+          id: `not-${Date.now()}`,
+          userId: currentUser.id,
+          title: `Booking ${payload.bookingReference}: ${payload.paymentStatus}`,
+          detail: `${draft.title} (${draft.date}) · Method: ${payload.paymentMethod}. Status: ${initialBookingStatus}.`,
+          category: 'Booking',
+          timestamp: 'Just now',
+          read: false,
+          dataOrigin: 'demo',
+        },
+        ...prev,
+      ]);
+    }
+
+    // 4. Sync settled online payment amount into Budget Tracker
+    if (isSettled && payload.amountZar > 0) {
+      const budgetCategory: BudgetExpense['category'] =
+        draft.offeringType === 'Accommodation'
+          ? 'Accommodation'
+          : draft.offeringType === 'Transport'
+          ? 'Transport'
+          : 'Tours & Passes';
+      const alreadyLogged = expenses.some((e) => e.bookingId === bookingId);
+      if (!alreadyLogged) {
+        await handleAddExpense({
+          date: draft.date,
+          description: `${draft.title} (${payload.paymentMethod})`,
+          category: budgetCategory,
+          amountZar: payload.amountZar,
+          paymentMethod: payload.paymentMethod,
+          bookingId,
+        });
+      }
+    }
+
+    return {
+      ...recordBase,
+      id: paymentId,
+      createdAtLabel: 'Just now',
+      updatedAtLabel: 'Just now',
+      dataOrigin: isFirebaseVerified ? 'live' : 'demo',
+    };
+  };
+
+  const handleRemoveSavedCard = async (cardId: string) => {
+    const target = savedCards.find((c) => c.id === cardId);
+    if (isFirebaseVerified && target?.dataOrigin === 'live') {
+      await dataService.deleteSavedCard(cardId);
+    } else {
+      setSavedCards((prev) => prev.filter((c) => c.id !== cardId));
+    }
+  };
+
+  const handleSaveProviderPaymentSettings = async (
+    settings: Omit<ProviderPaymentSettings, 'id' | 'providerId' | 'updatedAtLabel' | 'dataOrigin'>
+  ) => {
+    if (isFirebaseVerified) {
+      await dataService.upsertProviderPaymentSettings(currentUser.id, settings);
+    } else {
+      setProviderPaymentSettings((prev) => {
+        const idx = prev.findIndex((s) => s.providerId === currentUser.id);
+        const updated: ProviderPaymentSettings = {
+          ...settings,
+          id: currentUser.id,
+          providerId: currentUser.id,
+          updatedAtLabel: 'Just now',
+          dataOrigin: 'demo',
+        };
+        if (idx >= 0) {
+          return prev.map((s, i) => (i === idx ? updated : s));
+        }
+        return [updated, ...prev];
+      });
+    }
+  };
+
+  const handleMarkInPersonPaymentReceived = async (
+    paymentId: string,
+    bookingId: string,
+    methodUsed: InPersonPaymentMethod
+  ) => {
+    const targetPayment = payments.find((p) => p.id === paymentId);
+    if (!targetPayment) return;
+    const targetBooking = bookings.find((b) => b.id === bookingId);
+    const receiptNumber = targetPayment.receiptNumber || generateReceiptNumber();
+    const nowLabel = 'Just now';
+    const nextBookingStatus =
+      targetBooking && targetBooking.status === 'Completed' ? 'Completed' : 'Confirmed';
+
+    if (isFirebaseVerified && targetPayment.dataOrigin === 'live') {
+      await dataService.updatePaymentRecord(paymentId, {
+        paymentStatus: 'Paid',
+        balanceDueInPerson: 0,
+        inPersonMethodUsed: methodUsed,
+        inPersonConfirmedBy: currentUser.organization || currentUser.name,
+        inPersonConfirmedAt: nowLabel,
+        receiptNumber,
+        paidAtLabel: nowLabel,
+      });
+      if (targetBooking && targetBooking.dataOrigin === 'live') {
+        await dataService.updateBookingStatus(bookingId, nextBookingStatus, {
+          confirmedBy: targetBooking.confirmedBy || currentUser.organization || currentUser.name,
+          paymentStatus: 'Paid',
+          paidAmountZar: targetPayment.bookingTotalZar,
+          balanceDueInPersonZar: 0,
+        });
+      }
+      await dataService.appendPaymentAuditLog(currentUser.id, {
+        paymentId,
+        bookingId,
+        actorRole: currentUser.role,
+        action: 'IN_PERSON_PAYMENT_RECEIVED',
+        previousStatus: targetPayment.paymentStatus,
+        newStatus: 'Paid',
+        amountZar: targetPayment.bookingTotalZar,
+        notes: `Provider confirmed in-person settlement via ${methodUsed}. Receipt ${receiptNumber}.`,
+      });
+    } else {
+      setPayments((prev) =>
+        prev.map((p) =>
+          p.id === paymentId
+            ? {
+                ...p,
+                paymentStatus: 'Paid',
+                amount: p.bookingTotalZar,
+                balanceDueInPerson: 0,
+                inPersonMethodUsed: methodUsed,
+                inPersonConfirmedBy: currentUser.organization || currentUser.name,
+                inPersonConfirmedAt: nowLabel,
+                receiptNumber,
+                paidAtLabel: nowLabel,
+                updatedAtLabel: nowLabel,
+              }
+            : p
+        )
+      );
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === bookingId
+            ? {
+                ...b,
+                status: nextBookingStatus,
+                paymentStatus: 'Paid',
+                paidAmountZar: targetPayment.bookingTotalZar,
+                balanceDueInPersonZar: 0,
+              }
+            : b
+        )
+      );
+      setPaymentAuditLogs((prev) => [
+        {
+          id: `aud-${Date.now()}`,
+          paymentId,
+          bookingId,
+          actorId: currentUser.id,
+          actorRole: currentUser.role,
+          action: 'IN_PERSON_PAYMENT_RECEIVED',
+          previousStatus: targetPayment.paymentStatus,
+          newStatus: 'Paid',
+          amountZar: targetPayment.bookingTotalZar,
+          notes: `Provider confirmed in-person settlement via ${methodUsed}. Receipt ${receiptNumber}.`,
+          timestampLabel: nowLabel,
+          dataOrigin: 'demo',
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  const handleAdminRefundPayment = async (
+    paymentId: string,
+    refundAmountZar: number,
+    reason: string
+  ) => {
+    const targetPayment = payments.find((p) => p.id === paymentId);
+    if (!targetPayment) return;
+
+    const result = await paymentService.processRefund({
+      paymentReference: targetPayment.paymentReference,
+      amount: refundAmountZar,
+      originalAmount: targetPayment.amount,
+      paymentStatus: targetPayment.paymentStatus,
+      reason,
+    });
+
+    const totalRefunded = Math.min(
+      targetPayment.amount,
+      (targetPayment.refundedAmount || 0) + result.refundedAmount
+    );
+    const nextStatus: PaymentStatus =
+      totalRefunded >= targetPayment.amount ? 'Refunded' : 'Partially Refunded';
+
+    if (isFirebaseVerified && targetPayment.dataOrigin === 'live') {
+      await dataService.updatePaymentRecord(paymentId, {
+        paymentStatus: nextStatus,
+        refundedAmount: totalRefunded,
+      });
+      await dataService.appendPaymentAuditLog(currentUser.id, {
+        paymentId,
+        bookingId: targetPayment.bookingId,
+        actorRole: currentUser.role,
+        action: 'ADMIN_REFUND_ISSUED',
+        previousStatus: targetPayment.paymentStatus,
+        newStatus: nextStatus,
+        amountZar: result.refundedAmount,
+        notes: `${reason} (Ref ${result.refundReference})`,
+      });
+    } else {
+      setPayments((prev) =>
+        prev.map((p) =>
+          p.id === paymentId
+            ? {
+                ...p,
+                paymentStatus: nextStatus,
+                refundedAmount: totalRefunded,
+                updatedAtLabel: 'Just now',
+              }
+            : p
+        )
+      );
+      setPaymentAuditLogs((prev) => [
+        {
+          id: `aud-${Date.now()}`,
+          paymentId,
+          bookingId: targetPayment.bookingId,
+          actorId: currentUser.id,
+          actorRole: currentUser.role,
+          action: 'ADMIN_REFUND_ISSUED',
+          previousStatus: targetPayment.paymentStatus,
+          newStatus: nextStatus,
+          amountZar: result.refundedAmount,
+          notes: `${reason} (Ref ${result.refundReference})`,
+          timestampLabel: 'Just now',
+          dataOrigin: 'demo',
+        },
+        ...prev,
+      ]);
+    }
   };
 
   const handleToggleActivity = async (id: string) => {
@@ -1022,6 +1620,9 @@ export default function App() {
             managedUsers={managedUsers}
             advisories={advisories}
             announcements={announcements}
+            payments={payments}
+            paymentAuditLogs={paymentAuditLogs}
+            onIssueRefund={handleAdminRefundPayment}
             onUpdateApplicationStatus={handleUpdateApplicationStatus}
             onUpdateUserRole={handleUpdateUserRole}
             onUpdateIncident={handleUpdateIncident}
@@ -1037,6 +1638,13 @@ export default function App() {
             user={currentUser}
             listings={providerListings}
             bookings={bookings}
+            paymentSettings={
+              providerPaymentSettings.find((s) => s.providerId === currentUser.id) ||
+              providerPaymentSettings[0]
+            }
+            payments={payments}
+            onSavePaymentSettings={handleSaveProviderPaymentSettings}
+            onMarkInPersonPaid={handleMarkInPersonPaymentReceived}
             onToggleListingStatus={handleToggleListingStatus}
             onCompleteChecklist={handleCompleteChecklist}
             onCreateOffering={handleCreateOffering}
@@ -1071,6 +1679,10 @@ export default function App() {
             weather={weather}
             checkIns={checkIns}
             expenses={expenses}
+            payments={payments}
+            savedCards={savedCards}
+            providerPaymentSettings={providerPaymentSettings}
+            onRemoveSavedCard={handleRemoveSavedCard}
             onNavigate={setActiveSection}
           />
         );
@@ -1098,7 +1710,12 @@ export default function App() {
             user={currentUser}
             bookings={bookings}
             offerings={providerListings}
+            payments={payments}
+            savedCards={savedCards}
+            providerPaymentSettings={providerPaymentSettings}
             onCreateBooking={handleCreateBooking}
+            onCompleteCheckout={handleCompleteCheckout}
+            onRemoveSavedCard={handleRemoveSavedCard}
             onCancelBooking={handleCancelBooking}
             onNavigate={setActiveSection}
           />

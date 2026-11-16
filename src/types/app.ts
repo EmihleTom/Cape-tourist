@@ -68,8 +68,125 @@ export type DurationUnit = 'hours' | 'days' | 'nights' | 'sessions';
 export type OfferingType = 'Accommodation' | 'Transport' | 'Activity';
 export type PricingModel = 'per_guest' | 'per_unit';
 
+export type BookingStatus =
+  | 'Pending'
+  | 'Pending Verification'
+  | 'Awaiting Provider Confirmation'
+  | 'Confirmed'
+  | 'Rejected'
+  | 'Completed'
+  | 'Cancelled'
+  | 'Available';
+
+export type PaymentStatus =
+  | 'Unpaid'
+  | 'Payment Pending'
+  | 'Processing'
+  | 'Paid'
+  | 'Failed'
+  | 'Partially Paid'
+  | 'Refunded'
+  | 'Partially Refunded';
+
+export type PaymentMethodType = 'PayShap' | 'Card' | 'Pay in Person';
+
+export type InPersonPaymentMethod = 'Cash' | 'Card Machine' | 'EFT' | 'SnapScan' | 'Zapper';
+
+export type ProviderPaymentPolicy =
+  | 'reserve_pay_on_arrival'
+  | 'pay_full_online'
+  | 'deposit_online_balance_in_person'
+  | 'pay_in_person_before_service';
+
+export type PaymentDueTiming =
+  | 'On Arrival'
+  | 'Before Service Begins'
+  | 'Upon Check-in'
+  | 'Within 24 Hours Before Service';
+
+export interface PaymentRecord {
+  id: string;
+  bookingId: string;
+  bookingReference: string;
+  userId: string;
+  userName?: string;
+  providerId: string;
+  providerName: string;
+  serviceTitle: string;
+  amount: number;
+  bookingTotalZar: number;
+  depositAmount?: number;
+  balanceDueInPerson?: number;
+  refundedAmount?: number;
+  currency: 'ZAR';
+  paymentMethod: PaymentMethodType;
+  paymentStatus: PaymentStatus;
+  paymentReference: string;
+  paymentProviderReference?: string;
+  providerVerified?: boolean;
+  paymentMode?: 'live' | 'demo';
+  inPersonMethodUsed?: InPersonPaymentMethod;
+  inPersonConfirmedBy?: string;
+  inPersonConfirmedAt?: string;
+  savedCardTokenId?: string;
+  cardBrand?: string;
+  cardLastFour?: string;
+  failureReason?: string;
+  receiptNumber?: string;
+  paidAtLabel?: string;
+  createdAtLabel: string;
+  updatedAtLabel: string;
+  dataOrigin: DataOrigin;
+}
+
+export interface SavedPaymentMethod {
+  id: string;
+  userId: string;
+  providerToken: string;
+  cardBrand: 'Visa' | 'Mastercard' | 'Amex' | 'Other';
+  cardholderName: string;
+  lastFourDigits: string;
+  expiryMonth: string;
+  expiryYear: string;
+  paymentMode: 'live' | 'demo';
+  createdAtLabel: string;
+  dataOrigin: DataOrigin;
+}
+
+export interface ProviderPaymentSettings {
+  id: string;
+  providerId: string;
+  providerName: string;
+  payInPersonEnabled: boolean;
+  acceptedInPersonMethods: InPersonPaymentMethod[];
+  paymentInstructions: string;
+  paymentLocation: string;
+  paymentDueTiming: PaymentDueTiming;
+  advancePaymentRequired: boolean;
+  depositPercentage: number;
+  paymentPolicy: ProviderPaymentPolicy;
+  updatedAtLabel: string;
+  dataOrigin: DataOrigin;
+}
+
+export interface PaymentAuditLog {
+  id: string;
+  paymentId: string;
+  bookingId: string;
+  actorId: string;
+  actorRole: UserRole;
+  action: string;
+  previousStatus?: PaymentStatus;
+  newStatus: PaymentStatus;
+  amountZar: number;
+  notes: string;
+  timestampLabel: string;
+  dataOrigin: DataOrigin;
+}
+
 export interface BookingItem {
   id: string;
+  bookingReference?: string;
   userId?: string;
   providerId?: string;
   offeringId?: string;
@@ -88,7 +205,15 @@ export interface BookingItem {
   pricingModel?: PricingModel;
   guests: number;
   priceZar: number;
-  status: 'Confirmed' | 'Pending Verification' | 'Available' | 'Completed' | 'Cancelled';
+  status: BookingStatus;
+  paymentStatus?: PaymentStatus;
+  paymentMethod?: PaymentMethodType;
+  paymentPolicy?: ProviderPaymentPolicy;
+  depositAmountZar?: number;
+  paidAmountZar?: number;
+  balanceDueInPersonZar?: number;
+  paymentId?: string;
+  paymentReference?: string;
   confirmedBy?: string;
   cancellationReason?: string;
   safetyVerified: boolean;

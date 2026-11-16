@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   BellRing,
@@ -69,6 +69,10 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
   const [tcPhone, setTcPhone] = useState('');
   const [tcEmail, setTcEmail] = useState('');
   const [tcFeedback, setTcFeedback] = useState('');
+  const [checkInError, setCheckInError] = useState('');
+  const [startingCheckIn, setStartingCheckIn] = useState(false);
+  const [busySessionId, setBusySessionId] = useState<string | null>(null);
+  const triggeredReminderIdsRef = useRef<Set<string>>(new Set());
 
   // Live timer tick for active countdown & reminders
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -93,13 +97,19 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
   // Monitor active check-ins for reminder window
   useEffect(() => {
     checkIns.forEach((session) => {
-      if (session.status !== 'Active' || session.reminderSent || !session.expectedReturnIso) {
+      if (
+        session.status !== 'Active' ||
+        session.reminderSent ||
+        !session.expectedReturnIso ||
+        triggeredReminderIdsRef.current.has(session.id)
+      ) {
         return;
       }
       const dueMs = Date.parse(session.expectedReturnIso);
       if (Number.isNaN(dueMs)) return;
       const leadMs = (session.reminderMinutes ?? 30) * 60 * 1000;
       if (nowMs >= dueMs - leadMs) {
+        triggeredReminderIdsRef.current.add(session.id);
         setActiveReminderBanner(
           `Reminder: Check-in for "${session.route}" is due at ${session.expectedReturn}. Confirm Safe Return or extend by +30 min.`
         );
@@ -155,69 +165,91 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    const now = new Date();
-    let due: Date;
-    if (returnMode === 'duration') {
-      due = new Date(now.getTime() + Number(durationHours) * 60 * 60 * 1000);
-    } else {
-      const [hh, mm] = exactReturnTime.split(':').map((v) => Number(v));
-      due = new Date(now);
-      due.setHours(hh || 17, mm || 30, 0, 0);
-      if (due.getTime() <= now.getTime()) {
-        due.setDate(due.getDate() + 1);
+    setCheckInError('');
+    setStartingCheckIn(true);
+    try {
+      const now = new Date();
+      let due: Date;
+      if (returnMode === 'duration') {
+        due = new Date(now.getTime() + Number(durationHours) * 60 * 60 * 1000);
+      } else {
+        const [hh, mm] = exactReturnTime.split(':').map((v) => Number(v));
+        due = new Date(now);
+        due.setHours(hh || 17, mm || 30, 0, 0);
+        if (due.getTime() <= now.getTime()) {
+          due.setDate(due.getDate() + 1);
+        }
       }
+
+      const chosenContacts = trustedContacts.filter((c) => selectedContactIds.includes(c.id));
+      const contactsSummary = chosenContacts.map((c) => `${c.name} (${c.phone})`).join(', ');
+      const shareCoords = Boolean(locationConsent && trailheadCoords);
+
+      await onStartCheckIn({
+        touristName: user.name,
+        route,
+        startedAt: formatSastTime(now),
+        expectedReturn: formatSastTime(due),
+        expectedReturnIso: due.toISOString(),
+        reminderMinutes,
+        reminderSent: false,
+        status: 'Active',
+        emergencyContact: emergencyContact.trim() || chosenContacts[0]?.phone || '+27 82 555 0148',
+        ...(contactsSummary ? { trustedContactsSummary: contactsSummary.slice(0, 300) } : {}),
+        partySize,
+        locationConsent: shareCoords,
+        ...(shareCoords && trailheadCoords
+          ? { sharedLat: trailheadCoords.lat, sharedLng: trailheadCoords.lng }
+          : {}),
+      });
+    } catch (err) {
+      setCheckInError(err instanceof Error ? err.message : 'Unable to start check-in timer.');
+    } finally {
+      setStartingCheckIn(false);
     }
-
-    const chosenContacts = trustedContacts.filter((c) => selectedContactIds.includes(c.id));
-    const contactsSummary = chosenContacts.map((c) => `${c.name} (${c.phone})`).join(', ');
-    const shareCoords = Boolean(locationConsent && trailheadCoords);
-
-    await onStartCheckIn({
-      touristName: user.name,
-      route,
-      startedAt: formatSastTime(now),
-      expectedReturn: formatSastTime(due),
-      expectedReturnIso: due.toISOString(),
-      reminderMinutes,
-      reminderSent: false,
-      status: 'Active',
-      emergencyContact: emergencyContact.trim() || chosenContacts[0]?.phone || '+27 82 555 0148',
-      ...(contactsSummary ? { trustedContactsSummary: contactsSummary.slice(0, 300) } : {}),
-      partySize,
-      locationConsent: shareCoords,
-      ...(shareCoords && trailheadCoords
-        ? { sharedLat: trailheadCoords.lat, sharedLng: trailheadCoords.lng }
-        : {}),
-    });
   };
 
   const handleExtend = async (session: CheckInSession) => {
-    const baseMs =
-      session.expectedReturnIso && !Number.isNaN(Date.parse(session.expectedReturnIso))
-        ? Date.parse(session.expectedReturnIso)
-        : Date.now() + 30 * 60 * 1000;
-    const nextDue = new Date(baseMs + 30 * 60 * 1000);
-    await onExtendCheckIn(session.id, formatSastTime(nextDue), nextDue.toISOString());
+    setCheckInError('');
+    setBusySessionId(session.id);
+    try {
+      const baseMs =
+        session.expectedReturnIso && !Number.isNaN(Date.parse(session.expectedReturnIso))
+          ? Date.parse(session.expectedReturnIso)
+          : Date.now() + 30 * 60 * 1000;
+      const nextDue = new Date(baseMs + 30 * 60 * 1000);
+      triggeredReminderIdsRef.current.delete(session.id);
+      await onExtendCheckIn(session.id, formatSastTime(nextDue), nextDue.toISOString());
+    } catch (err) {
+      setCheckInError(err instanceof Error ? err.message : 'Unable to extend check-in window.');
+    } finally {
+      setBusySessionId(null);
+    }
   };
 
   const handleAddContact = async (e: React.FormEvent) => {
     e.preventDefault();
     setTcFeedback('');
+    setCheckInError('');
     if (tcName.trim().length < 2 || tcPhone.trim().length < 4) {
-      setTcFeedback('Enter contact name (min 2 chars) and phone number (min 4 chars).');
+      setCheckInError('Enter contact name (min 2 chars) and phone number (min 4 chars).');
       return;
     }
-    await onAddTrustedContact({
-      name: tcName.trim(),
-      relationship: tcRelationship.trim() || 'Trusted Contact',
-      phone: tcPhone.trim(),
-      ...(tcEmail.trim() ? { email: tcEmail.trim() } : {}),
-      notifyByDefault: true,
-    });
-    setTcName('');
-    setTcPhone('');
-    setTcEmail('');
-    setTcFeedback('Trusted contact saved.');
+    try {
+      await onAddTrustedContact({
+        name: tcName.trim(),
+        relationship: tcRelationship.trim() || 'Trusted Contact',
+        phone: tcPhone.trim(),
+        ...(tcEmail.trim() ? { email: tcEmail.trim() } : {}),
+        notifyByDefault: true,
+      });
+      setTcName('');
+      setTcPhone('');
+      setTcEmail('');
+      setTcFeedback('Trusted contact saved.');
+    } catch (err) {
+      setCheckInError(err instanceof Error ? err.message : 'Unable to save trusted contact.');
+    }
   };
 
   const toggleContactSelection = (id: string) => {
@@ -313,6 +345,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                 <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5 text-[11px] font-semibold">
                   <button
                     type="button"
+                    aria-pressed={returnMode === 'duration'}
                     onClick={() => setReturnMode('duration')}
                     className={`rounded px-2 py-0.5 ${
                       returnMode === 'duration' ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
@@ -322,6 +355,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                   </button>
                   <button
                     type="button"
+                    aria-pressed={returnMode === 'exact'}
                     onClick={() => setReturnMode('exact')}
                     className={`rounded px-2 py-0.5 ${
                       returnMode === 'exact' ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
@@ -469,12 +503,19 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
               {gpsStatus && <p className="font-mono text-[11px] text-slate-600">{gpsStatus}</p>}
             </div>
 
+            {checkInError && (
+              <p role="alert" className="text-xs font-medium text-red-700">
+                {checkInError}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0D9488] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E] transition-colors"
+              disabled={startingCheckIn}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0D9488] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
             >
               <Play className="h-4 w-4" aria-hidden="true" />
-              Activate Check-In Timer
+              {startingCheckIn ? 'Starting Timer...' : 'Activate Check-In Timer'}
             </button>
           </form>
         </section>
@@ -548,16 +589,30 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
+                          disabled={busySessionId === session.id}
                           onClick={() => handleExtend(session)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-[#0B1F3A] hover:bg-slate-50 whitespace-nowrap"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-[#0B1F3A] hover:bg-slate-50 disabled:opacity-60 whitespace-nowrap"
                         >
                           <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                           +30 min
                         </button>
                         <button
                           type="button"
-                          onClick={() => onCompleteCheckIn(session.id)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 whitespace-nowrap"
+                          disabled={busySessionId === session.id}
+                          onClick={async () => {
+                            setCheckInError('');
+                            setBusySessionId(session.id);
+                            try {
+                              await onCompleteCheckIn(session.id);
+                            } catch (err) {
+                              setCheckInError(
+                                err instanceof Error ? err.message : 'Unable to mark safe return.'
+                              );
+                            } finally {
+                              setBusySessionId(null);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 rounded-lg bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-800 disabled:opacity-60 whitespace-nowrap"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
                           Safe Return
@@ -599,7 +654,16 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onDeleteTrustedContact(tc.id)}
+                    onClick={async () => {
+                      setCheckInError('');
+                      try {
+                        await onDeleteTrustedContact(tc.id);
+                      } catch (err) {
+                        setCheckInError(
+                          err instanceof Error ? err.message : 'Unable to remove trusted contact.'
+                        );
+                      }
+                    }}
                     aria-label={`Remove ${tc.name}`}
                     className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50"
                   >
@@ -613,6 +677,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
             <form onSubmit={handleAddContact} className="grid gap-2.5 border-t border-slate-200 pt-4 sm:grid-cols-12">
               <input
                 type="text"
+                aria-label="Contact full name"
                 value={tcName}
                 onChange={(e) => setTcName(e.target.value)}
                 placeholder="Contact full name"
@@ -620,6 +685,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
               />
               <input
                 type="text"
+                aria-label="Relationship"
                 value={tcRelationship}
                 onChange={(e) => setTcRelationship(e.target.value)}
                 placeholder="Relationship"
@@ -627,6 +693,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
               />
               <input
                 type="text"
+                aria-label="Contact phone number"
                 value={tcPhone}
                 onChange={(e) => setTcPhone(e.target.value)}
                 placeholder="+27 82 ..."
@@ -640,7 +707,11 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                 Add Contact
               </button>
             </form>
-            {tcFeedback && <p className="text-xs font-medium text-[#15803D]">{tcFeedback}</p>}
+            {tcFeedback && (
+              <p role="status" className="text-xs font-medium text-[#15803D]">
+                {tcFeedback}
+              </p>
+            )}
           </section>
         </div>
       </div>
