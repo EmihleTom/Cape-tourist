@@ -63,7 +63,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
 
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+          <h1 className="font-display text-2xl font-bold text-[#111827]">
             Cape Town Transport Information
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -77,7 +77,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
           onClick={() => setAccessibleOnly((v) => !v)}
           className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
             accessibleOnly
-              ? 'border-[#0D9488] bg-[#F0FDFA] text-[#0D9488]'
+              ? 'border-[#1D4ED8] bg-[#EFF6FF] text-[#1D4ED8]'
               : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -96,9 +96,9 @@ export const TransportPage: React.FC<TransportPageProps> = ({
       {weather && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-xs">
           <div className="flex items-center gap-2.5">
-            <Wind className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+            <Wind className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
             <span>
-              <strong className="text-[#0B1F3A]">Corridor Wind Check:</strong> {weather.temperatureC}°C · Wind {weather.windSpeedKmh} km/h (Gusts {weather.windGustsKmh} km/h)
+              <strong className="text-[#111827]">Corridor Wind Check:</strong> {weather.temperatureC}°C · Wind {weather.windSpeedKmh} km/h (Gusts {weather.windGustsKmh} km/h)
             </span>
           </div>
           <StatusText
@@ -124,7 +124,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search route or corridor (e.g., Airport, Camps Bay)..."
-            className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-3 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 py-2 pl-8 pr-3 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
           />
         </div>
 
@@ -145,8 +145,8 @@ export const TransportPage: React.FC<TransportPageProps> = ({
               onClick={() => setServiceFilter(svc)}
               className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                 serviceFilter === svc
-                  ? 'bg-[#0B1F3A] text-white'
-                  : 'bg-slate-100 text-slate-600 hover:text-[#0B1F3A]'
+                  ? 'bg-[#111827] text-white'
+                  : 'bg-slate-100 text-slate-600 hover:text-[#111827]'
               }`}
             >
               {svc === 'All' ? 'All Services' : svc}
@@ -174,13 +174,13 @@ export const TransportPage: React.FC<TransportPageProps> = ({
               {visible.map((route) => (
                 <tr key={route.id} className="hover:bg-slate-50/70">
                   <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-2 font-semibold text-[#0B1F3A] whitespace-nowrap">
-                      <Bus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-2 font-semibold text-[#111827] whitespace-nowrap">
+                      <Bus className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
                       {route.service}
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <p className="font-semibold text-[#0B1F3A]">{route.routeName}</p>
+                    <p className="font-semibold text-[#111827]">{route.routeName}</p>
                     <p className="text-xs text-slate-500">{route.corridor}</p>
                   </td>
                   <td className="px-5 py-3.5 font-mono text-xs tabular-nums text-slate-700">
@@ -204,7 +204,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
                         type="button"
                         disabled={addingId === route.id}
                         onClick={() => void handleAddToTrip(route)}
-                        className="inline-flex items-center gap-1 rounded-md border border-[#0D9488] bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E] hover:bg-teal-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                        className="inline-flex items-center gap-1 rounded-md border border-[#1D4ED8] bg-[#EFF6FF] px-2.5 py-1 text-xs font-semibold text-[#1E40AF] hover:bg-blue-100 disabled:opacity-50 transition-colors whitespace-nowrap"
                       >
                         <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
                         {addingId === route.id
@@ -227,7 +227,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
         <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Bookable Accredited Transport &amp; Shuttles
               </h2>
               <p className="text-xs text-slate-500">
@@ -238,7 +238,7 @@ export const TransportPage: React.FC<TransportPageProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('bookings')}
-                className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors whitespace-nowrap"
+                className="rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
               >
                 Open Smart Bookings
               </button>
@@ -252,13 +252,13 @@ export const TransportPage: React.FC<TransportPageProps> = ({
                 className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-3.5 text-xs"
               >
                 <div>
-                  <p className="font-semibold text-[#0B1F3A]">{item.experienceTitle}</p>
+                  <p className="font-semibold text-[#111827]">{item.experienceTitle}</p>
                   <p className="text-slate-600">
                     {item.providerName} · {item.zone}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono font-bold text-[#0B1F3A] tabular-nums">
+                  <p className="font-mono font-bold text-[#111827] tabular-nums">
                     R {item.priceZar.toLocaleString('en-ZA')}
                   </p>
                   <p className="text-[11px] text-slate-500">

@@ -67,6 +67,17 @@ export default function App() {
 
   const [view, setView] = useState<AuthView>('landing');
   const [activeSection, setActiveSection] = useState<NavSectionId>('dashboard');
+  const [sectionHistory, setSectionHistory] = useState<NavSectionId[]>([]);
+  const [touristDashboardTab, setTouristDashboardTab] = useState<'overview' | 'payments'>('overview');
+  const [adminDashboardTab, setAdminDashboardTab] = useState<
+    'overview' | 'governance' | 'announcements' | 'payments'
+  >('overview');
+  const [providerDashboardTab, setProviderDashboardTab] = useState<
+    'bookings' | 'offerings' | 'payments' | 'accreditation'
+  >('bookings');
+  const [safetyDashboardTab, setSafetyDashboardTab] = useState<
+    'dispatch' | 'checkins' | 'broadcast'
+  >('dispatch');
   const [adminPreviewRole, setAdminPreviewRole] = useState<UserRole | null>(null);
   const [currentUser, setCurrentUser] = useState<DemoUser>({
     ...DEMO_USERS[0],
@@ -372,16 +383,70 @@ export default function App() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  const navigateToSection = (
+    section: NavSectionId,
+    options?: { dashboardTab?: string }
+  ) => {
+    if (section !== activeSection) {
+      setSectionHistory((prev) => [...prev.slice(-12), activeSection]);
+    }
+    if (options?.dashboardTab) {
+      const tab = options.dashboardTab;
+      if (tab === 'overview' || tab === 'payments') {
+        setTouristDashboardTab(tab);
+      }
+      if (tab === 'overview' || tab === 'governance' || tab === 'announcements' || tab === 'payments') {
+        setAdminDashboardTab(tab);
+      }
+      if (tab === 'bookings' || tab === 'offerings' || tab === 'payments' || tab === 'accreditation') {
+        setProviderDashboardTab(tab);
+      } else if (tab === 'overview') {
+        setProviderDashboardTab('bookings');
+      }
+      if (tab === 'dispatch' || tab === 'checkins' || tab === 'broadcast') {
+        setSafetyDashboardTab(tab);
+      } else if (tab === 'overview') {
+        setSafetyDashboardTab('dispatch');
+      }
+    }
+    setActiveSection(section);
+    window.scrollTo({ top: 0 });
+  };
+
+  const handleGoBack = () => {
+    setSectionHistory((prev) => {
+      if (prev.length === 0) {
+        setActiveSection('dashboard');
+        return prev;
+      }
+      const nextHistory = prev.slice(0, -1);
+      const previousSection = prev[prev.length - 1];
+      setActiveSection(previousSection);
+      window.scrollTo({ top: 0 });
+      return nextHistory;
+    });
+  };
+
   const handleEnterDemoRole = (role: UserRole, section: NavSectionId = 'dashboard') => {
     const matched = DEMO_USERS.find((u) => u.role === role) ?? DEMO_USERS[0];
     setAdminPreviewRole(null);
     setCurrentUser({ ...matched, authMode: 'demo', emailVerified: true });
+    setSectionHistory([]);
+    setTouristDashboardTab('overview');
+    setAdminDashboardTab('overview');
+    setProviderDashboardTab('bookings');
+    setSafetyDashboardTab('dispatch');
     setActiveSection(section);
     setView('app');
     window.scrollTo({ top: 0 });
   };
 
   const handleSwitchRole = (role: UserRole) => {
+    setSectionHistory([]);
+    setTouristDashboardTab('overview');
+    setAdminDashboardTab('overview');
+    setProviderDashboardTab('bookings');
+    setSafetyDashboardTab('dispatch');
     if (currentUser.authMode === 'firebase' && currentUser.role === 'admin') {
       setAdminPreviewRole(role);
       return;
@@ -394,6 +459,11 @@ export default function App() {
   const handleAuthenticated = (user: DemoUser) => {
     setAdminPreviewRole(null);
     setCurrentUser(user);
+    setSectionHistory([]);
+    setTouristDashboardTab('overview');
+    setAdminDashboardTab('overview');
+    setProviderDashboardTab('bookings');
+    setSafetyDashboardTab('dispatch');
     setActiveSection('dashboard');
     setView('app');
     window.scrollTo({ top: 0 });
@@ -423,6 +493,8 @@ export default function App() {
     setPaymentAuditLogs(freshSnapshot.paymentAuditLogs);
     setAdminPreviewRole(null);
     setCurrentUser({ ...DEMO_USERS[0], authMode: 'demo', emailVerified: true });
+    setSectionHistory([]);
+    setTouristDashboardTab('overview');
     setActiveSection('dashboard');
     setView('login');
     window.scrollTo({ top: 0 });
@@ -1622,6 +1694,12 @@ export default function App() {
             announcements={announcements}
             payments={payments}
             paymentAuditLogs={paymentAuditLogs}
+            bookings={bookings}
+            communityPosts={communityPosts}
+            weather={weather}
+            initialTab={adminDashboardTab}
+            onTabChange={setAdminDashboardTab}
+            onModeratePost={handleModeratePost}
             onIssueRefund={handleAdminRefundPayment}
             onUpdateApplicationStatus={handleUpdateApplicationStatus}
             onUpdateUserRole={handleUpdateUserRole}
@@ -1629,7 +1707,7 @@ export default function App() {
             onCreateAnnouncement={handleCreateAnnouncement}
             onUpdateAnnouncement={handleUpdateAnnouncement}
             onDeleteAnnouncement={handleDeleteAnnouncement}
-            onNavigate={setActiveSection}
+            onNavigate={navigateToSection}
           />
         );
       case 'provider':
@@ -1643,6 +1721,8 @@ export default function App() {
               providerPaymentSettings[0]
             }
             payments={payments}
+            initialTab={providerDashboardTab}
+            onTabChange={setProviderDashboardTab}
             onSavePaymentSettings={handleSaveProviderPaymentSettings}
             onMarkInPersonPaid={handleMarkInPersonPaymentReceived}
             onToggleListingStatus={handleToggleListingStatus}
@@ -1651,7 +1731,7 @@ export default function App() {
             onUpdateOffering={handleUpdateOffering}
             onUpdateBookingStatus={handleUpdateBookingStatus}
             onSubmitAccreditation={handleSubmitAccreditation}
-            onNavigate={setActiveSection}
+            onNavigate={navigateToSection}
           />
         );
       case 'safety':
@@ -1660,10 +1740,13 @@ export default function App() {
             user={currentUser}
             checkIns={checkIns}
             advisories={advisories}
+            weather={weather}
+            initialTab={safetyDashboardTab}
+            onTabChange={setSafetyDashboardTab}
             onResolveCheckIn={handleCompleteCheckIn}
             onPublishAdvisory={handlePublishAdvisory}
             onUpdateIncident={handleUpdateIncident}
-            onNavigate={setActiveSection}
+            onNavigate={navigateToSection}
           />
         );
       case 'tourist':
@@ -1682,8 +1765,10 @@ export default function App() {
             payments={payments}
             savedCards={savedCards}
             providerPaymentSettings={providerPaymentSettings}
+            initialTab={touristDashboardTab}
+            onTabChange={setTouristDashboardTab}
             onRemoveSavedCard={handleRemoveSavedCard}
-            onNavigate={setActiveSection}
+            onNavigate={navigateToSection}
           />
         );
     }
@@ -1906,10 +1991,9 @@ export default function App() {
           activePortalRole={activePortalRole}
           activeSection={activeSection}
           unreadNotifications={unreadCount}
-          onSelectSection={(section) => {
-            setActiveSection(section);
-            window.scrollTo({ top: 0 });
-          }}
+          canGoBack={sectionHistory.length > 0}
+          onGoBack={handleGoBack}
+          onSelectSection={navigateToSection}
           onSwitchRole={handleSwitchRole}
           onResendVerification={() => authService.resendVerificationEmail()}
           onRefreshVerification={async () => {

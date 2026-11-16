@@ -407,7 +407,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
   return (
     <section
       aria-label="Secure Checkout & Payment Selection"
-      className="space-y-5 rounded-xl border border-[#0D9488]/40 bg-white p-5 sm:p-6"
+      className="space-y-5 rounded-xl border border-[#1D4ED8]/40 bg-white p-5 sm:p-6"
     >
       {/* Top Bar */}
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -415,12 +415,12 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D9488] hover:text-[#0F766E]"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D4ED8] hover:text-[#1E40AF]"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
             Back to Reservation Details
           </button>
-          <h2 className="mt-1 font-display text-xl font-bold text-[#0B1F3A]">
+          <h2 className="mt-1 font-display text-xl font-bold text-[#111827]">
             Secure Checkout — {draft.title}
           </h2>
           <p className="text-xs text-slate-600">
@@ -429,11 +429,11 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
         </div>
 
         <div className="flex flex-col items-start sm:items-end gap-1">
-          <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#0B1F3A]">
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-[11px] font-semibold text-[#111827]">
             Ref: {bookingReference}
           </span>
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600">
-            <Lock className="h-3 w-3 text-[#0D9488]" aria-hidden="true" />
+            <Lock className="h-3 w-3 text-[#1D4ED8]" aria-hidden="true" />
             {gatewayConfig
               ? gatewayConfig.mode === 'live'
                 ? `Live PSP: ${gatewayConfig.providerName}`
@@ -446,8 +446,8 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
       {/* Mode & Policy Summary */}
       <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-12">
         <div className="md:col-span-7 space-y-1.5 text-xs">
-          <p className="font-semibold text-[#0B1F3A]">
-            Provider Payment Policy: <span className="text-[#0D9488]">{breakdown.policyLabel}</span>
+          <p className="font-semibold text-[#111827]">
+            Provider Payment Policy: <span className="text-[#1D4ED8]">{breakdown.policyLabel}</span>
           </p>
           <p className="text-slate-600">{breakdown.policyDescription}</p>
           <p className="text-[11px] text-slate-500">
@@ -459,7 +459,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           <p className="text-[11px] text-slate-500">
             {breakdown.isDepositOnly ? 'Online Deposit Due Now' : 'Booking Total (ZAR)'}
           </p>
-          <p className="font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+          <p className="font-display text-2xl font-bold text-[#111827] tabular-nums">
             R {(breakdown.isDepositOnly ? breakdown.onlinePayableZar : draft.totalZar).toLocaleString('en-ZA')}
           </p>
           {breakdown.isDepositOnly && (
@@ -492,23 +492,23 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           }}
           className={`flex flex-col justify-between rounded-xl border p-4 text-left transition-all ${
             selectedMethod === 'PayShap'
-              ? 'border-[#0D9488] bg-[#F0FDFA]/60 ring-1 ring-[#0D9488]'
+              ? 'border-[#1D4ED8] bg-[#EFF6FF]/60 ring-1 ring-[#1D4ED8]'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#0D9488]/10 text-[#0D9488]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#1D4ED8]/10 text-[#1D4ED8]">
                 <Smartphone className="h-4 w-4" aria-hidden="true" />
               </span>
-              <span className="font-mono text-[11px] font-semibold text-[#0D9488]">Option A</span>
+              <span className="font-mono text-[11px] font-semibold text-[#1D4ED8]">Option A</span>
             </div>
-            <h3 className="font-display text-base font-bold text-[#0B1F3A]">PayShap</h3>
+            <h3 className="font-display text-base font-bold text-[#111827]">PayShap</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               Instant South African EFT / ShapID payment via your banking app in ZAR with real-time reference tracking.
             </p>
           </div>
-          <p className="mt-3 pt-2 border-t border-slate-200 font-mono text-xs font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-3 pt-2 border-t border-slate-200 font-mono text-xs font-bold text-[#111827] tabular-nums">
             Pay R {breakdown.onlinePayableZar.toLocaleString('en-ZA')}
           </p>
         </button>
@@ -523,23 +523,23 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           }}
           className={`flex flex-col justify-between rounded-xl border p-4 text-left transition-all ${
             selectedMethod === 'Card'
-              ? 'border-[#0D9488] bg-[#F0FDFA]/60 ring-1 ring-[#0D9488]'
+              ? 'border-[#1D4ED8] bg-[#EFF6FF]/60 ring-1 ring-[#1D4ED8]'
               : 'border-slate-200 bg-white hover:border-slate-300'
           }`}
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#0B1F3A]/10 text-[#0B1F3A]">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-[#111827]/10 text-[#111827]">
                 <CreditCard className="h-4 w-4" aria-hidden="true" />
               </span>
-              <span className="font-mono text-[11px] font-semibold text-[#0B1F3A]">Option B</span>
+              <span className="font-mono text-[11px] font-semibold text-[#111827]">Option B</span>
             </div>
-            <h3 className="font-display text-base font-bold text-[#0B1F3A]">Credit or Debit Card</h3>
+            <h3 className="font-display text-base font-bold text-[#111827]">Credit or Debit Card</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               Visa, Mastercard &amp; supported networks with secure PSP tokenisation and optional saved-card checkout.
             </p>
           </div>
-          <p className="mt-3 pt-2 border-t border-slate-200 font-mono text-xs font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-3 pt-2 border-t border-slate-200 font-mono text-xs font-bold text-[#111827] tabular-nums">
             Pay R {breakdown.onlinePayableZar.toLocaleString('en-ZA')}
           </p>
         </button>
@@ -555,7 +555,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
             }}
             className={`flex flex-col justify-between rounded-xl border p-4 text-left transition-all ${
               selectedMethod === 'Pay in Person'
-                ? 'border-[#0D9488] bg-[#F0FDFA]/60 ring-1 ring-[#0D9488]'
+                ? 'border-[#1D4ED8] bg-[#EFF6FF]/60 ring-1 ring-[#1D4ED8]'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
@@ -566,7 +566,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 </span>
                 <span className="font-mono text-[11px] font-semibold text-[#15803D]">Option C</span>
               </div>
-              <h3 className="font-display text-base font-bold text-[#0B1F3A]">Pay in Person</h3>
+              <h3 className="font-display text-base font-bold text-[#111827]">Pay in Person</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Reserve without paying online now. Pay directly to {draft.providerName} on arrival or before service.
               </p>
@@ -637,12 +637,12 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
         <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-5 space-y-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h3 className="font-display text-base font-bold text-[#111827]">
                 PayShap Instant Payment (ZAR)
               </h3>
               <p className="text-xs text-slate-600">
                 Amount to pay:{' '}
-                <strong className="font-mono text-[#0B1F3A] tabular-nums">
+                <strong className="font-mono text-[#111827] tabular-nums">
                   R {breakdown.onlinePayableZar.toLocaleString('en-ZA')}
                 </strong>
               </p>
@@ -652,7 +652,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 type="button"
                 disabled={payshapBusy}
                 onClick={handleInitiatePayShap}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0D9488] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
               >
                 <Smartphone className="h-4 w-4" aria-hidden="true" />
                 {payshapBusy ? 'Generating PayShap Request...' : 'Initiate PayShap Payment'}
@@ -665,13 +665,13 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <p className="text-[11px] text-slate-500">Unique Payment Reference</p>
-                  <p className="font-mono text-sm font-bold text-[#0B1F3A]">
+                  <p className="font-mono text-sm font-bold text-[#111827]">
                     {payshapSession.paymentReference}
                   </p>
                 </div>
                 <div>
                   <p className="text-[11px] text-slate-500">PayShap Destination / ShapID</p>
-                  <p className="font-mono font-semibold text-[#0D9488]">
+                  <p className="font-mono font-semibold text-[#1D4ED8]">
                     {payshapSession.payshapInstructions?.shapId || 'capesafe@payshap.co.za'}
                   </p>
                 </div>
@@ -706,7 +706,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                       href={payshapSession.authorizationUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg bg-[#0B1F3A] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#102A43]"
+                      className="rounded-lg bg-[#111827] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E293B]"
                     >
                       Open PSP PayShap Authorization
                     </a>
@@ -715,7 +715,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                     type="button"
                     disabled={payshapBusy}
                     onClick={() => handleVerifyPayShap('Paid')}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
                   >
                     <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                     {payshapBusy ? 'Verifying...' : 'Check PayShap Confirmation'}
@@ -723,7 +723,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 </div>
               ) : (
                 <div className="space-y-2 border-t border-slate-200 pt-3">
-                  <p className="font-semibold text-[#0B1F3A]">
+                  <p className="font-semibold text-[#111827]">
                     Sandbox Outcome Controls (Demo Mode — Not Live Banking):
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -782,14 +782,14 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h3 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h3 className="font-display text-base font-bold text-[#111827]">
                 Credit or Debit Card Checkout
               </h3>
               <p className="text-slate-600">
                 Supported networks: <strong>Visa</strong> · <strong>Mastercard</strong> · <strong>Amex</strong>
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded bg-white px-2.5 py-1 border border-slate-200 font-medium text-[#0F766E]">
+            <span className="inline-flex items-center gap-1 rounded bg-white px-2.5 py-1 border border-slate-200 font-medium text-[#1E40AF]">
               <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
               PSP Tokenised (Zero PAN/CVV Storage)
             </span>
@@ -797,14 +797,14 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
 
           {savedCards.length > 0 && (
             <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3.5">
-              <p className="font-semibold text-[#0B1F3A]">Saved Tokenised Cards</p>
+              <p className="font-semibold text-[#111827]">Saved Tokenised Cards</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {savedCards.map((card) => (
                   <div
                     key={card.id}
                     className={`flex items-center justify-between rounded-lg border p-2.5 ${
                       selectedSavedCardId === card.id
-                        ? 'border-[#0D9488] bg-[#F0FDFA]'
+                        ? 'border-[#1D4ED8] bg-[#EFF6FF]'
                         : 'border-slate-200 bg-white'
                     }`}
                   >
@@ -814,10 +814,10 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                         name="saved-card-choice"
                         checked={selectedSavedCardId === card.id}
                         onChange={() => setSelectedSavedCardId(card.id)}
-                        className="text-[#0D9488]"
+                        className="text-[#1D4ED8]"
                       />
                       <div>
-                        <p className="font-semibold text-[#0B1F3A]">
+                        <p className="font-semibold text-[#111827]">
                           {card.cardBrand} •••• {card.lastFourDigits}
                         </p>
                         <p className="text-[11px] text-slate-500">
@@ -842,7 +842,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 <label
                   className={`flex items-center gap-2 rounded-lg border p-2.5 cursor-pointer ${
                     selectedSavedCardId === 'new'
-                      ? 'border-[#0D9488] bg-[#F0FDFA]'
+                      ? 'border-[#1D4ED8] bg-[#EFF6FF]'
                       : 'border-slate-200 bg-white'
                   }`}
                 >
@@ -851,9 +851,9 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                     name="saved-card-choice"
                     checked={selectedSavedCardId === 'new'}
                     onChange={() => setSelectedSavedCardId('new')}
-                    className="text-[#0D9488]"
+                    className="text-[#1D4ED8]"
                   />
-                  <span className="font-semibold text-[#0B1F3A]">Use a new Visa / Mastercard</span>
+                  <span className="font-semibold text-[#111827]">Use a new Visa / Mastercard</span>
                 </label>
               </div>
             </div>
@@ -872,7 +872,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                   value={cardholderName}
                   onChange={(e) => setCardholderName(e.target.value)}
                   placeholder="Name as printed on card"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-6">
@@ -888,7 +888,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
                   placeholder="4242 4242 4242 4242"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-4">
@@ -903,7 +903,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                   value={expiryMonth}
                   onChange={(e) => setExpiryMonth(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   placeholder="08"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-4">
@@ -918,7 +918,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                   value={expiryYear}
                   onChange={(e) => setExpiryYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder="2028"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-4">
@@ -935,7 +935,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                   value={cvv}
                   onChange={(e) => setCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   placeholder="•••"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
 
@@ -945,7 +945,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                     type="checkbox"
                     checked={saveCardForFuture}
                     onChange={(e) => setSaveCardForFuture(e.target.checked)}
-                    className="rounded border-slate-300 text-[#0D9488]"
+                    className="rounded border-slate-300 text-[#1D4ED8]"
                   />
                   <span>
                     Save card token securely for future CapeSafe bookings (stores token, card brand &amp; last 4 digits only)
@@ -957,7 +957,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
 
           {!isLivePsp && (
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-3.5 py-2.5">
-              <span className="font-semibold text-[#0B1F3A]">Demo Card Gateway Outcome:</span>
+              <span className="font-semibold text-[#111827]">Demo Card Gateway Outcome:</span>
               {(['Paid', 'Payment Pending', 'Failed'] as const).map((outcome) => (
                 <label key={outcome} className="inline-flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -965,7 +965,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                     name="demo-card-outcome"
                     checked={cardDemoOutcome === outcome}
                     onChange={() => setCardDemoOutcome(outcome)}
-                    className="text-[#0D9488]"
+                    className="text-[#1D4ED8]"
                   />
                   <span>
                     {outcome === 'Paid'
@@ -982,14 +982,14 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-200 pt-3">
             <p className="text-slate-600">
               Total charged now:{' '}
-              <strong className="font-mono text-sm text-[#0B1F3A] tabular-nums">
+              <strong className="font-mono text-sm text-[#111827] tabular-nums">
                 R {breakdown.onlinePayableZar.toLocaleString('en-ZA')} ZAR
               </strong>
             </p>
             <button
               type="submit"
               disabled={cardBusy}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0D9488] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
             >
               <Lock className="h-3.5 w-3.5" aria-hidden="true" />
               {cardBusy
@@ -1004,7 +1004,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
         <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-5 space-y-4 text-xs">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h3 className="font-display text-base font-bold text-[#111827]">
                 Pay Directly to {draft.providerName}
               </h3>
               <p className="mt-0.5 text-slate-600">
@@ -1019,7 +1019,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           <dl className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2">
             <div>
               <dt className="text-[11px] text-slate-500">Provider-Confirmed In-Person Methods</dt>
-              <dd className="mt-0.5 font-semibold text-[#0B1F3A]">
+              <dd className="mt-0.5 font-semibold text-[#111827]">
                 {effectiveSettings.acceptedInPersonMethods.length > 0
                   ? effectiveSettings.acceptedInPersonMethods.join(' · ')
                   : 'Confirmed on arrival by provider'}
@@ -1027,13 +1027,13 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
             </div>
             <div>
               <dt className="text-[11px] text-slate-500">When Payment Is Due</dt>
-              <dd className="mt-0.5 font-semibold text-[#0B1F3A]">
+              <dd className="mt-0.5 font-semibold text-[#111827]">
                 {effectiveSettings.paymentDueTiming}
               </dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="text-[11px] text-slate-500">Where Payment Must Be Made</dt>
-              <dd className="mt-0.5 font-semibold text-[#0B1F3A]">
+              <dd className="mt-0.5 font-semibold text-[#111827]">
                 {effectiveSettings.paymentLocation}
               </dd>
             </div>
@@ -1048,7 +1048,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-slate-200 pt-3">
             <p className="text-slate-600">
               Due in person to provider:{' '}
-              <strong className="font-mono text-sm text-[#0B1F3A] tabular-nums">
+              <strong className="font-mono text-sm text-[#111827] tabular-nums">
                 R {draft.totalZar.toLocaleString('en-ZA')} ZAR
               </strong>
             </p>
@@ -1056,7 +1056,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
               type="button"
               disabled={inPersonBusy}
               onClick={handleReservePayInPerson}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0B1F3A] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#102A43] disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#111827] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60"
             >
               <Banknote className="h-4 w-4" aria-hidden="true" />
               {inPersonBusy ? 'Submitting Reservation...' : 'Confirm Booking Request (Pay in Person)'}

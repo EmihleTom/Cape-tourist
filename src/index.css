@@ -5,15 +5,16 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-navy-950: #071529;
-  --color-navy-900: #0B1F3A;
-  --color-navy-800: #102A43;
-  --color-navy-700: #1E3A5F;
+  --color-obsidian-950: #090D16;
+  --color-obsidian-900: #111827;
+  --color-obsidian-800: #1E293B;
+  --color-obsidian-700: #334155;
 
-  --color-turquoise-600: #0D9488;
-  --color-turquoise-500: #14B8A6;
-  --color-turquoise-400: #2DD4BF;
-  --color-turquoise-50: #F0FDFA;
+  --color-cobalt-700: #1E40AF;
+  --color-cobalt-600: #1D4ED8;
+  --color-cobalt-500: #3B82F6;
+  --color-cobalt-400: #60A5FA;
+  --color-cobalt-50: #EFF6FF;
 
   --color-coastal-700: #15803D;
   --color-coastal-600: #16A34A;
@@ -24,10 +25,17 @@
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
+    background-color: #F8FAFC;
+    color: #111827;
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+  }
+
+  :focus-visible {
+    outline: 2px solid #1D4ED8;
+    outline-offset: 2px;
   }
 }
 

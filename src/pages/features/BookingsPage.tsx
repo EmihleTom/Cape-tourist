@@ -57,9 +57,9 @@ interface BookingsPageProps {
 }
 
 const OFFERING_ICONS: Record<OfferingType, React.ReactNode> = {
-  Accommodation: <BedDouble className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />,
-  Transport: <Bus className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />,
-  Activity: <Compass className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />,
+  Accommodation: <BedDouble className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />,
+  Transport: <Bus className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />,
+  Activity: <Compass className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />,
 };
 
 export const BookingsPage: React.FC<BookingsPageProps> = ({
@@ -260,7 +260,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       {/* Header + Category Switcher */}
       <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+          <h1 className="font-display text-2xl font-bold text-[#111827]">
             Smart Bookings &amp; Secure Checkout
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -277,8 +277,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               onClick={() => setTypeFilter(t)}
               className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                 typeFilter === t
-                  ? 'bg-[#0D9488] text-white'
-                  : 'text-slate-600 hover:text-[#0B1F3A]'
+                  ? 'bg-[#1D4ED8] text-white'
+                  : 'text-slate-600 hover:text-[#111827]'
               }`}
             >
               {t}
@@ -288,8 +288,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       </div>
 
       {/* Strict Confirmation Policy Notice */}
-      <div className="flex items-start gap-2.5 rounded-xl border border-[#0D9488]/30 bg-[#F0FDFA] px-4 py-3 text-xs text-[#0B1F3A]">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#0D9488]" aria-hidden="true" />
+      <div className="flex items-start gap-2.5 rounded-xl border border-[#1D4ED8]/30 bg-[#EFF6FF] px-4 py-3 text-xs text-[#111827]">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#1D4ED8]" aria-hidden="true" />
         <p>
           <strong>Provider Verification Rule:</strong> Online payments settle via verified SA gateway checks while Pay in Person reserves with <strong className="text-amber-800">Unpaid</strong> status. New bookings enter{' '}
           <strong className="text-amber-800">Pending Verification</strong> or{' '}
@@ -319,7 +319,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
           {/* Catalog */}
           <section className="space-y-3 lg:col-span-7">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Available Provider Offerings ({filteredOfferings.length})
               </h2>
               <span className="text-xs text-slate-500">Select an offering to calculate dates &amp; ZAR total</span>
@@ -336,14 +336,14 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     key={offering.id}
                     className={`rounded-xl border p-4 transition-colors ${
                       isSelected
-                        ? 'border-[#0D9488] bg-[#F0FDFA]/50'
+                        ? 'border-[#1D4ED8] bg-[#EFF6FF]/50'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                     }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="inline-flex items-center gap-1 font-semibold text-[#0D9488]">
+                          <span className="inline-flex items-center gap-1 font-semibold text-[#1D4ED8]">
                             {OFFERING_ICONS[offering.offeringType || 'Activity']}
                             {offering.offeringType || 'Activity'}
                           </span>
@@ -353,7 +353,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                             {offering.dataOrigin === 'live' ? 'Live' : 'Demo'}
                           </span>
                         </div>
-                        <h3 className="font-display text-base font-bold text-[#0B1F3A]">
+                        <h3 className="font-display text-base font-bold text-[#111827]">
                           {offering.experienceTitle}
                         </h3>
                         <p className="text-xs text-slate-600">
@@ -377,7 +377,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                             </span>
                           )}
                           {offering.accessible && (
-                            <span className="inline-flex items-center gap-1 font-medium text-[#0D9488]">
+                            <span className="inline-flex items-center gap-1 font-medium text-[#1D4ED8]">
                               <Accessibility className="h-3.5 w-3.5" aria-hidden="true" />
                               Step-Free
                             </span>
@@ -387,7 +387,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
 
                       <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-2 sm:flex-col sm:items-end sm:border-t-0 sm:pt-0">
                         <div className="text-left sm:text-right">
-                          <p className="font-mono text-base font-bold text-[#0B1F3A] tabular-nums">
+                          <p className="font-mono text-base font-bold text-[#111827] tabular-nums">
                             R {offering.priceZar.toLocaleString('en-ZA')}
                           </p>
                           <p className="text-[11px] text-slate-500">
@@ -400,8 +400,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                           onClick={() => handleSelectOffering(offering)}
                           className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                             isSelected
-                              ? 'bg-[#0B1F3A] text-white'
-                              : 'border border-slate-300 bg-white text-[#0B1F3A] hover:bg-slate-50'
+                              ? 'bg-[#111827] text-white'
+                              : 'border border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
                           }`}
                         >
                           {isSelected ? 'Selected' : 'Select Offering'}
@@ -417,7 +417,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
           {/* Smart Booking Calculator & Checkout Trigger */}
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5 h-fit space-y-4">
             <div className="border-b border-slate-200 pb-3">
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Smart Reservation Calculator
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
@@ -438,7 +438,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -450,7 +450,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -469,7 +469,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     onChange={(e) =>
                       setDurationValue(Math.max(1, Math.min(30, Number(e.target.value) || 1)))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -480,7 +480,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     id="bk-dur-unit"
                     value={durationUnit}
                     onChange={(e) => setDurationUnit(e.target.value as DurationUnit)}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   >
                     <option value="hours">Hours</option>
                     <option value="days">Days</option>
@@ -501,7 +501,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     onChange={(e) =>
                       setGuests(Math.max(1, Math.min(20, Number(e.target.value) || 1)))
                     }
-                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   />
                 </div>
               </div>
@@ -510,10 +510,10 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3.5 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 text-slate-600">
-                    <Clock className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />
+                    <Clock className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                     Calculated End
                   </span>
-                  <span className="font-mono font-semibold text-[#0B1F3A] tabular-nums">
+                  <span className="font-mono font-semibold text-[#111827] tabular-nums">
                     {calculatedEnd.endLabel}
                   </span>
                 </div>
@@ -532,13 +532,13 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
 
                 <div className="flex items-center justify-between border-t border-slate-200 pt-2">
                   <div>
-                    <p className="font-semibold text-[#0B1F3A]">Total Provider Quote</p>
+                    <p className="font-semibold text-[#111827]">Total Provider Quote</p>
                     <p className="text-[11px] text-slate-500 font-mono">
                       R {unitPriceZar.toLocaleString('en-ZA')} × {durationValue} {durationUnit}
                       {pricingModel === 'per_guest' ? ` × ${guests} guests` : ' (unit rate)'}
                     </p>
                   </div>
-                  <p className="font-display text-xl font-bold text-[#0B1F3A] tabular-nums">
+                  <p className="font-display text-xl font-bold text-[#111827] tabular-nums">
                     R {calculatedTotalZar.toLocaleString('en-ZA')}
                   </p>
                 </div>
@@ -547,7 +547,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               <button
                 type="submit"
                 disabled={!availability.available}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0D9488] py-2.5 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-50 transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50 transition-colors"
               >
                 <CreditCard className="h-4 w-4" aria-hidden="true" />
                 Proceed to Secure Payment (PayShap / Card / Pay in Person)
@@ -572,7 +572,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-lg font-bold text-[#111827]">
               My Reservations ({bookings.length})
             </h2>
             <p className="text-xs text-slate-500">
@@ -598,8 +598,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 onClick={() => setStatusFilter(tab)}
                 className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                   statusFilter === tab
-                    ? 'bg-[#0B1F3A] text-white'
-                    : 'text-slate-600 hover:text-[#0B1F3A]'
+                    ? 'bg-[#111827] text-white'
+                    : 'text-slate-600 hover:text-[#111827]'
                 }`}
               >
                 {tab}
@@ -644,11 +644,11 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       {booking.bookingReference && (
-                        <span className="font-mono font-semibold text-[#0B1F3A]">
+                        <span className="font-mono font-semibold text-[#111827]">
                           {booking.bookingReference}
                         </span>
                       )}
-                      <span className="font-semibold text-[#0D9488]">
+                      <span className="font-semibold text-[#1D4ED8]">
                         {booking.offeringType || booking.category}
                       </span>
                       <span aria-hidden="true">·</span>
@@ -658,7 +658,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                       {booking.endDate && (
                         <>
                           <span aria-hidden="true">→</span>
-                          <span className="font-mono tabular-nums text-[#0B1F3A] font-medium">
+                          <span className="font-mono tabular-nums text-[#111827] font-medium">
                             End: {booking.endDate} {booking.endTime || ''}
                           </span>
                         </>
@@ -673,7 +673,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                       </span>
                     </div>
 
-                    <h3 className="font-display text-base font-bold text-[#0B1F3A]">
+                    <h3 className="font-display text-base font-bold text-[#111827]">
                       {booking.title}
                     </h3>
                     <p className="text-xs text-slate-600">
@@ -704,7 +704,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
 
                   <div className="flex flex-col items-start gap-2 border-t border-slate-200 pt-3 sm:items-end sm:border-t-0 sm:pt-0">
                     <div className="flex flex-col items-start gap-1 sm:items-end">
-                      <p className="font-mono text-base font-bold tabular-nums text-[#0B1F3A]">
+                      <p className="font-mono text-base font-bold tabular-nums text-[#111827]">
                         R {booking.priceZar.toLocaleString('en-ZA')}
                       </p>
                       <StatusText
@@ -736,9 +736,9 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                         <button
                           type="button"
                           onClick={() => setActiveReceipt(matchedPayment)}
-                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50 transition-colors"
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors"
                         >
-                          <Receipt className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />
+                          <Receipt className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                           {paymentStatus === 'Paid' || paymentStatus === 'Partially Paid'
                             ? 'View Receipt'
                             : 'Payment Slip'}
@@ -749,7 +749,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                         <button
                           type="button"
                           onClick={() => handleOpenRetryCheckout(booking, matchedPayment)}
-                          className="inline-flex items-center gap-1 rounded-md bg-[#0D9488] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#0F766E] transition-colors"
+                          className="inline-flex items-center gap-1 rounded-md bg-[#1D4ED8] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors"
                         >
                           <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                           {paymentStatus === 'Unpaid' ? 'Pay Now' : 'Retry Payment'}
@@ -760,7 +760,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                         <button
                           type="button"
                           onClick={() => onNavigate('trips')}
-                          className="inline-flex items-center gap-1 rounded-md border border-[#0D9488] bg-[#F0FDFA] px-2.5 py-1 text-xs font-semibold text-[#0F766E] hover:bg-teal-100 transition-colors"
+                          className="inline-flex items-center gap-1 rounded-md border border-[#1D4ED8] bg-[#EFF6FF] px-2.5 py-1 text-xs font-semibold text-[#1E40AF] hover:bg-blue-100 transition-colors"
                         >
                           <CalendarCheck className="h-3.5 w-3.5" aria-hidden="true" />
                           Combine in My Trips

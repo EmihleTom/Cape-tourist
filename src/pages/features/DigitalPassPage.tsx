@@ -71,7 +71,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
           cells.push({
             x: col,
             y: row,
-            color: hash === 0 ? '#0D9488' : '#0B1F3A',
+            color: hash === 0 ? '#1D4ED8' : '#111827',
           });
         }
       }
@@ -130,13 +130,13 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
 
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Pass Card */}
-        <section className="rounded-xl border border-slate-200 bg-[#0B1F3A] p-6 text-white lg:col-span-6">
+        <section className="rounded-xl border border-slate-200 bg-[#111827] p-6 text-white lg:col-span-6">
           <div className="flex items-start justify-between border-b border-white/15 pb-4">
             <div>
-              <p className="text-xs font-semibold text-teal-300">CapeSafe Connect 360</p>
+              <p className="text-xs font-semibold text-blue-300">CapeSafe Connect 360</p>
               <h1 className="mt-1 font-display text-2xl font-bold">Digital Tourist Pass</h1>
             </div>
-            <span className="font-mono text-xs text-teal-300 tabular-nums">{passCode}</span>
+            <span className="font-mono text-xs text-blue-300 tabular-nums">{passCode}</span>
           </div>
 
           <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
@@ -150,12 +150,12 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
                 fill="none"
               >
                 <rect width="21" height="21" fill="#FFFFFF" />
-                <rect x="1" y="1" width="6" height="6" stroke="#0B1F3A" strokeWidth="1.5" />
-                <rect x="3" y="3" width="2" height="2" fill="#0B1F3A" />
-                <rect x="14" y="1" width="6" height="6" stroke="#0B1F3A" strokeWidth="1.5" />
-                <rect x="16" y="3" width="2" height="2" fill="#0B1F3A" />
-                <rect x="1" y="14" width="6" height="6" stroke="#0B1F3A" strokeWidth="1.5" />
-                <rect x="3" y="16" width="2" height="2" fill="#0B1F3A" />
+                <rect x="1" y="1" width="6" height="6" stroke="#111827" strokeWidth="1.5" />
+                <rect x="3" y="3" width="2" height="2" fill="#111827" />
+                <rect x="14" y="1" width="6" height="6" stroke="#111827" strokeWidth="1.5" />
+                <rect x="16" y="3" width="2" height="2" fill="#111827" />
+                <rect x="1" y="14" width="6" height="6" stroke="#111827" strokeWidth="1.5" />
+                <rect x="3" y="16" width="2" height="2" fill="#111827" />
                 {qrCells.map((c) => (
                   <rect
                     key={`${c.x}-${c.y}`}
@@ -180,7 +180,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
               </div>
               <div>
                 <p className="text-slate-400">Trail Safety Status</p>
-                <p className="font-mono text-teal-300">
+                <p className="font-mono text-blue-300">
                   {activeCheckIn
                     ? `Active Check-In: ${activeCheckIn.route}`
                     : 'No overdue safety timers'}
@@ -201,7 +201,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
 
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/15 pt-4">
             <span className="inline-flex items-center gap-1.5 text-xs text-slate-300">
-              <Wifi className="h-3.5 w-3.5 text-teal-300" aria-hidden="true" />
+              <Wifi className="h-3.5 w-3.5 text-blue-300" aria-hidden="true" />
               Offline PWA snapshot ready
             </span>
             <div className="flex flex-wrap gap-2">
@@ -219,14 +219,14 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
               <button
                 type="button"
                 onClick={handleSaveOfflineCopy}
-                className="rounded-lg bg-[#14B8A6] px-3.5 py-2 text-xs font-semibold text-[#071529] hover:bg-teal-300 transition-colors whitespace-nowrap"
+                className="rounded-lg bg-[#3B82F6] px-3.5 py-2 text-xs font-semibold text-[#090D16] hover:bg-blue-300 transition-colors whitespace-nowrap"
               >
                 Save / Refresh Offline Copy
               </button>
             </div>
           </div>
           {passFeedback && (
-            <p role="status" className="mt-3 text-xs font-medium text-teal-300">
+            <p role="status" className="mt-3 text-xs font-medium text-blue-300">
               {passFeedback}
             </p>
           )}
@@ -241,8 +241,8 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
         <section className="rounded-xl border border-slate-200 bg-white p-6 lg:col-span-6 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <QrCode className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-              <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+              <QrCode className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+              <h2 className="font-display text-lg font-bold text-[#111827]">
                 Verified Pass Entitlements ({confirmedBookings.length})
               </h2>
             </div>
@@ -268,7 +268,7 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
                       aria-hidden="true"
                     />
                     <div>
-                      <p className="font-semibold text-[#0B1F3A]">{bk.title}</p>
+                      <p className="font-semibold text-[#111827]">{bk.title}</p>
                       <p className="text-xs text-slate-500">
                         {bk.offeringType || bk.category} · {bk.providerName}
                         {bk.bookingReference ? ` · ${bk.bookingReference}` : ''}
@@ -315,9 +315,9 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
 
           {user.emergencyContact && (
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-700">
-              <ShieldAlert className="h-4 w-4 text-[#0D9488] shrink-0" aria-hidden="true" />
+              <ShieldAlert className="h-4 w-4 text-[#1D4ED8] shrink-0" aria-hidden="true" />
               <span>
-                Pass Emergency Contact: <strong className="text-[#0B1F3A]">{user.emergencyContact}</strong>
+                Pass Emergency Contact: <strong className="text-[#111827]">{user.emergencyContact}</strong>
               </span>
             </div>
           )}

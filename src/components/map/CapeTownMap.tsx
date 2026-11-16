@@ -203,9 +203,9 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
       return { background: '#15803D', borderColor: '#14532D', glyphColor: '#FFFFFF' };
     }
     if (kind === 'business') {
-      return { background: '#0B1F3A', borderColor: '#071529', glyphColor: '#5EEAD4' };
+      return { background: '#111827', borderColor: '#090D16', glyphColor: '#93C5FD' };
     }
-    return { background: '#0D9488', borderColor: '#0F766E', glyphColor: '#FFFFFF' };
+    return { background: '#1D4ED8', borderColor: '#1E40AF', glyphColor: '#FFFFFF' };
   };
 
   return (
@@ -213,8 +213,8 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
       {/* Layer Toggle Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Layers className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-          <span className="text-xs font-bold text-[#0B1F3A]">
+          <Layers className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+          <span className="text-xs font-bold text-[#111827]">
             Interactive Cape Peninsula Map
           </span>
           <span className="font-mono text-[11px] text-slate-500 tabular-nums">
@@ -229,7 +229,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
               onClick={() => setShowAttractions((prev) => !prev)}
               className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
                 showAttractions
-                  ? 'border-[#0D9488] bg-[#F0FDFA] text-[#0F766E]'
+                  ? 'border-[#1D4ED8] bg-[#EFF6FF] text-[#1E40AF]'
                   : 'border-slate-300 bg-white text-slate-600'
               }`}
             >
@@ -243,7 +243,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
               onClick={() => setShowBusinesses((prev) => !prev)}
               className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
                 showBusinesses
-                  ? 'border-[#0B1F3A] bg-[#0B1F3A] text-white'
+                  ? 'border-[#111827] bg-[#111827] text-white'
                   : 'border-slate-300 bg-white text-slate-600'
               }`}
             >
@@ -316,10 +316,10 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
                   onCloseClick={() => setActiveMarkerId(null)}
                 >
                   <div className="max-w-[230px] p-1 text-slate-800">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-[#1D4ED8]">
                       {activeMarker.kind} · {activeMarker.badge}
                     </p>
-                    <p className="mt-0.5 text-sm font-bold text-[#0B1F3A]">
+                    <p className="mt-0.5 text-sm font-bold text-[#111827]">
                       {activeMarker.title}
                     </p>
                     <p className="text-[11px] text-slate-500">{activeMarker.subtitle}</p>
@@ -359,18 +359,18 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
                   onClick={() => handleMarkerClick(marker)}
                   className={`rounded-lg border p-3 text-left transition-colors ${
                     isSelected
-                      ? 'border-[#0D9488] bg-[#F0FDFA]'
+                      ? 'border-[#1D4ED8] bg-[#EFF6FF]'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="font-semibold uppercase text-[#0D9488]">{marker.kind}</span>
+                    <span className="font-semibold uppercase text-[#1D4ED8]">{marker.kind}</span>
                     <span className="font-mono text-slate-500 tabular-nums">
                       {marker.lat.toFixed(3)}, {marker.lng.toFixed(3)}
                     </span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[#0B1F3A]">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-[#0D9488]" aria-hidden="true" />
+                  <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[#111827]">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-[#1D4ED8]" aria-hidden="true" />
                     <span className="truncate">{marker.title}</span>
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-600 truncate">{marker.subtitle}</p>

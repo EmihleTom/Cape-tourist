@@ -117,12 +117,12 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-12">
       {/* Left Architectural Visual Panel */}
-      <div className="relative hidden flex-col justify-between bg-[#0B1F3A] p-10 text-white lg:col-span-5 lg:flex">
+      <div className="relative hidden flex-col justify-between bg-[#111827] p-10 text-white lg:col-span-5 lg:flex">
         <div>
           <button
             type="button"
             onClick={onBackLanding}
-            className="inline-flex items-center gap-2 text-xs font-medium text-teal-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-medium text-blue-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to overview
@@ -147,11 +147,11 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
           </div>
           <ul className="space-y-2 text-xs text-slate-300">
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#14B8A6] shrink-0" aria-hidden="true" />
+              <CheckCircle2 className="h-4 w-4 text-[#3B82F6] shrink-0" aria-hidden="true" />
               <span>Firebase Authentication with Google Sign-In, email verification &amp; password reset</span>
             </li>
             <li className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#14B8A6] shrink-0" aria-hidden="true" />
+              <CheckCircle2 className="h-4 w-4 text-[#3B82F6] shrink-0" aria-hidden="true" />
               <span>Role-isolated Firestore records and private emergency contact storage</span>
             </li>
           </ul>
@@ -166,7 +166,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
             <button
               type="button"
               onClick={onBackLanding}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0D9488]"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1D4ED8]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               Overview
@@ -178,7 +178,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
           <div className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8">
             <div className="flex items-center justify-between border-b border-slate-200 pb-4">
               <div>
-                <h2 className="font-display text-2xl font-bold text-[#0B1F3A]">
+                <h2 className="font-display text-2xl font-bold text-[#111827]">
                   {showResetForm
                     ? 'Reset your password'
                     : mode === 'login'
@@ -203,7 +203,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                     onSwitchMode('login');
                   }}
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    mode === 'login' && !showResetForm ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
+                    mode === 'login' && !showResetForm ? 'bg-[#111827] text-white' : 'text-slate-600'
                   }`}
                 >
                   Login
@@ -217,7 +217,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                     onSwitchMode('register');
                   }}
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                    mode === 'register' && !showResetForm ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
+                    mode === 'register' && !showResetForm ? 'bg-[#111827] text-white' : 'text-slate-600'
                   }`}
                 >
                   Register
@@ -239,7 +239,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                      className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -260,7 +260,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 rounded-lg bg-[#0D9488] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
+                    className="flex-1 rounded-lg bg-[#1D4ED8] py-2.5 text-sm font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
                   >
                     {submitting ? 'Sending Reset Link...' : 'Send Password Reset Email'}
                   </button>
@@ -292,7 +292,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           placeholder="Maya van der Merwe"
-                          className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                          className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                         />
                       </div>
                     </div>
@@ -310,7 +310,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                        className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -329,7 +329,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                             setResetSuccess('');
                             setShowResetForm(true);
                           }}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[#0D9488] hover:text-[#0F766E]"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-[#1D4ED8] hover:text-[#1E40AF]"
                         >
                           <KeyRound className="h-3 w-3" aria-hidden="true" />
                           Forgot password?
@@ -344,7 +344,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Minimum 6 characters"
-                        className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                        className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -358,7 +358,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                         id="auth-role"
                         value={role}
                         onChange={(e) => setRole(e.target.value as UserRole)}
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                       >
                         <option value="tourist">Tourist</option>
                         <option value="provider">Tourism Service Provider (Admin Approval)</option>
@@ -382,7 +382,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                         value={organization}
                         onChange={(e) => setOrganization(e.target.value)}
                         placeholder="Peninsula Eco Charters"
-                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                        className="mt-1.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                       />
                     </div>
                   )}
@@ -393,7 +393,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                         type="checkbox"
                         checked={accessibilityPriority}
                         onChange={(e) => setAccessibilityPriority(e.target.checked)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0D9488] focus:ring-[#0D9488]"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1D4ED8] focus:ring-[#1D4ED8]"
                       />
                       <span>Prioritize step-free routes, sensory-friendly windows, and accessible transit suggestions</span>
                     </label>
@@ -408,7 +408,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full rounded-lg bg-[#0D9488] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
+                    className="w-full rounded-lg bg-[#1D4ED8] py-2.5 text-sm font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
                   >
                     {submitting
                       ? 'Authenticating...'
@@ -428,7 +428,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   type="button"
                   disabled={submitting}
                   onClick={handleGoogleSignIn}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-[#0B1F3A] hover:bg-slate-50 disabled:opacity-60 transition-colors"
+                  className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-[#111827] hover:bg-slate-50 disabled:opacity-60 transition-colors"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
                     <path
@@ -458,8 +458,8 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
           <div className="rounded-xl border border-slate-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-                <h3 className="font-display text-sm font-semibold text-[#0B1F3A]">
+                <Shield className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                <h3 className="font-display text-sm font-semibold text-[#111827]">
                   Offline Demonstration Role Preview
                 </h3>
               </div>
@@ -474,7 +474,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   key={r}
                   type="button"
                   onClick={() => handleDemoQuickLogin(r)}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] transition-colors whitespace-nowrap"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] transition-colors whitespace-nowrap"
                 >
                   {ROLE_LABELS[r].short}
                 </button>

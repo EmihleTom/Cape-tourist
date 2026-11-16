@@ -128,8 +128,8 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Accessibility className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-            <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+            <Accessibility className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+            <h1 className="font-display text-2xl font-bold text-[#111827]">
               Accessibility &amp; Inclusive Discovery
             </h1>
           </div>
@@ -143,7 +143,7 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
         </p>
 
         {notice && (
-          <p role="status" className="mt-3 rounded-lg border border-teal-200 bg-[#F0FDFA] px-3 py-2 text-xs font-medium text-[#0F766E]">
+          <p role="status" className="mt-3 rounded-lg border border-blue-200 bg-[#EFF6FF] px-3 py-2 text-xs font-medium text-[#1E40AF]">
             {notice}
           </p>
         )}
@@ -159,10 +159,10 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
               type="checkbox"
               checked={stepFreeDefault}
               onChange={(e) => void handleTogglePriority(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0D9488]"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1D4ED8]"
             />
             <span className="text-xs">
-              <strong className="block font-semibold text-[#0B1F3A]">Step-Free Route Priority</strong>
+              <strong className="block font-semibold text-[#111827]">Step-Free Route Priority</strong>
               <span className="text-slate-600">Rank boardwalks, level MyCiTi stops &amp; AI suggestions first</span>
             </span>
           </label>
@@ -172,10 +172,10 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
               type="checkbox"
               checked={largeTextMode}
               onChange={(e) => setLargeTextMode(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0D9488]"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1D4ED8]"
             />
             <span className="text-xs">
-              <strong className="block font-semibold text-[#0B1F3A]">Expanded Card Readability</strong>
+              <strong className="block font-semibold text-[#111827]">Expanded Card Readability</strong>
               <span className="text-slate-600">Increase route note sizing inside this view</span>
             </span>
           </label>
@@ -185,10 +185,10 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
               type="checkbox"
               checked={audioGuides}
               onChange={(e) => setAudioGuides(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#0D9488]"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1D4ED8]"
             />
             <span className="text-xs">
-              <strong className="block font-semibold text-[#0B1F3A]">Sensory &amp; Audio Notes</strong>
+              <strong className="block font-semibold text-[#111827]">Sensory &amp; Audio Notes</strong>
               <span className="text-slate-600">Highlight quiet hours &amp; tactile boardwalk cues</span>
             </span>
           </label>
@@ -203,7 +203,7 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search boardwalks, ramps, Kirstenbosch, Sea Point, or sensory hours..."
-              className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-xs focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-2 text-xs focus:border-[#1D4ED8] focus:outline-none"
             />
           </div>
           <select
@@ -225,14 +225,14 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
 
       {/* Verified Route Audits */}
       <section className="space-y-3">
-        <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+        <h2 className="font-display text-lg font-bold text-[#111827]">
           Verified Route &amp; Facility Audits ({filteredRoutes.length})
         </h2>
         <div className="grid gap-4">
           {filteredRoutes.map((route) => (
             <article key={route.id} className="rounded-xl border border-slate-200 bg-white p-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className={`font-display font-bold text-[#0B1F3A] ${largeTextMode ? 'text-xl' : 'text-base'}`}>
+                <h3 className={`font-display font-bold text-[#111827] ${largeTextMode ? 'text-xl' : 'text-base'}`}>
                   {route.site}
                 </h3>
                 <StatusText
@@ -270,8 +270,8 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-6 space-y-3">
           <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-            <Compass className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+            <Compass className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+            <h2 className="font-display text-base font-bold text-[#111827]">
               Accessible Cape Town Attractions ({accessibleAttractions.length})
             </h2>
           </div>
@@ -279,12 +279,12 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
             {accessibleAttractions.map((attr) => (
               <div key={attr.id} className="py-3 first:pt-1 last:pb-0 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-[#0B1F3A]">{attr.title}</p>
+                  <p className="text-sm font-semibold text-[#111827]">{attr.title}</p>
                   <button
                     type="button"
                     disabled={addingAttrId === attr.id}
                     onClick={() => void handleAddAccessibleStop(attr)}
-                    className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded border border-[#1D4ED8] px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-50"
                   >
                     <CalendarPlus className="h-3 w-3" aria-hidden="true" />
                     {addingAttrId === attr.id ? 'Adding...' : 'Add to Trip'}
@@ -302,15 +302,15 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
           <div>
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
-                <Bus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-                <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+                <Bus className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                <h2 className="font-display text-base font-bold text-[#111827]">
                   Level-Boarding Transit ({accessibleTransport.length})
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={() => onNavigate('transport')}
-                className="text-xs font-semibold text-[#0D9488] hover:underline"
+                className="text-xs font-semibold text-[#1D4ED8] hover:underline"
               >
                 Open Transport
               </button>
@@ -318,7 +318,7 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
             <div className="mt-2 divide-y divide-slate-200">
               {accessibleTransport.map((trn) => (
                 <div key={trn.id} className="py-2.5 text-xs">
-                  <p className="font-semibold text-[#0B1F3A]">{trn.routeName}</p>
+                  <p className="font-semibold text-[#111827]">{trn.routeName}</p>
                   <p className="text-slate-600">
                     {trn.service} · {trn.frequency} · {trn.fareZar}
                   </p>
@@ -329,13 +329,13 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
 
           <div className="border-t border-slate-200 pt-4">
             <div className="flex items-center justify-between pb-2">
-              <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+              <h3 className="font-display text-sm font-bold text-[#111827]">
                 Accessible Bookable Offerings ({accessibleOfferings.length})
               </h3>
               <button
                 type="button"
                 onClick={() => onNavigate('bookings')}
-                className="text-xs font-semibold text-[#0D9488] hover:underline"
+                className="text-xs font-semibold text-[#1D4ED8] hover:underline"
               >
                 Book in Smart Bookings
               </button>
@@ -347,12 +347,12 @@ export const AccessibilityPage: React.FC<AccessibilityPageProps> = ({
                   className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs"
                 >
                   <div>
-                    <p className="font-semibold text-[#0B1F3A]">{off.experienceTitle}</p>
+                    <p className="font-semibold text-[#111827]">{off.experienceTitle}</p>
                     <p className="text-[11px] text-slate-600">
                       {off.offeringType} · {off.zone}
                     </p>
                   </div>
-                  <span className="font-mono font-semibold text-[#0D9488]">
+                  <span className="font-mono font-semibold text-[#1D4ED8]">
                     R {off.priceZar}
                   </span>
                 </div>

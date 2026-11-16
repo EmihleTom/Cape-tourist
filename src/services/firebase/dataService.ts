@@ -5,6 +5,7 @@ import {
   deleteField,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -1488,6 +1489,18 @@ export const dataService = {
       },
       (error) => handleFirestoreError(error, OperationType.LIST, path)
     );
+  },
+
+  async fetchUserPayments(uid: string): Promise<PaymentRecord[]> {
+    const path = FIREBASE_COLLECTIONS.payments;
+    try {
+      const q = query(collection(db, path), where('userId', '==', uid));
+      const snap = await getDocs(q);
+      return snap.docs.map((d) => this.mapPaymentDoc(d.id, d.data()));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
   },
 
   subscribeProviderPayments(providerId: string, onData: (items: PaymentRecord[]) => void): Unsubscribe {

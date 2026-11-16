@@ -203,28 +203,28 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
       <DemoDataNotice scope="Pre-loaded precinct advisories are demo data; submitted incidents, weather, and official announcements reflect live feeds when active" />
 
       {/* Emergency Dispatch Reference */}
-      <section className="rounded-xl border border-slate-200 bg-[#0B1F3A] p-6 text-white">
+      <section className="rounded-xl border border-slate-200 bg-[#111827] p-6 text-white">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-semibold text-teal-300">24/7 Emergency &amp; Incident Desk</p>
+            <p className="text-xs font-semibold text-blue-300">24/7 Emergency &amp; Incident Desk</p>
             <h1 className="mt-1 font-display text-2xl font-bold">Cape Town Safety Centre</h1>
             <p className="mt-1 text-sm text-slate-300 max-w-2xl">
               Submit field incidents with optional photos and consented GPS, check live Cape Peninsula weather, and dial official emergency services directly for urgent rescues.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-white/15 bg-[#102A43] px-4 py-3">
+            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
               <p className="text-[11px] text-slate-300">City Emergency</p>
               <p className="mt-1 flex items-center gap-1.5 font-mono text-base font-bold tabular-nums text-white">
-                <PhoneCall className="h-4 w-4 text-[#14B8A6]" aria-hidden="true" />
+                <PhoneCall className="h-4 w-4 text-[#3B82F6]" aria-hidden="true" />
                 107 / 112
               </p>
             </div>
-            <div className="rounded-lg border border-white/15 bg-[#102A43] px-4 py-3">
+            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
               <p className="text-[11px] text-slate-300">Mountain Rescue</p>
               <p className="mt-1 font-mono text-base font-bold tabular-nums text-white">021 937 0300</p>
             </div>
-            <div className="rounded-lg border border-white/15 bg-[#102A43] px-4 py-3">
+            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
               <p className="text-[11px] text-slate-300">NSRI Sea Rescue</p>
               <p className="mt-1 font-mono text-base font-bold tabular-nums text-white">087 094 9774</p>
             </div>
@@ -237,8 +237,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <CloudSun className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <CloudSun className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Cape Town Conditions
               </h2>
             </div>
@@ -250,19 +250,19 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
           <div className="grid grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
             <div>
               <p className="text-[11px] text-slate-500">Temp</p>
-              <p className="font-display text-lg font-bold tabular-nums text-[#0B1F3A]">
+              <p className="font-display text-lg font-bold tabular-nums text-[#111827]">
                 {weather.temperatureC}°C
               </p>
             </div>
             <div>
               <p className="text-[11px] text-slate-500">Wind</p>
-              <p className="font-display text-lg font-bold tabular-nums text-[#0B1F3A]">
+              <p className="font-display text-lg font-bold tabular-nums text-[#111827]">
                 {weather.windSpeedKmh} <span className="text-xs font-normal">km/h</span>
               </p>
             </div>
             <div>
               <p className="text-[11px] text-slate-500">Gusts</p>
-              <p className="font-display text-lg font-bold tabular-nums text-[#0B1F3A]">
+              <p className="font-display text-lg font-bold tabular-nums text-[#111827]">
                 {weather.windGustsKmh} <span className="text-xs font-normal">km/h</span>
               </p>
             </div>
@@ -287,8 +287,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-8">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div className="flex items-center gap-2">
-              <Megaphone className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <Megaphone className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Destination Announcements
               </h2>
             </div>
@@ -302,9 +302,9 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
               <div key={ann.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#0B1F3A]">{ann.title}</span>
+                    <span className="text-xs font-bold text-[#111827]">{ann.title}</span>
                     {ann.pinned && (
-                      <span className="rounded bg-[#F0FDFA] px-1.5 py-0.5 text-[10px] font-semibold text-[#0F766E]">
+                      <span className="rounded bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#1E40AF]">
                         Pinned
                       </span>
                     )}
@@ -334,8 +334,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+            <ShieldAlert className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+            <h2 className="font-display text-base font-bold text-[#111827]">
               Report a Safety Incident
             </h2>
           </div>
@@ -353,7 +353,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                   id="inc-category"
                   value={category}
                   onChange={(e) => setCategory(e.target.value as IncidentCategory)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 >
                   {INCIDENT_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -371,7 +371,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                   id="inc-severity"
                   value={severity}
                   onChange={(e) => setSeverity(e.target.value as SafetyAdvisory['severity'])}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 >
                   <option value="Nominal">Nominal (FYI)</option>
                   <option value="Advisory">Advisory (Caution)</option>
@@ -388,7 +388,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 id="inc-zone"
                 value={zone}
                 onChange={(e) => setZone(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               >
                 {CAPE_TOWN_ZONES.map((z) => (
                   <option key={z} value={z}>
@@ -409,7 +409,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Loose rockfall near Contour Path junction"
                 maxLength={160}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               />
             </div>
 
@@ -424,15 +424,15 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 onChange={(e) => setSummary(e.target.value)}
                 placeholder="Describe what happened, landmark proximity, and whether path access is blocked..."
                 maxLength={800}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               />
             </div>
 
             {/* Optional Photo & Consented GPS */}
             <div className="space-y-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-[#0B1F3A] hover:bg-slate-100">
-                  <Camera className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-[#111827] hover:bg-slate-100">
+                  <Camera className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                   {photoFile ? photoFile.name : 'Optional Photo (Storage)'}
                   <input
                     type="file"
@@ -445,7 +445,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 <button
                   type="button"
                   onClick={handleCaptureGps}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-[#0D9488] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#0F766E] hover:bg-[#F0FDFA]"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#1D4ED8] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#1E40AF] hover:bg-[#EFF6FF]"
                 >
                   <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
                   Capture GPS
@@ -457,7 +457,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                   type="checkbox"
                   checked={locationConsent}
                   onChange={(e) => setLocationConsent(e.target.checked)}
-                  className="mt-0.5 rounded border-slate-300 text-[#0D9488] focus:ring-[#0D9488]"
+                  className="mt-0.5 rounded border-slate-300 text-[#1D4ED8] focus:ring-[#1D4ED8]"
                 />
                 <span>
                   I explicitly consent to share my captured GPS coordinates with CapeSafe Safety Management &amp; Administrators for this report (revocable anytime).
@@ -484,7 +484,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#0B1F3A] py-2.5 text-xs font-semibold text-white hover:bg-[#102A43] disabled:opacity-60 transition-colors"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#111827] py-2.5 text-xs font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60 transition-colors"
             >
               <Send className="h-3.5 w-3.5" aria-hidden="true" />
               {submitting ? 'Submitting Report...' : 'Submit Safety Incident'}
@@ -494,13 +494,13 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
 
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-base font-bold text-[#111827]">
               Safety Incident &amp; Corridor Map
             </h2>
             <button
               type="button"
               onClick={() => setShowMap((prev) => !prev)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50"
             >
               {showMap ? 'Hide Map' : 'Show Map'}
             </button>
@@ -521,8 +521,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
       {/* Filter & Advisories */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-          <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+          <ShieldAlert className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+          <h2 className="font-display text-lg font-bold text-[#111827]">
             Precinct Conditions &amp; Reported Incidents
           </h2>
         </div>
@@ -532,7 +532,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
             aria-label="Filter by incident category"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as 'All' | IncidentCategory)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] focus:border-[#0D9488] focus:outline-none"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
           >
             <option value="All">All Categories</option>
             {INCIDENT_CATEGORIES.map((cat) => (
@@ -551,8 +551,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 onClick={() => setSeverityFilter(level)}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                   severityFilter === level
-                    ? 'bg-[#0B1F3A] text-white'
-                    : 'text-slate-600 hover:text-[#0B1F3A]'
+                    ? 'bg-[#111827] text-white'
+                    : 'text-slate-600 hover:text-[#111827]'
                 }`}
               >
                 {level}
@@ -580,12 +580,12 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
             <article
               key={adv.id}
               className={`rounded-xl border bg-white p-5 space-y-2.5 transition-colors ${
-                selectedIncidentId === adv.id ? 'border-[#0D9488] ring-1 ring-[#0D9488]' : 'border-slate-200'
+                selectedIncidentId === adv.id ? 'border-[#1D4ED8] ring-1 ring-[#1D4ED8]' : 'border-slate-200'
               }`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  <span className="font-semibold text-[#0B1F3A]">{adv.category || 'Safety Advisory'}</span>
+                  <span className="font-semibold text-[#111827]">{adv.category || 'Safety Advisory'}</span>
                   <span aria-hidden="true">·</span>
                   <span>{adv.zone}</span>
                 </div>
@@ -608,17 +608,17 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                 </div>
               </div>
 
-              <h3 className="font-display text-base font-bold text-[#0B1F3A]">{adv.title}</h3>
+              <h3 className="font-display text-base font-bold text-[#111827]">{adv.title}</h3>
               <p className="text-sm text-slate-600 leading-relaxed">{adv.summary}</p>
 
               {adv.assignedOfficerName && (
-                <p className="text-xs font-medium text-[#0B1F3A]">
-                  Assigned Unit: <span className="text-[#0D9488]">{adv.assignedOfficerName}</span>
+                <p className="text-xs font-medium text-[#111827]">
+                  Assigned Unit: <span className="text-[#1D4ED8]">{adv.assignedOfficerName}</span>
                 </p>
               )}
               {adv.resolutionNotes && (
                 <p className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700">
-                  <strong className="text-[#0B1F3A]">Dispatch Note:</strong> {adv.resolutionNotes}
+                  <strong className="text-[#111827]">Dispatch Note:</strong> {adv.resolutionNotes}
                 </p>
               )}
 
@@ -628,7 +628,7 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                     href={adv.attachmentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-xs font-semibold text-[#0D9488] hover:underline"
+                    className="inline-block text-xs font-semibold text-[#1D4ED8] hover:underline"
                   >
                     View Field Photo Attachment
                   </a>
@@ -637,9 +637,9 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                   <button
                     type="button"
                     onClick={() => setSelectedIncidentId(adv.id)}
-                    className="inline-flex items-center gap-1 text-xs font-mono text-[#0B1F3A] hover:text-[#0D9488]"
+                    className="inline-flex items-center gap-1 text-xs font-mono text-[#111827] hover:text-[#1D4ED8]"
                   >
-                    <MapPin className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />
+                    <MapPin className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                     {adv.sharedLat?.toFixed(4)}, {adv.sharedLng?.toFixed(4)}
                   </button>
                 )}
@@ -669,21 +669,21 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
       {/* Cape Town Destination Info & Preparedness Guide */}
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-          <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+          <Info className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+          <h3 className="font-display text-sm font-bold text-[#111827]">
             Cape Town Destination Information &amp; Trail Readiness
           </h3>
         </div>
         <div className="grid gap-4 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
           {CAPE_TOWN_DESTINATION_INFO.map((item) => (
             <div key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
-              <p className="font-semibold text-[#0B1F3A]">{item.title}</p>
+              <p className="font-semibold text-[#111827]">{item.title}</p>
               <p className="mt-1 leading-relaxed">{item.detail}</p>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-2 border-t border-slate-200 pt-3 text-xs text-slate-600">
-          <Wind className="h-4 w-4 text-[#0D9488] shrink-0" aria-hidden="true" />
+          <Wind className="h-4 w-4 text-[#1D4ED8] shrink-0" aria-hidden="true" />
           <span>
             Aerial Cableway pauses when summit gusts exceed 50 km/h. Always swim between red-and-yellow flags and keep Tourist Check-In active on mountain trails.
           </span>

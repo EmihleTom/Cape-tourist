@@ -153,8 +153,8 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
       <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+            <Wallet className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+            <h2 className="font-display text-lg font-bold text-[#111827]">
               Payment Operations, Revenue Analytics &amp; Audit Ledger
             </h2>
           </div>
@@ -162,7 +162,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
             Monitor PayShap, tokenised card, and Pay in Person collections across Cape Town providers, issue policy refunds, and inspect the immutable payment audit log.
           </p>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-md border border-[#0D9488]/30 bg-[#F0FDFA] px-2.5 py-1 text-[11px] font-semibold text-[#0F766E]">
+        <span className="inline-flex items-center gap-1 rounded-md border border-[#1D4ED8]/30 bg-[#EFF6FF] px-2.5 py-1 text-[11px] font-semibold text-[#1E40AF]">
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
           PSP Verification Enforced
         </span>
@@ -170,7 +170,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
 
       {/* Security Rule Banner */}
       <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs text-slate-700">
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#0B1F3A]" aria-hidden="true" />
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#111827]" aria-hidden="true" />
         <p>
           <strong>Governance Control:</strong> Administrators may review transactions, verify references, and issue refunds. Online PayShap and Card payments cannot be manually marked as <strong>Paid</strong> without verified payment gateway confirmation.
         </p>
@@ -181,9 +181,9 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
           <div className="flex items-center justify-between text-[11px] text-slate-500">
             <span>Settled Volume</span>
-            <Wallet className="h-3.5 w-3.5 text-[#0D9488]" aria-hidden="true" />
+            <Wallet className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
           </div>
-          <p className="mt-1 font-display text-lg font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1 font-display text-lg font-bold text-[#111827] tabular-nums">
             R {totalVolumeZar.toLocaleString('en-ZA')}
           </p>
         </div>
@@ -219,7 +219,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
             <span>Refunded</span>
             <RotateCcw className="h-3.5 w-3.5 text-slate-600" aria-hidden="true" />
           </div>
-          <p className="mt-1 font-display text-lg font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1 font-display text-lg font-bold text-[#111827] tabular-nums">
             R {refundedZar.toLocaleString('en-ZA')}
           </p>
         </div>
@@ -237,7 +237,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
       {/* Revenue Analytics Bar Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-          <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+          <h3 className="font-display text-sm font-bold text-[#111827]">
             Settled Revenue by Payment Method
           </h3>
           <div className="space-y-2.5 text-xs">
@@ -245,13 +245,13 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
               <div key={row.method} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-slate-700">{row.method}</span>
-                  <span className="font-mono font-semibold text-[#0B1F3A] tabular-nums">
+                  <span className="font-mono font-semibold text-[#111827] tabular-nums">
                     R {row.totalZar.toLocaleString('en-ZA')}
                   </span>
                 </div>
                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
-                    className="h-full rounded-full bg-[#0D9488] transition-all"
+                    className="h-full rounded-full bg-[#1D4ED8] transition-all"
                     style={{ width: `${row.totalZar === 0 ? 0 : Math.max(4, row.pct)}%` }}
                   />
                 </div>
@@ -261,7 +261,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
         </div>
 
         <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-          <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+          <h3 className="font-display text-sm font-bold text-[#111827]">
             Top Providers by Settled Revenue (ZAR)
           </h3>
           <div className="space-y-2.5 text-xs">
@@ -272,13 +272,13 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
                 <div key={row.name} className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-slate-700 truncate">{row.name}</span>
-                    <span className="font-mono font-semibold text-[#0B1F3A] tabular-nums shrink-0">
+                    <span className="font-mono font-semibold text-[#111827] tabular-nums shrink-0">
                       R {row.totalZar.toLocaleString('en-ZA')}
                     </span>
                   </div>
                   <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className="h-full rounded-full bg-[#0B1F3A] transition-all"
+                      className="h-full rounded-full bg-[#111827] transition-all"
                       style={{ width: `${row.totalZar === 0 ? 0 : Math.max(4, row.pct)}%` }}
                     />
                   </div>
@@ -378,13 +378,13 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
           className="rounded-xl border border-amber-300 bg-amber-50 p-4 space-y-3 text-xs"
         >
           <div className="flex items-center justify-between">
-            <p className="font-bold text-[#0B1F3A]">
+            <p className="font-bold text-[#111827]">
               Issue Policy Refund — {refundTarget.paymentReference} ({refundTarget.serviceTitle})
             </p>
             <button
               type="button"
               onClick={() => setRefundTarget(null)}
-              className="text-slate-600 hover:text-[#0B1F3A] font-semibold"
+              className="text-slate-600 hover:text-[#111827] font-semibold"
             >
               Cancel
             </button>
@@ -420,7 +420,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
           <button
             type="submit"
             disabled={refundBusy}
-            className="rounded-lg bg-[#0B1F3A] px-4 py-1.5 font-semibold text-white hover:bg-[#102A43] disabled:opacity-60"
+            className="rounded-lg bg-[#111827] px-4 py-1.5 font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60"
           >
             {refundBusy ? 'Processing Refund...' : 'Confirm Refund'}
           </button>
@@ -449,11 +449,11 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
               return (
                 <tr key={pay.id} className="hover:bg-slate-50/70">
                   <td className="px-4 py-3">
-                    <p className="font-mono font-semibold text-[#0B1F3A]">{pay.bookingReference}</p>
+                    <p className="font-mono font-semibold text-[#111827]">{pay.bookingReference}</p>
                     <p className="font-mono text-[11px] text-slate-500">{pay.paymentReference}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-[#0B1F3A]">{pay.serviceTitle}</p>
+                    <p className="font-semibold text-[#111827]">{pay.serviceTitle}</p>
                     <p className="text-[11px] text-slate-500">
                       {pay.providerName} · {pay.userName || pay.userId}
                     </p>
@@ -466,7 +466,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-mono font-bold text-[#0B1F3A] tabular-nums">
+                  <td className="px-4 py-3 font-mono font-bold text-[#111827] tabular-nums">
                     R {pay.amount.toLocaleString('en-ZA')}
                     {pay.refundedAmount ? (
                       <p className="text-[10px] font-normal text-slate-500">
@@ -491,9 +491,9 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
                       <button
                         type="button"
                         onClick={() => setActiveReceipt(pay)}
-                        className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-[#0B1F3A] hover:bg-slate-50"
+                        className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-[#111827] hover:bg-slate-50"
                       >
-                        <Receipt className="h-3 w-3 text-[#0D9488]" aria-hidden="true" />
+                        <Receipt className="h-3 w-3 text-[#1D4ED8]" aria-hidden="true" />
                         Inspect
                       </button>
                       {canRefund && (
@@ -525,8 +525,8 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
       {/* Immutable Audit Ledger */}
       <div className="space-y-3 border-t border-slate-200 pt-4">
         <div className="flex items-center gap-2">
-          <History className="h-4 w-4 text-[#0B1F3A]" aria-hidden="true" />
-          <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+          <History className="h-4 w-4 text-[#111827]" aria-hidden="true" />
+          <h3 className="font-display text-sm font-bold text-[#111827]">
             Immutable Payment Audit Ledger ({auditLogs.length})
           </h3>
         </div>
@@ -534,7 +534,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
           {auditLogs.slice(0, 15).map((log) => (
             <div key={log.id} className="flex flex-col gap-1 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <span className="font-mono font-semibold text-[#0D9488]">{log.action}</span>
+                <span className="font-mono font-semibold text-[#1D4ED8]">{log.action}</span>
                 <span className="text-slate-600">
                   {' '}
                   · {log.actorRole} · {log.notes}

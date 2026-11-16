@@ -161,7 +161,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
       />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+        <h1 className="font-display text-2xl font-bold text-[#111827]">
           My Trips &amp; Daily Travel Itinerary
         </h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -174,9 +174,9 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Confirmed Stay</span>
-            <BedDouble className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+            <BedDouble className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
           </div>
-          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#111827] tabular-nums">
             {confirmedAccommodation.length}
           </p>
           <p className="text-[11px] text-slate-500">Accommodation bookings</p>
@@ -185,9 +185,9 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Confirmed Transport</span>
-            <Bus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+            <Bus className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
           </div>
-          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#111827] tabular-nums">
             {confirmedTransport.length}
           </p>
           <p className="text-[11px] text-slate-500">Shuttles &amp; transfers</p>
@@ -198,7 +198,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
             <span>Confirmed Activities</span>
             <Compass className="h-4 w-4 text-[#15803D]" aria-hidden="true" />
           </div>
-          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#111827] tabular-nums">
             {confirmedActivities.length}
           </p>
           <p className="text-[11px] text-slate-500">Tours &amp; excursions</p>
@@ -209,7 +209,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
             <span>Awaiting Provider</span>
             <CalendarCheck className="h-4 w-4 text-amber-700" aria-hidden="true" />
           </div>
-          <p className="mt-1.5 font-display text-2xl font-bold text-[#0B1F3A] tabular-nums">
+          <p className="mt-1.5 font-display text-2xl font-bold text-[#111827] tabular-nums">
             {pendingBookings.length}
           </p>
           <p className="text-[11px] text-slate-500">Awaiting provider confirmation (not locked)</p>
@@ -221,8 +221,8 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <Layers className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Combine Confirmed Bookings into One Itinerary
               </h2>
             </div>
@@ -237,7 +237,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
                 type="button"
                 disabled={combining}
                 onClick={handleCombineConfirmed}
-                className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap"
+                className="rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors whitespace-nowrap"
               >
                 {combining
                   ? 'Combining...'
@@ -248,7 +248,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigate('bookings')}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50 transition-colors whitespace-nowrap"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
               >
                 Manage Bookings
               </button>
@@ -280,14 +280,14 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-[#0D9488]">
+                    <span className="font-semibold text-[#1D4ED8]">
                       {bk.offeringType || 'Activity'}
                     </span>
                     <span className="font-mono text-[11px] text-slate-600 tabular-nums">
                       {bk.date} {bk.timeSlot}
                     </span>
                   </div>
-                  <p className="font-semibold text-[#0B1F3A]">{bk.title}</p>
+                  <p className="font-semibold text-[#111827]">{bk.title}</p>
                   <p className="text-[11px] text-slate-500">
                     {bk.providerName} · {bk.endDate ? `Ends ${bk.endDate}` : `${bk.guests} guests`}
                     {bk.bookingReference ? ` · ${bk.bookingReference}` : ''}
@@ -306,7 +306,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCombineSingleBooking(bk, day)}
-                  className="mt-3 w-full rounded-md border border-[#0D9488] bg-white py-1.5 text-xs font-semibold text-[#0F766E] hover:bg-[#F0FDFA] transition-colors"
+                  className="mt-3 w-full rounded-md border border-[#1D4ED8] bg-white py-1.5 text-xs font-semibold text-[#1E40AF] hover:bg-[#EFF6FF] transition-colors"
                 >
                   Add to Day {day}
                 </button>
@@ -320,7 +320,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
       <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-lg font-bold text-[#111827]">
               Daily Travel Itinerary
             </h2>
             <p className="mt-0.5 text-xs text-slate-600">
@@ -337,8 +337,8 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
                 onClick={() => setTypeFilter(t)}
                 className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                   typeFilter === t
-                    ? 'bg-[#0B1F3A] text-white'
-                    : 'text-slate-600 hover:text-[#0B1F3A]'
+                    ? 'bg-[#111827] text-white'
+                    : 'text-slate-600 hover:text-[#111827]'
                 }`}
               >
                 {t}
@@ -358,7 +358,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Add stop (e.g., Green Point Urban Park)"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             />
           </div>
           <div className="sm:col-span-2">
@@ -369,7 +369,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               id="trip-type"
               value={itemType}
               onChange={(e) => setItemType(e.target.value as OfferingType)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             >
               <option value="Activity">Activity</option>
               <option value="Accommodation">Accommodation</option>
@@ -386,7 +386,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               value={zone}
               onChange={(e) => setZone(e.target.value)}
               placeholder="Precinct"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             />
           </div>
           <div className="sm:col-span-2">
@@ -397,7 +397,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               id="trip-day"
               value={day}
               onChange={(e) => setDay(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             >
               {[1, 2, 3, 4, 5, 6, 7].map((d) => (
                 <option key={d} value={d}>
@@ -412,12 +412,12 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               value={time}
               onChange={(e) => setTime(e.target.value)}
               aria-label="Time"
-              className="w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+              className="w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             />
             <button
               type="submit"
               disabled={submittingStop}
-              className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#0D9488] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap"
+              className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors whitespace-nowrap"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {submittingStop ? 'Adding...' : 'Add'}
@@ -443,7 +443,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
           return (
             <section key={dayNum} className="rounded-xl border border-slate-200 bg-white">
               <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-3">
-                <h2 className="font-display text-sm font-bold text-[#0B1F3A]">{heading}</h2>
+                <h2 className="font-display text-sm font-bold text-[#111827]">{heading}</h2>
                 <span className="font-mono text-[11px] text-slate-500 tabular-nums">
                   {dayItems.length} stop(s)
                 </span>
@@ -475,10 +475,10 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
                       )}
                       <div>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span className="font-mono font-semibold tabular-nums text-[#0B1F3A]">
+                          <span className="font-mono font-semibold tabular-nums text-[#111827]">
                             {item.time}
                           </span>
-                          <span className="rounded bg-[#F0FDFA] px-1.5 py-0.5 text-[10px] font-semibold text-[#0F766E]">
+                          <span className="rounded bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#1E40AF]">
                             {item.itemType || 'Activity'}
                           </span>
                           <span>{item.zone}</span>
@@ -490,7 +490,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
                         </div>
                         <p
                           className={`mt-0.5 text-sm font-semibold ${
-                            item.completed ? 'line-through text-slate-400' : 'text-[#0B1F3A]'
+                            item.completed ? 'line-through text-slate-400' : 'text-[#111827]'
                           }`}
                         >
                           {item.title}

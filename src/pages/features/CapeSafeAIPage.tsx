@@ -364,8 +364,8 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-              <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+              <Bot className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+              <h1 className="font-display text-2xl font-bold text-[#111827]">
                 CapeSafe AI &amp; Cultural Companion
               </h1>
             </div>
@@ -382,7 +382,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               id="ai-pref-lang"
               value={language}
               onChange={(e) => void handleLanguageChange(e.target.value as PreferredLanguage)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] focus:border-[#0D9488] focus:outline-none"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
             >
               <option value="English">English</option>
               <option value="Afrikaans">Afrikaans</option>
@@ -395,8 +395,8 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4 sm:grid-cols-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[#0B1F3A]">
-                <CloudSun className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[#111827]">
+                <CloudSun className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
                 Wind &amp; Cableway Conditions
               </span>
               <StatusText
@@ -417,11 +417,11 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[#0B1F3A]">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[#111827]">
                 <ShieldAlert className="h-4 w-4 text-amber-700" aria-hidden="true" />
                 Active Corridor Advisories
               </span>
-              <span className="font-mono font-semibold text-[#0B1F3A]">
+              <span className="font-mono font-semibold text-[#111827]">
                 {conditionSynthesis.activeCount} open
               </span>
             </div>
@@ -432,14 +432,14 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
 
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 font-semibold text-[#0B1F3A]">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-[#111827]">
                 <Lock className="h-4 w-4 text-[#15803D]" aria-hidden="true" />
                 Privacy &amp; Context
               </span>
               <button
                 type="button"
                 onClick={() => onNavigate('settings')}
-                className="text-[11px] font-semibold text-[#0D9488] hover:underline"
+                className="text-[11px] font-semibold text-[#1D4ED8] hover:underline"
               >
                 Adjust
               </button>
@@ -495,7 +495,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
           onClick={() => setActiveTab('concierge')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'concierge'
-              ? 'bg-[#0B1F3A] text-white'
+              ? 'bg-[#111827] text-white'
               : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -508,7 +508,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
           onClick={() => setActiveTab('planner')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'planner'
-              ? 'bg-[#0B1F3A] text-white'
+              ? 'bg-[#111827] text-white'
               : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -521,7 +521,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
           onClick={() => setActiveTab('language')}
           className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
             activeTab === 'language'
-              ? 'bg-[#0B1F3A] text-white'
+              ? 'bg-[#111827] text-white'
               : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
           }`}
         >
@@ -534,7 +534,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
       {activeTab === 'concierge' && (
         <div className="grid gap-6 lg:grid-cols-12">
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-4 space-y-4">
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-base font-bold text-[#111827]">
               Suggested Cape Town Queries
             </h2>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -547,7 +547,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                   type="button"
                   disabled={loadingChat || !isOnline}
                   onClick={() => handleSendChat(prompt)}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-left text-xs font-medium text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50 transition-colors"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-left text-xs font-medium text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-50 transition-colors"
                 >
                   {prompt}
                 </button>
@@ -557,10 +557,10 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
 
           <section className="flex flex-col rounded-xl border border-slate-200 bg-white lg:col-span-8">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3.5">
-              <h2 className="font-display text-sm font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-sm font-bold text-[#111827]">
                 CapeSafe AI Conversation ({language})
               </h2>
-              <span className="font-mono text-[11px] text-[#0D9488]">
+              <span className="font-mono text-[11px] text-[#1D4ED8]">
                 {aiHealth.model} · Server Proxy
               </span>
             </div>
@@ -574,12 +574,12 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                   <div
                     className={`max-w-[90%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-[#0B1F3A] text-white'
+                        ? 'bg-[#111827] text-white'
                         : 'border border-slate-200 bg-slate-50 text-slate-800'
                     }`}
                   >
                     {msg.conditionBrief && (
-                      <p className="mb-2 rounded-md border border-teal-200 bg-[#F0FDFA] px-2.5 py-1.5 text-xs font-medium text-[#0F766E]">
+                      <p className="mb-2 rounded-md border border-blue-200 bg-[#EFF6FF] px-2.5 py-1.5 text-xs font-medium text-[#1E40AF]">
                         Condition Brief: {msg.conditionBrief}
                       </p>
                     )}
@@ -593,8 +593,8 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                             className="rounded-lg border border-slate-200 bg-white p-3 text-xs space-y-1.5"
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <p className="font-bold text-[#0B1F3A]">{rec.title}</p>
-                              <span className="font-mono text-[11px] font-semibold text-[#0D9488] shrink-0">
+                              <p className="font-bold text-[#111827]">{rec.title}</p>
+                              <span className="font-mono text-[11px] font-semibold text-[#1D4ED8] shrink-0">
                                 {rec.estimatedZar === 0 ? 'Free' : `R ${rec.estimatedZar}`}
                               </span>
                             </div>
@@ -610,7 +610,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                                 type="button"
                                 disabled={savingAction}
                                 onClick={() => void handleSaveRecommendation(rec)}
-                                className="inline-flex items-center gap-1 rounded border border-[#0D9488] px-2 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
+                                className="inline-flex items-center gap-1 rounded border border-[#1D4ED8] px-2 py-1 text-[11px] font-semibold text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-50"
                               >
                                 <CalendarPlus className="h-3 w-3" aria-hidden="true" />
                                 Add to Trips
@@ -625,7 +625,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               ))}
 
               {loadingChat && (
-                <p role="status" className="text-xs font-medium text-[#0D9488]">
+                <p role="status" className="text-xs font-medium text-[#1D4ED8]">
                   Consulting CapeSafe AI &amp; destination conditions...
                 </p>
               )}
@@ -653,12 +653,12 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                 disabled={loadingChat || !isOnline}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about Cape Town safety, step-free routes, or personalized ideas..."
-                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none disabled:bg-slate-100"
+                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none disabled:bg-slate-100"
               />
               <button
                 type="submit"
                 disabled={loadingChat || !isOnline || !input.trim()}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-50 transition-colors whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 <Send className="h-3.5 w-3.5" aria-hidden="true" />
                 Send
@@ -672,7 +672,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
       {activeTab === 'planner' && (
         <div className="grid gap-6 lg:grid-cols-12">
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5">
-            <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-lg font-bold text-[#111827]">
               Build Personalized Cape Town Plan
             </h2>
             <p className="mt-1 text-xs text-slate-600">
@@ -756,7 +756,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                         onClick={() => toggleInterest(item)}
                         className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${
                           selected
-                            ? 'border-[#0D9488] bg-[#F0FDFA] text-[#0F766E]'
+                            ? 'border-[#1D4ED8] bg-[#EFF6FF] text-[#1E40AF]'
                             : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                         }`}
                       >
@@ -772,10 +772,10 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                   type="checkbox"
                   checked={planAccessible}
                   onChange={(e) => setPlanAccessible(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-[#0D9488]"
+                  className="h-4 w-4 rounded border-slate-300 text-[#1D4ED8]"
                 />
-                <span className="inline-flex items-center gap-1.5 font-medium text-[#0B1F3A]">
-                  <Accessibility className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1.5 font-medium text-[#111827]">
+                  <Accessibility className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
                   Prioritize step-free boardwalks &amp; accessible MyCiTi stops
                 </span>
               </label>
@@ -789,7 +789,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               <button
                 type="submit"
                 disabled={loadingPlan || !isOnline}
-                className="w-full rounded-lg bg-[#0D9488] py-2.5 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-50 transition-colors"
+                className="w-full rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50 transition-colors"
               >
                 {loadingPlan ? 'Generating Personalized Plan...' : 'Generate AI Itinerary'}
               </button>
@@ -798,7 +798,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
 
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-7 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Generated Itinerary Preview
               </h2>
               {planResult && (
@@ -806,7 +806,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                   type="button"
                   disabled={savingAction}
                   onClick={() => void handleSaveFullPlan()}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#132f57] disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#111827] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#132f57] disabled:opacity-50"
                 >
                   <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" />
                   {savingAction ? 'Saving...' : 'Save All Stops to My Trips'}
@@ -820,15 +820,15 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               </p>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-lg border border-teal-200 bg-[#F0FDFA] p-4 text-xs space-y-1.5">
+                <div className="rounded-lg border border-blue-200 bg-[#EFF6FF] p-4 text-xs space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-[#0B1F3A]">Plan Summary</p>
-                    <span className="font-mono font-semibold text-[#0F766E]">
+                    <p className="font-bold text-[#111827]">Plan Summary</p>
+                    <span className="font-mono font-semibold text-[#1E40AF]">
                       Est. Total: R {planResult.totalEstimatedZar.toLocaleString('en-ZA')}
                     </span>
                   </div>
                   <p className="text-slate-700 leading-relaxed">{planResult.summary}</p>
-                  <p className="text-[11px] font-medium text-[#0F766E]">
+                  <p className="text-[11px] font-medium text-[#1E40AF]">
                     Weather Note: {planResult.weatherAdjustmentNote}
                   </p>
                 </div>
@@ -841,13 +841,13 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                     >
                       <div className="space-y-0.5">
                         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span className="font-semibold text-[#0D9488]">{stop.dayLabel}</span>
+                          <span className="font-semibold text-[#1D4ED8]">{stop.dayLabel}</span>
                           <span aria-hidden="true">·</span>
-                          <span className="font-mono font-medium text-[#0B1F3A]">{stop.time}</span>
+                          <span className="font-mono font-medium text-[#111827]">{stop.time}</span>
                           <span aria-hidden="true">·</span>
                           <span>{stop.zone}</span>
                         </div>
-                        <p className="text-sm font-semibold text-[#0B1F3A]">{stop.title}</p>
+                        <p className="text-sm font-semibold text-[#111827]">{stop.title}</p>
                         <p className="text-xs text-slate-600">{stop.transportNote}</p>
                         <p className="text-[11px] font-medium text-[#15803D]">
                           Safety: {stop.safetyNote} · Est. R {stop.estimatedZar}
@@ -857,7 +857,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
                         type="button"
                         disabled={savingAction}
                         onClick={() => void handleAddSingleStop(stop)}
-                        className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
+                        className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-50"
                       >
                         Add Stop
                       </button>
@@ -875,8 +875,8 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
         <div className="grid gap-6 lg:grid-cols-12">
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-6 space-y-4">
             <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-              <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+              <Globe className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              <h2 className="font-display text-lg font-bold text-[#111827]">
                 AI Translator &amp; Cultural Etiquette Coach
               </h2>
             </div>
@@ -958,7 +958,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
               <button
                 type="submit"
                 disabled={loadingTranslate || !isOnline}
-                className="w-full rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-50"
+                className="w-full rounded-lg bg-[#1D4ED8] py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50"
               >
                 {loadingTranslate ? 'Translating via Gemini...' : 'Translate & Get Cultural Tip'}
               </button>
@@ -966,10 +966,10 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
 
             {translationResult && (
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2 text-xs">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#0D9488]">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1D4ED8]">
                   {targetLang} Translation ({translationResult.model})
                 </p>
-                <p className="font-display text-base font-bold text-[#0B1F3A]">
+                <p className="font-display text-base font-bold text-[#111827]">
                   {translationResult.translatedText}
                 </p>
                 <p className="text-slate-700">
@@ -988,7 +988,7 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
           <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div>
-                <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+                <h2 className="font-display text-base font-bold text-[#111827]">
                   Saved Offline Phrasebook
                 </h2>
                 <p className="text-[11px] text-slate-500">
@@ -1001,14 +1001,14 @@ export const CapeSafeAIPage: React.FC<CapeSafeAIPageProps> = ({
             <div className="space-y-3 max-h-[480px] overflow-y-auto">
               {OFFLINE_CAPE_TOWN_PHRASEBOOK.map((entry) => (
                 <article key={entry.id} className="rounded-lg border border-slate-200 p-3.5 text-xs space-y-1.5">
-                  <p className="font-semibold text-[#0D9488]">{entry.category}</p>
+                  <p className="font-semibold text-[#1D4ED8]">{entry.category}</p>
                   <p className="text-slate-800">
                     <strong>English:</strong> {entry.en}
                   </p>
                   <p className="text-slate-800">
                     <strong>Afrikaans:</strong> {entry.af}
                   </p>
-                  <p className="text-[#0B1F3A] font-medium">
+                  <p className="text-[#111827] font-medium">
                     <strong>isiXhosa:</strong> {entry.xh}
                   </p>
                   <p className="font-mono text-[11px] text-slate-500">

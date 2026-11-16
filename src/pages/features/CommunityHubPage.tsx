@@ -215,13 +215,13 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <MessageSquarePlus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-              <h1 className="font-display text-lg font-bold text-[#0B1F3A]">
+              <MessageSquarePlus className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              <h1 className="font-display text-lg font-bold text-[#111827]">
                 Share Field Note
               </h1>
             </div>
             <span className="inline-flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-              <Lock className="h-3 w-3 text-[#0D9488]" aria-hidden="true" />
+              <Lock className="h-3 w-3 text-[#1D4ED8]" aria-hidden="true" />
               {displayedAuthor}
             </span>
           </div>
@@ -239,7 +239,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                 id="com-zone"
                 value={zone}
                 onChange={(e) => setZone(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               >
                 <option>Sea Point &amp; Atlantic Seaboard</option>
                 <option>Bo-Kaap</option>
@@ -259,7 +259,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share current trail conditions, accessibility notes, or visitor etiquette..."
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               />
             </div>
 
@@ -279,7 +279,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
+              className="w-full rounded-lg bg-[#1D4ED8] py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
             >
               {submitting ? 'Screening & Publishing...' : 'Publish Field Note'}
             </button>
@@ -306,7 +306,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-amber-800" aria-hidden="true" />
-                  <h2 className="font-display text-sm font-bold text-[#0B1F3A]">
+                  <h2 className="font-display text-sm font-bold text-[#111827]">
                     Moderation Queue ({moderationQueue.length})
                   </h2>
                 </div>
@@ -322,7 +322,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                     className="rounded-lg border border-amber-200 bg-white p-3.5 text-xs space-y-2"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-semibold text-[#0B1F3A]">
+                      <span className="font-semibold text-[#111827]">
                         {post.author} · {post.zone}
                       </span>
                       <StatusText
@@ -350,7 +350,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                         type="button"
                         disabled={busyPostId === post.id}
                         onClick={() => void handleModerateAction(post.id, 'Approved', true)}
-                        className="rounded border border-[#0D9488] px-2.5 py-1 text-[11px] font-semibold text-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-50"
+                        className="rounded border border-[#1D4ED8] px-2.5 py-1 text-[11px] font-semibold text-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-50"
                       >
                         Approve + Verified Guide
                       </button>
@@ -387,7 +387,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search field observations..."
-                className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-1.5 text-xs focus:border-[#0D9488] focus:outline-none"
+                className="w-full rounded-lg border border-slate-300 pl-8 pr-3 py-1.5 text-xs focus:border-[#1D4ED8] focus:outline-none"
               />
             </div>
             <select
@@ -413,7 +413,7 @@ export const CommunityHubPage: React.FC<CommunityHubPageProps> = ({
               <article key={post.id} className="rounded-xl border border-slate-200 bg-white p-5 space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-[#0B1F3A]">{post.author}</span>
+                    <span className="font-semibold text-[#111827]">{post.author}</span>
                     <span aria-hidden="true">·</span>
                     <span>{post.roleLabel}</span>
                     {post.verifiedGuide && (

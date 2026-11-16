@@ -32,11 +32,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-white text-slate-900">
       {/* Strict 3-Zone Top Bar Contract */}
-      <header className="border-b border-slate-200 bg-white">
+      <header className="sticky top-0 z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 px-4 py-4 sm:px-6 lg:px-8">
           <a
             href="#top"
-            className="whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D9488] rounded-md"
+            className="whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] rounded-md"
           >
             <BrandMark />
           </a>
@@ -45,16 +45,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             aria-label="Landing navigation"
             className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600"
           >
-            <a href="#capabilities" className="hover:text-[#0B1F3A] transition-colors whitespace-nowrap shrink-0">
+            <a href="#capabilities" className="hover:text-[#111827] transition-colors whitespace-nowrap shrink-0">
               Capabilities
             </a>
-            <a href="#destinations" className="hover:text-[#0B1F3A] transition-colors whitespace-nowrap shrink-0">
+            <a href="#destinations" className="hover:text-[#111827] transition-colors whitespace-nowrap shrink-0">
               Destinations
             </a>
-            <a href="#safety-network" className="hover:text-[#0B1F3A] transition-colors whitespace-nowrap shrink-0">
+            <a href="#safety-network" className="hover:text-[#111827] transition-colors whitespace-nowrap shrink-0">
               Safety Network
             </a>
-            <a href="#portals" className="hover:text-[#0B1F3A] transition-colors whitespace-nowrap shrink-0">
+            <a href="#portals" className="hover:text-[#111827] transition-colors whitespace-nowrap shrink-0">
               Role Portals
             </a>
           </nav>
@@ -63,7 +63,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth('login')}
-              className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-xs font-semibold text-white hover:bg-[#102A43] transition-colors whitespace-nowrap shrink-0"
+              className="rounded-lg bg-[#111827] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E293B] transition-colors whitespace-nowrap shrink-0"
             >
               Sign In
             </button>
@@ -72,15 +72,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* Hero Split */}
-      <section id="top" className="border-b border-slate-200 bg-slate-50">
+      <section id="top" className="border-b border-slate-200 bg-gradient-to-b from-[#EFF6FF]/75 via-slate-50 to-white">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <div className="grid items-stretch gap-8 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col justify-between lg:col-span-5">
               <div>
-                <p className="text-xs font-semibold text-[#0D9488]">
+                <p className="text-xs font-semibold text-[#1D4ED8]">
                   Cape Town Metropolitan Tourism &amp; Coastal Safety
                 </p>
-                <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-[#0B1F3A] sm:text-5xl text-balance leading-[1.1]">
+                <h1 className="mt-3 font-display text-4xl font-bold tracking-tight text-[#111827] sm:text-5xl text-balance leading-[1.1]">
                   Explore Cape Town with coordinated safety and verified transit.
                 </h1>
                 <p className="mt-5 text-base text-slate-600 leading-relaxed max-w-xl">
@@ -92,7 +92,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => onEnterDemoRole('tourist', 'dashboard')}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#0D9488] px-5 py-3 text-sm font-semibold text-white hover:bg-[#0F766E] transition-colors whitespace-nowrap"
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
                   >
                     Launch Demo Platform
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenAuth('register')}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-[#0B1F3A] hover:bg-slate-100 transition-colors whitespace-nowrap"
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-[#111827] hover:bg-slate-100 transition-colors whitespace-nowrap"
                   >
                     Create Account
                   </button>
@@ -113,14 +113,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="lg:col-span-7">
-              <div className="relative h-72 overflow-hidden rounded-xl border border-slate-200 bg-[#0B1F3A] sm:h-96 lg:h-full lg:min-h-[420px]">
+              <div className="relative h-72 overflow-hidden rounded-xl border border-slate-200 bg-[#111827] sm:h-96 lg:h-full lg:min-h-[420px]">
                 <ImageWithFallback
                   src={HERO_IMAGE_URL}
                   alt="Table Mountain rising behind Cape Town Victoria and Alfred Waterfront coastline"
                   className="h-full w-full object-cover"
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#071529]/85 via-[#071529]/40 to-transparent p-5 sm:p-6">
-                  <p className="font-mono text-xs text-teal-300">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#090D16]/85 via-[#090D16]/40 to-transparent p-5 sm:p-6">
+                  <p className="font-mono text-xs text-blue-300">
                     33.9036° S, 18.4205° E · Victoria &amp; Alfred Coastal Corridor
                   </p>
                   <p className="mt-1 font-display text-sm font-semibold text-white">
@@ -135,17 +135,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="mt-10 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-5 lg:grid-cols-4 lg:gap-6">
             <div>
               <p className="text-xs text-slate-500">Integrated Features</p>
-              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#0B1F3A]">15 Modules</p>
+              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#111827]">15 Modules</p>
               <p className="mt-0.5 text-xs text-slate-600">Navigation, passes &amp; AI planning</p>
             </div>
             <div className="border-slate-200 lg:border-l lg:pl-6">
               <p className="text-xs text-slate-500">Dedicated Dashboards</p>
-              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#0B1F3A]">4 Portals</p>
+              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#111827]">4 Portals</p>
               <p className="mt-0.5 text-xs text-slate-600">Tourist, Admin, Provider &amp; Safety</p>
             </div>
             <div className="border-slate-200 lg:border-l lg:pl-6">
               <p className="text-xs text-slate-500">Demo Patrol Corridors</p>
-              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#0D9488]">12 Zones</p>
+              <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#1D4ED8]">12 Zones</p>
               <p className="mt-0.5 text-xs text-slate-600">Mountain, coastal &amp; heritage routes</p>
             </div>
             <div className="border-slate-200 lg:border-l lg:pl-6">
@@ -161,50 +161,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="capabilities" className="border-b border-slate-200 bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold text-[#0D9488]">Platform Architecture</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#0B1F3A] text-balance">
+            <p className="text-xs font-semibold text-[#1D4ED8]">Platform Architecture</p>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#111827] text-balance">
               Built for travelers, municipal safety teams, and local operators.
             </h2>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-6">
-              <p className="font-mono text-xs font-semibold text-[#0D9488]">01. Discovery &amp; Smart Bookings</p>
-              <h3 className="mt-2 font-display text-xl font-semibold text-[#0B1F3A]">
+          <div className="mt-10 grid gap-5 lg:grid-cols-12">
+            <div className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-7 lg:col-span-7 hover:border-[#1D4ED8]/40 transition-colors">
+              <p className="font-mono text-xs font-semibold text-[#1D4ED8]">01. Discovery &amp; Smart Bookings</p>
+              <h3 className="mt-2 font-display text-xl font-semibold text-[#111827]">
                 Verified Cape Town experiences with safety vetting
               </h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Browse coastal reserves, botanical canopy trails, and guided heritage quarters. Every listed operator carries compliance verification and accessibility clarity.
+                Browse coastal reserves, botanical canopy trails, and guided heritage quarters. Every listed operator carries compliance verification, PayShap &amp; card tokenization checkout, and accessibility clarity.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-6">
-              <p className="font-mono text-xs font-semibold text-[#0D9488]">02. Safety Centre &amp; Timed Check-In</p>
-              <h3 className="mt-2 font-display text-xl font-semibold text-[#0B1F3A]">
-                Proactive trail timers and southeaster wind advisories
+            <div className="rounded-xl border border-slate-200 bg-white p-7 lg:col-span-5 hover:border-[#1D4ED8]/40 transition-colors">
+              <p className="font-mono text-xs font-semibold text-[#1D4ED8]">02. Safety Centre &amp; Timed Check-In</p>
+              <h3 className="mt-2 font-display text-xl font-semibold text-[#111827]">
+                Proactive trail timers &amp; wind advisories
               </h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Start a timed mountain or coastal check-in before heading up Lion&apos;s Head or Table Mountain, notifying designated contacts if return windows lapse.
+                Start a timed mountain or coastal check-in before heading up Lion&apos;s Head or Table Mountain, alerting designated contacts if return windows lapse.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-6">
-              <p className="font-mono text-xs font-semibold text-[#0D9488]">03. Digital Pass &amp; Accessible Transit</p>
-              <h3 className="mt-2 font-display text-xl font-semibold text-[#0B1F3A]">
-                Unified MyCiTi corridors, shuttles, and offline QR pass
+            <div className="rounded-xl border border-slate-200 bg-white p-7 lg:col-span-5 hover:border-[#1D4ED8]/40 transition-colors">
+              <p className="font-mono text-xs font-semibold text-[#1D4ED8]">03. Digital Pass &amp; Transit</p>
+              <h3 className="mt-2 font-display text-xl font-semibold text-[#111827]">
+                Unified MyCiTi routes &amp; offline QR pass
               </h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                 Keep your Digital Tourist Pass, ZAR budget ledger, and step-free mobility guidance accessible even when coastal signal drops.
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-6">
-              <p className="font-mono text-xs font-semibold text-[#0D9488]">04. Multi-Stakeholder Operations</p>
-              <h3 className="mt-2 font-display text-xl font-semibold text-[#0B1F3A]">
+            <div className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-7 lg:col-span-7 hover:border-[#1D4ED8]/40 transition-colors">
+              <p className="font-mono text-xs font-semibold text-[#1D4ED8]">04. Multi-Stakeholder Operations</p>
+              <h3 className="mt-2 font-display text-xl font-semibold text-[#111827]">
                 Four role-tailored operational dashboards
               </h3>
               <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-                Switch seamlessly between Tourist, Administrator, Tourism Service Provider, and Safety Management views on a Firebase-ready frontend foundation.
+                Switch seamlessly between Tourist, Administrator, Tourism Service Provider, and Safety Management views with live Firebase Authentication, Cloud Firestore sync, and server-side AI planning.
               </p>
             </div>
           </div>
@@ -216,15 +216,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold text-[#0D9488]">Explore Preview</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#0B1F3A]">
+              <p className="text-xs font-semibold text-[#1D4ED8]">Explore Preview</p>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#111827]">
                 Featured Cape Peninsula precincts
               </h2>
             </div>
             <button
               type="button"
               onClick={() => onEnterDemoRole('tourist', 'explore')}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0D9488] hover:text-[#0F766E] whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1D4ED8] hover:text-[#1E40AF] whitespace-nowrap"
             >
               Browse all precincts
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -244,7 +244,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <span>Coastal · Simon&apos;s Town</span>
                   <StatusText label="Nominal" tone="nominal" />
                 </div>
-                <h3 className="mt-2 font-display text-lg font-semibold text-[#0B1F3A]">
+                <h3 className="mt-2 font-display text-lg font-semibold text-[#111827]">
                   Boulders Beach Sanctuary
                 </h3>
                 <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
@@ -265,7 +265,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <span>Accessibility · Newlands</span>
                   <StatusText label="Step-Free Verified" tone="nominal" />
                 </div>
-                <h3 className="mt-2 font-display text-lg font-semibold text-[#0B1F3A]">
+                <h3 className="mt-2 font-display text-lg font-semibold text-[#111827]">
                   Kirstenbosch Boomslang Canopy
                 </h3>
                 <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
@@ -286,7 +286,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <span>Heritage · Signal Hill</span>
                   <StatusText label="Guided Recommended" tone="advisory" />
                 </div>
-                <h3 className="mt-2 font-display text-lg font-semibold text-[#0B1F3A]">
+                <h3 className="mt-2 font-display text-lg font-semibold text-[#111827]">
                   Bo-Kaap Heritage Quarter
                 </h3>
                 <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">
@@ -299,11 +299,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* Safety Network Section */}
-      <section id="safety-network" className="border-b border-slate-200 bg-[#0B1F3A] py-16 text-white">
+      <section id="safety-network" className="border-b border-slate-200 bg-[#111827] py-16 text-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
             <div className="lg:col-span-7">
-              <p className="text-xs font-semibold text-teal-300">Safety Coordination</p>
+              <p className="text-xs font-semibold text-blue-300">Safety Coordination</p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white text-balance">
                 Direct link between traveler check-ins and Cape Town safety responders.
               </h2>
@@ -314,7 +314,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onEnterDemoRole('safety', 'safety')}
-                  className="rounded-lg bg-[#14B8A6] px-4 py-2.5 text-xs font-semibold text-[#071529] hover:bg-teal-300 transition-colors whitespace-nowrap"
+                  className="rounded-lg bg-[#3B82F6] px-4 py-2.5 text-xs font-semibold text-[#090D16] hover:bg-blue-300 transition-colors whitespace-nowrap"
                 >
                   Inspect Safety Centre
                 </button>
@@ -329,12 +329,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="lg:col-span-5">
-              <div className="rounded-xl border border-white/15 bg-[#102A43] p-6 space-y-4">
+              <div className="rounded-xl border border-white/15 bg-[#1E293B] p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <span className="font-display text-sm font-semibold text-white">
                     Sample Emergency Directory
                   </span>
-                  <span className="font-mono text-xs text-teal-300">24/7 Reference</span>
+                  <span className="font-mono text-xs text-blue-300">24/7 Reference</span>
                 </div>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
@@ -360,8 +360,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <section id="portals" className="bg-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold text-[#0D9488]">Hackathon Demonstration Access</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#0B1F3A]">
+            <p className="text-xs font-semibold text-[#1D4ED8]">Hackathon Demonstration Access</p>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#111827]">
               Open any role dashboard directly
             </h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -373,18 +373,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onEnterDemoRole('tourist', 'dashboard')}
-              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#0D9488] hover:bg-white transition-colors"
+              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#1D4ED8] hover:bg-white transition-colors"
             >
               <div>
-                <Compass className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-                <h3 className="mt-3 font-display text-base font-bold text-[#0B1F3A]">
+                <Compass className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+                <h3 className="mt-3 font-display text-base font-bold text-[#111827]">
                   Tourist Dashboard
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
                   Trip timeline, Digital Pass, Check-In timer, CapeSafe AI, ZAR budget, and transit routes.
                 </p>
               </div>
-              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#0D9488] group-hover:translate-x-0.5 transition-transform">
+              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#1D4ED8] group-hover:translate-x-0.5 transition-transform">
                 Enter as Tourist <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
             </button>
@@ -392,18 +392,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onEnterDemoRole('admin', 'dashboard')}
-              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#0D9488] hover:bg-white transition-colors"
+              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#1D4ED8] hover:bg-white transition-colors"
             >
               <div>
-                <Users className="h-5 w-5 text-[#0B1F3A]" aria-hidden="true" />
-                <h3 className="mt-3 font-display text-base font-bold text-[#0B1F3A]">
+                <Users className="h-5 w-5 text-[#111827]" aria-hidden="true" />
+                <h3 className="mt-3 font-display text-base font-bold text-[#111827]">
                   Administrator Dashboard
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
                   Operator accreditation queue, metro precinct load, and Firebase readiness controls.
                 </p>
               </div>
-              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#0B1F3A] group-hover:translate-x-0.5 transition-transform">
+              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#111827] group-hover:translate-x-0.5 transition-transform">
                 Enter as Admin <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
             </button>
@@ -411,11 +411,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onEnterDemoRole('provider', 'dashboard')}
-              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#0D9488] hover:bg-white transition-colors"
+              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#1D4ED8] hover:bg-white transition-colors"
             >
               <div>
                 <Store className="h-5 w-5 text-[#15803D]" aria-hidden="true" />
-                <h3 className="mt-3 font-display text-base font-bold text-[#0B1F3A]">
+                <h3 className="mt-3 font-display text-base font-bold text-[#111827]">
                   Service Provider Dashboard
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
@@ -430,18 +430,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onEnterDemoRole('safety', 'dashboard')}
-              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#0D9488] hover:bg-white transition-colors"
+              className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/70 p-5 text-left hover:border-[#1D4ED8] hover:bg-white transition-colors"
             >
               <div>
-                <ShieldCheck className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-                <h3 className="mt-3 font-display text-base font-bold text-[#0B1F3A]">
+                <ShieldCheck className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+                <h3 className="mt-3 font-display text-base font-bold text-[#111827]">
                   Safety Management Dashboard
                 </h3>
                 <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
                   Overdue hiker escalations, advisory broadcasts, and patrol corridor statuses.
                 </p>
               </div>
-              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#0D9488] group-hover:translate-x-0.5 transition-transform">
+              <span className="mt-5 inline-flex items-center gap-1 text-xs font-semibold text-[#1D4ED8] group-hover:translate-x-0.5 transition-transform">
                 Enter as Safety Ops <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </span>
             </button>
@@ -464,7 +464,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth('login')}
-              className="inline-flex items-center gap-1.5 font-medium text-[#0B1F3A] hover:text-[#0D9488]"
+              className="inline-flex items-center gap-1.5 font-medium text-[#111827] hover:text-[#1D4ED8]"
             >
               <UserCheck className="h-3.5 w-3.5" aria-hidden="true" />
               Sign In
@@ -472,7 +472,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth('register')}
-              className="font-medium text-[#0B1F3A] hover:text-[#0D9488]"
+              className="font-medium text-[#111827] hover:text-[#1D4ED8]"
             >
               Register
             </button>

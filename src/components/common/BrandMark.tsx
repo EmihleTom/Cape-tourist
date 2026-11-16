@@ -17,14 +17,14 @@ export const BrandMark: React.FC<BrandMarkProps> = ({ inverted = false, compact 
         aria-hidden="true"
         className="shrink-0"
       >
-        <rect width="36" height="36" rx="9" fill={inverted ? '#102A43' : '#0B1F3A'} />
+        <rect width="36" height="36" rx="9" fill={inverted ? '#1E293B' : '#111827'} />
         <path
           d="M18 5.5L29 10V18.2C29 25 24.3 30.6 18 32.5C11.7 30.6 7 25 7 18.2V10L18 5.5Z"
-          stroke="#14B8A6"
+          stroke="#3B82F6"
           strokeWidth="1.75"
-          fill="#102A43"
+          fill="#1E293B"
         />
-        <path d="M10.5 21L14 16.5H22L25.5 21H10.5Z" fill="#14B8A6" />
+        <path d="M10.5 21L14 16.5H22L25.5 21H10.5Z" fill="#3B82F6" />
         <path
           d="M11.5 24C13.8 22.7 15.8 25.3 18 24C20.2 22.7 22.2 25.3 24.5 24"
           stroke="#F8FAFC"
@@ -35,7 +35,7 @@ export const BrandMark: React.FC<BrandMarkProps> = ({ inverted = false, compact 
       </svg>
       <span
         className={`font-display text-base font-bold tracking-tight ${
-          inverted ? 'text-white' : 'text-[#0B1F3A]'
+          inverted ? 'text-white' : 'text-[#111827]'
         }`}
       >
         {compact ? 'CapeSafe 360' : 'CapeSafe Connect 360'}

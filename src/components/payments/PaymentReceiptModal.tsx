@@ -26,17 +26,17 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-receipt-heading"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#071529]/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#090D16]/60 p-4"
     >
       <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-xl">
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#0D9488]">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1D4ED8]">
               {isReceiptEligible ? 'Verified Transaction Receipt' : 'Booking Payment Slip'}
             </p>
             <h2
               id="payment-receipt-heading"
-              className="mt-0.5 font-display text-lg font-bold text-[#0B1F3A]"
+              className="mt-0.5 font-display text-lg font-bold text-[#111827]"
             >
               {payment.receiptNumber || payment.paymentReference}
             </h2>
@@ -45,7 +45,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close receipt modal"
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-[#0B1F3A]"
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-[#111827]"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -84,17 +84,17 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg border border-slate-200 p-4">
             <div>
               <dt className="text-[11px] text-slate-500">Booking Reference</dt>
-              <dd className="font-mono font-semibold text-[#0B1F3A]">{payment.bookingReference}</dd>
+              <dd className="font-mono font-semibold text-[#111827]">{payment.bookingReference}</dd>
             </div>
             <div>
               <dt className="text-[11px] text-slate-500">Transaction Reference</dt>
-              <dd className="font-mono font-semibold text-[#0B1F3A] break-all">
+              <dd className="font-mono font-semibold text-[#111827] break-all">
                 {payment.paymentReference}
               </dd>
             </div>
             <div className="col-span-2">
               <dt className="text-[11px] text-slate-500">Experience / Service</dt>
-              <dd className="font-semibold text-[#0B1F3A]">{payment.serviceTitle}</dd>
+              <dd className="font-semibold text-[#111827]">{payment.serviceTitle}</dd>
             </div>
             <div>
               <dt className="text-[11px] text-slate-500">Tourism Provider</dt>
@@ -110,7 +110,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
             </div>
             <div>
               <dt className="text-[11px] text-slate-500">Booking Total</dt>
-              <dd className="font-mono font-semibold text-[#0B1F3A] tabular-nums">
+              <dd className="font-mono font-semibold text-[#111827] tabular-nums">
                 R {payment.bookingTotalZar.toLocaleString('en-ZA')}
               </dd>
             </div>
@@ -118,7 +118,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               <dt className="text-[11px] text-slate-500">
                 {payment.paymentStatus === 'Unpaid' ? 'Amount Due' : 'Amount Settled'}
               </dt>
-              <dd className="font-mono text-base font-bold text-[#0B1F3A] tabular-nums">
+              <dd className="font-mono text-base font-bold text-[#111827] tabular-nums">
                 R {payment.amount.toLocaleString('en-ZA')}
               </dd>
             </div>
@@ -153,7 +153,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           </dl>
 
           <div className="flex items-center gap-2 text-[11px] text-slate-500">
-            <ShieldCheck className="h-4 w-4 text-[#0D9488] shrink-0" aria-hidden="true" />
+            <ShieldCheck className="h-4 w-4 text-[#1D4ED8] shrink-0" aria-hidden="true" />
             <span>No complete card numbers or CVV security codes are stored by CapeSafe Connect 360.</span>
           </div>
         </div>
@@ -164,7 +164,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               <button
                 type="button"
                 onClick={() => paymentService.printReceipt(payment)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#0B1F3A] hover:bg-slate-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50"
               >
                 <Printer className="h-3.5 w-3.5" aria-hidden="true" />
                 Print Receipt
@@ -172,7 +172,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               <button
                 type="button"
                 onClick={() => paymentService.downloadReceipt(payment)}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#0D9488] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0F766E]"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF]"
               >
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
                 Download Receipt
@@ -182,7 +182,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg bg-[#0B1F3A] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#102A43]"
+            className="rounded-lg bg-[#111827] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E293B]"
           >
             Done
           </button>

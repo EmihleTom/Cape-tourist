@@ -102,8 +102,8 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
       <div className="rounded-xl border border-slate-200 bg-white p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-            <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+            <Trophy className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+            <h1 className="font-display text-2xl font-bold text-[#111827]">
               Discover Cape Town Challenges &amp; Badges
             </h1>
           </div>
@@ -125,8 +125,8 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
       {/* Achievement Badges Showcase */}
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-          <Award className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-          <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+          <Award className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+          <h2 className="font-display text-base font-bold text-[#111827]">
             Earned Achievement Badges
           </h2>
         </div>
@@ -144,7 +144,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
               >
                 <ShieldCheck className="h-5 w-5 text-[#15803D] shrink-0 mt-0.5" aria-hidden="true" />
                 <div className="text-xs">
-                  <p className="font-bold text-[#0B1F3A]">{badge.title}</p>
+                  <p className="font-bold text-[#111827]">{badge.title}</p>
                   <p className="mt-0.5 text-slate-700 leading-relaxed">{badge.description}</p>
                   <p className="mt-1 font-mono text-[10px] font-semibold text-[#15803D]">
                     {badge.origin}
@@ -165,7 +165,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
             <article key={ch.id} className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5">
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-[#0D9488]">{ch.category}</p>
+                  <p className="text-xs font-semibold text-[#1D4ED8]">{ch.category}</p>
                   {complete && (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#15803D]">
                       <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -173,22 +173,22 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
                     </span>
                   )}
                 </div>
-                <h2 className="mt-1.5 font-display text-lg font-bold text-[#0B1F3A]">{ch.title}</h2>
+                <h2 className="mt-1.5 font-display text-lg font-bold text-[#111827]">{ch.title}</h2>
                 {ch.badgeTitle && (
                   <p className="mt-1 text-xs font-medium text-slate-600">
-                    Unlocks badge: <strong className="text-[#0B1F3A]">{ch.badgeTitle}</strong>
+                    Unlocks badge: <strong className="text-[#111827]">{ch.badgeTitle}</strong>
                   </p>
                 )}
                 <div className="mt-4 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-600">{ch.unit}</span>
-                    <span className="font-mono font-semibold tabular-nums text-[#0B1F3A]">
+                    <span className="font-mono font-semibold tabular-nums text-[#111827]">
                       {ch.progress} / {ch.target}
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                     <div
-                      className={`h-full rounded-full transition-all ${complete ? 'bg-[#15803D]' : 'bg-[#0D9488]'}`}
+                      className={`h-full rounded-full transition-all ${complete ? 'bg-[#15803D]' : 'bg-[#1D4ED8]'}`}
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -200,7 +200,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
                 type="button"
                 disabled={complete || busyChallengeId === ch.id}
                 onClick={() => void handleIncrement(ch.id)}
-                className="mt-5 w-full rounded-lg border border-slate-300 bg-slate-50 py-2 text-xs font-semibold text-[#0B1F3A] hover:border-[#0D9488] hover:bg-[#F0FDFA] disabled:opacity-60 transition-colors"
+                className="mt-5 w-full rounded-lg border border-slate-300 bg-slate-50 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-60 transition-colors"
               >
                 {complete
                   ? `Completed · ${ch.badgeTitle || 'Badge Earned'}`

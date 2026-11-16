@@ -170,8 +170,8 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <Settings className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h2 className="font-display text-lg font-bold text-[#0B1F3A]">
+            <Settings className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+            <h2 className="font-display text-lg font-bold text-[#111827]">
               Payment Settings &amp; In-Person Collection Ledger
             </h2>
           </div>
@@ -248,22 +248,22 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
           )}
 
           <div className="flex flex-wrap gap-4 pt-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-[#0B1F3A]">
+            <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-[#111827]">
               <input
                 type="checkbox"
                 checked={payInPersonEnabled}
                 onChange={(e) => setPayInPersonEnabled(e.target.checked)}
-                className="rounded border-slate-300 text-[#0D9488]"
+                className="rounded border-slate-300 text-[#1D4ED8]"
               />
               <span>Enable Pay in Person Option</span>
             </label>
 
-            <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-[#0B1F3A]">
+            <label className="inline-flex items-center gap-2 cursor-pointer font-medium text-[#111827]">
               <input
                 type="checkbox"
                 checked={advancePaymentRequired}
                 onChange={(e) => setAdvancePaymentRequired(e.target.checked)}
-                className="rounded border-slate-300 text-[#0D9488]"
+                className="rounded border-slate-300 text-[#1D4ED8]"
               />
               <span>Advance Online Payment Required</span>
             </label>
@@ -281,7 +281,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                     type="checkbox"
                     checked={acceptedMethods.includes(m)}
                     onChange={() => toggleAcceptedMethod(m)}
-                    className="rounded border-slate-300 text-[#0D9488]"
+                    className="rounded border-slate-300 text-[#1D4ED8]"
                   />
                   <span>{m}</span>
                 </label>
@@ -351,7 +351,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
             <button
               type="submit"
               disabled={savingSettings}
-              className="ml-auto rounded-lg bg-[#0D9488] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60"
+              className="ml-auto rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
             >
               {savingSettings ? 'Saving Settings...' : 'Save Payment Settings'}
             </button>
@@ -363,8 +363,8 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
       <div className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-[#0B1F3A]" aria-hidden="true" />
-            <h3 className="font-display text-sm font-bold text-[#0B1F3A]">
+            <Wallet className="h-4 w-4 text-[#111827]" aria-hidden="true" />
+            <h3 className="font-display text-sm font-bold text-[#111827]">
               Bookings Payment Reconciliation ({filteredPayments.length})
             </h3>
           </div>
@@ -379,8 +379,8 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                   onClick={() => setLedgerFilter(tab)}
                   className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                     ledgerFilter === tab
-                      ? 'bg-[#0B1F3A] text-white'
-                      : 'text-slate-600 hover:text-[#0B1F3A]'
+                      ? 'bg-[#111827] text-white'
+                      : 'text-slate-600 hover:text-[#111827]'
                   }`}
                 >
                   {tab}
@@ -422,7 +422,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                 >
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-semibold text-[#0D9488]">
+                      <span className="font-mono font-semibold text-[#1D4ED8]">
                         {pay.bookingReference}
                       </span>
                       <span className="font-mono text-slate-500">{pay.paymentReference}</span>
@@ -430,7 +430,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                         {pay.paymentMethod}
                       </span>
                     </div>
-                    <p className="text-sm font-bold text-[#0B1F3A]">{pay.serviceTitle}</p>
+                    <p className="text-sm font-bold text-[#111827]">{pay.serviceTitle}</p>
                     <p className="text-slate-600">
                       Tourist: <strong>{pay.userName || pay.userId}</strong>
                       {linkedBooking && (
@@ -451,7 +451,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
 
                   <div className="flex flex-col items-start gap-2 sm:items-end">
                     <div className="text-left sm:text-right">
-                      <p className="font-mono text-sm font-bold text-[#0B1F3A] tabular-nums">
+                      <p className="font-mono text-sm font-bold text-[#111827] tabular-nums">
                         R {pay.bookingTotalZar.toLocaleString('en-ZA')} total
                         {typeof pay.balanceDueInPerson === 'number' &&
                         pay.balanceDueInPerson > 0 &&

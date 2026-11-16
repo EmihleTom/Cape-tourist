@@ -298,8 +298,8 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
           <div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Timer className="h-5 w-5 text-[#0D9488]" aria-hidden="true" />
-                <h1 className="font-display text-xl font-bold text-[#0B1F3A]">
+                <Timer className="h-5 w-5 text-[#1D4ED8]" aria-hidden="true" />
+                <h1 className="font-display text-xl font-bold text-[#111827]">
                   Start Timed Tourist Check-In
                 </h1>
               </div>
@@ -307,9 +307,9 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                 <button
                   type="button"
                   onClick={handleRequestNotifications}
-                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-[#0B1F3A] hover:bg-slate-100"
+                  className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-[#111827] hover:bg-slate-100"
                 >
-                  <Bell className="h-3 w-3 text-[#0D9488]" aria-hidden="true" />
+                  <Bell className="h-3 w-3 text-[#1D4ED8]" aria-hidden="true" />
                   Enable Alerts
                 </button>
               )}
@@ -328,7 +328,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                 id="chk-route"
                 value={route}
                 onChange={(e) => setRoute(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               >
                 <option>Lion&apos;s Head Spiral Trail</option>
                 <option>Platteklip Gorge Ascent</option>
@@ -348,7 +348,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                     aria-pressed={returnMode === 'duration'}
                     onClick={() => setReturnMode('duration')}
                     className={`rounded px-2 py-0.5 ${
-                      returnMode === 'duration' ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
+                      returnMode === 'duration' ? 'bg-[#111827] text-white' : 'text-slate-600'
                     }`}
                   >
                     Duration
@@ -358,7 +358,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                     aria-pressed={returnMode === 'exact'}
                     onClick={() => setReturnMode('exact')}
                     className={`rounded px-2 py-0.5 ${
-                      returnMode === 'exact' ? 'bg-[#0B1F3A] text-white' : 'text-slate-600'
+                      returnMode === 'exact' ? 'bg-[#111827] text-white' : 'text-slate-600'
                     }`}
                   >
                     Exact Time
@@ -376,7 +376,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                       id="chk-duration"
                       value={durationHours}
                       onChange={(e) => setDurationHours(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                     >
                       <option value="1.5">1.5 hours</option>
                       <option value="2.5">2.5 hours</option>
@@ -394,7 +394,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                       type="time"
                       value={exactReturnTime}
                       onChange={(e) => setExactReturnTime(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                     />
                   </div>
                 )}
@@ -407,7 +407,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                     id="chk-reminder"
                     value={reminderMinutes}
                     onChange={(e) => setReminderMinutes(Number(e.target.value))}
-                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                   >
                     <option value={15}>15 min before</option>
                     <option value={30}>30 min before</option>
@@ -429,7 +429,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                   max={20}
                   value={partySize}
                   onChange={(e) => setPartySize(Number(e.target.value) || 1)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono tabular-nums text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div className="col-span-2">
@@ -441,14 +441,14 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                   type="text"
                   value={emergencyContact}
                   onChange={(e) => setEmergencyContact(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
             </div>
 
             {/* Trusted Contacts Selection */}
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
-              <p className="text-xs font-semibold text-[#0B1F3A]">
+              <p className="text-xs font-semibold text-[#111827]">
                 Notify Trusted Contacts for This Session
               </p>
               {trustedContacts.length === 0 ? (
@@ -467,9 +467,9 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                           type="checkbox"
                           checked={selectedContactIds.includes(tc.id)}
                           onChange={() => toggleContactSelection(tc.id)}
-                          className="rounded border-slate-300 text-[#0D9488]"
+                          className="rounded border-slate-300 text-[#1D4ED8]"
                         />
-                        <span className="font-medium text-[#0B1F3A]">{tc.name}</span>
+                        <span className="font-medium text-[#111827]">{tc.name}</span>
                         <span className="text-slate-500">({tc.relationship})</span>
                       </span>
                       <span className="font-mono text-[11px] text-slate-500">{tc.phone}</span>
@@ -487,14 +487,14 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                     type="checkbox"
                     checked={locationConsent}
                     onChange={(e) => setLocationConsent(e.target.checked)}
-                    className="rounded border-slate-300 text-[#0D9488]"
+                    className="rounded border-slate-300 text-[#1D4ED8]"
                   />
                   <span>Share trailhead GPS with Safety Ops</span>
                 </label>
                 <button
                   type="button"
                   onClick={handleCaptureTrailheadGps}
-                  className="inline-flex items-center gap-1 rounded border border-[#0D9488] bg-white px-2 py-1 text-[11px] font-semibold text-[#0F766E] hover:bg-[#F0FDFA]"
+                  className="inline-flex items-center gap-1 rounded border border-[#1D4ED8] bg-white px-2 py-1 text-[11px] font-semibold text-[#1E40AF] hover:bg-[#EFF6FF]"
                 >
                   <Navigation className="h-3 w-3" aria-hidden="true" />
                   Capture GPS
@@ -512,7 +512,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
             <button
               type="submit"
               disabled={startingCheckIn}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#0D9488] py-2.5 text-sm font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] py-2.5 text-sm font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
             >
               <Play className="h-4 w-4" aria-hidden="true" />
               {startingCheckIn ? 'Starting Timer...' : 'Activate Check-In Timer'}
@@ -524,7 +524,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
         <div className="lg:col-span-7 space-y-6">
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+              <h2 className="font-display text-base font-bold text-[#111827]">
                 Active &amp; Recent Check-In Log
               </h2>
               <span className="font-mono text-xs text-slate-500 tabular-nums">
@@ -542,7 +542,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                   >
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-[#0B1F3A]">{session.route}</span>
+                        <span className="text-sm font-semibold text-[#111827]">{session.route}</span>
                         <StatusText
                           label={session.status}
                           tone={
@@ -554,7 +554,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                           }
                         />
                         {countdown && (
-                          <span className="rounded bg-[#F0FDFA] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#0F766E]">
+                          <span className="rounded bg-[#EFF6FF] px-2 py-0.5 font-mono text-[11px] font-semibold text-[#1E40AF]">
                             {countdown}
                           </span>
                         )}
@@ -571,14 +571,14 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                       </p>
                       {session.trustedContactsSummary && (
                         <p className="text-[11px] text-slate-600">
-                          <strong className="text-[#0B1F3A]">Trusted Contacts:</strong>{' '}
+                          <strong className="text-[#111827]">Trusted Contacts:</strong>{' '}
                           {session.trustedContactsSummary}
                         </p>
                       )}
                       {session.locationConsent &&
                         typeof session.sharedLat === 'number' &&
                         typeof session.sharedLng === 'number' && (
-                          <p className="inline-flex items-center gap-1 font-mono text-[11px] text-[#0F766E]">
+                          <p className="inline-flex items-center gap-1 font-mono text-[11px] text-[#1E40AF]">
                             <MapPin className="h-3 w-3" aria-hidden="true" />
                             Trailhead GPS: {session.sharedLat.toFixed(4)}, {session.sharedLng.toFixed(4)}
                           </p>
@@ -591,7 +591,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
                           type="button"
                           disabled={busySessionId === session.id}
                           onClick={() => handleExtend(session)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-[#0B1F3A] hover:bg-slate-50 disabled:opacity-60 whitespace-nowrap"
+                          className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-slate-50 disabled:opacity-60 whitespace-nowrap"
                         >
                           <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                           +30 min
@@ -629,8 +629,8 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
           <section className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-                <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+                <UserPlus className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                <h2 className="font-display text-base font-bold text-[#111827]">
                   Trusted Emergency Contacts
                 </h2>
               </div>
@@ -643,7 +643,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
               {trustedContacts.map((tc) => (
                 <div key={tc.id} className="flex items-center justify-between gap-3 py-2.5 text-xs">
                   <div>
-                    <p className="font-semibold text-[#0B1F3A]">
+                    <p className="font-semibold text-[#111827]">
                       {tc.name}{' '}
                       <span className="font-normal text-slate-500">· {tc.relationship}</span>
                     </p>
@@ -701,7 +701,7 @@ export const CheckInPage: React.FC<CheckInPageProps> = ({
               />
               <button
                 type="submit"
-                className="sm:col-span-3 inline-flex items-center justify-center gap-1 rounded-lg bg-[#0B1F3A] px-3 py-2 text-xs font-semibold text-white hover:bg-[#102A43]"
+                className="sm:col-span-3 inline-flex items-center justify-center gap-1 rounded-lg bg-[#111827] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1E293B]"
               >
                 <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 Add Contact

@@ -169,6 +169,7 @@ async function runTests() {
     'subscribeChallengeProgress',
     'upsertChallengeProgress',
     'subscribeUserPayments',
+    'fetchUserPayments',
     'subscribeProviderPayments',
     'subscribeAllPaymentsAdmin',
     'createPaymentRecord',
@@ -686,8 +687,40 @@ async function runTests() {
     'BookingsPage checkout integration must surface PayShap, Card, and Pay in Person'
   );
 
+  const touristDashSrc = fs.readFileSync('src/pages/dashboards/TouristDashboard.tsx', 'utf8');
+  assert.ok(
+    touristDashSrc.includes('My Payments') && touristDashSrc.includes('fetchUserPayments'),
+    'TouristDashboard must include My Payments tab and fetchUserPayments integration'
+  );
+  const myPaymentsSrc = fs.readFileSync('src/components/payments/MyPaymentsSection.tsx', 'utf8');
+  assert.ok(
+    myPaymentsSrc.includes('Receipt #') && myPaymentsSrc.includes('StatusText'),
+    'MyPaymentsSection must display status indicators and receipt links for settled transactions'
+  );
+
+  assert.ok(
+    adminDashSrc.includes('Overview & Dispatch') &&
+      adminDashSrc.includes('Accreditations & RBAC') &&
+      adminDashSrc.includes('Payments & Audit'),
+    'AdminDashboard must organize operations into segmented workspace tabs'
+  );
+  const providerDashSrc = fs.readFileSync('src/pages/dashboards/ProviderDashboard.tsx', 'utf8');
+  assert.ok(
+    providerDashSrc.includes('Offering Capacity Utilization Pulse') &&
+      providerDashSrc.includes('Operations & Bookings') &&
+      providerDashSrc.includes('Offerings & Calendar'),
+    'ProviderDashboard must include segmented tabs and live capacity utilization tracking'
+  );
+  const safetyDashSrc = fs.readFileSync('src/pages/dashboards/SafetyManagementDashboard.tsx', 'utf8');
+  assert.ok(
+    safetyDashSrc.includes('Peninsula Corridor Risk Matrix') &&
+      safetyDashSrc.includes('Rapid Dispatch Templates') &&
+      safetyDashSrc.includes('Live Triage & Dispatch'),
+    'SafetyManagementDashboard must include Peninsula Corridor Risk Matrix and Rapid Dispatch Templates'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 17 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 17 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
   );
 }
 

@@ -28,7 +28,7 @@ export default defineConfig(({mode}) => {
           name: 'CapeSafe Connect 360',
           short_name: 'CapeSafe 360',
           description: 'AI-powered tourism, verified bookings, and coastal safety platform for Cape Town.',
-          theme_color: '#0B1F3A',
+          theme_color: '#111827',
           background_color: '#F8FAFC',
           display: 'standalone',
           start_url: '/',

@@ -146,7 +146,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
       />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5">
-        <h1 className="font-display text-2xl font-bold text-[#0B1F3A]">
+        <h1 className="font-display text-2xl font-bold text-[#111827]">
           Cape Town Travel Budget &amp; Expense Ledger
         </h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -158,12 +158,12 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-xs text-slate-500">Total Logged Spend</p>
-          <p className="mt-1.5 font-display text-2xl font-bold tabular-nums text-[#0B1F3A]">
+          <p className="mt-1.5 font-display text-2xl font-bold tabular-nums text-[#111827]">
             R {totalSpent.toLocaleString('en-ZA')}
           </p>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
             <div
-              className={`h-full transition-all ${overBudget ? 'bg-red-600' : 'bg-[#0D9488]'}`}
+              className={`h-full transition-all ${overBudget ? 'bg-red-600' : 'bg-[#1D4ED8]'}`}
               style={{ width: `${utilizationPct}%` }}
             />
           </div>
@@ -175,7 +175,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             Planned Trip Budget (ZAR)
           </label>
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="font-display text-lg font-bold text-[#0B1F3A]">R</span>
+            <span className="font-display text-lg font-bold text-[#111827]">R</span>
             <input
               id="budget-target"
               type="number"
@@ -183,7 +183,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
               step={500}
               value={targetBudgetZar}
               onChange={(e) => setTargetBudgetZar(Math.max(500, Number(e.target.value) || 500))}
-              className="w-full rounded-lg border border-slate-300 px-3 py-1 font-display text-xl font-bold tabular-nums text-[#0B1F3A] focus:border-[#0D9488] focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-3 py-1 font-display text-xl font-bold tabular-nums text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
             />
           </div>
           <p className="mt-2 text-[11px] text-slate-500">Adjustable trip ceiling</p>
@@ -210,9 +210,9 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
 
       {/* Sync Confirmed Bookings Banner */}
       {unsyncedBookings.length > 0 && (
-        <div className="flex flex-col gap-3 rounded-xl border border-[#0D9488]/30 bg-[#F0FDFA] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5 text-xs text-[#0B1F3A]">
-            <CalendarCheck className="h-4 w-4 shrink-0 text-[#0D9488]" aria-hidden="true" />
+        <div className="flex flex-col gap-3 rounded-xl border border-[#1D4ED8]/30 bg-[#EFF6FF] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5 text-xs text-[#111827]">
+            <CalendarCheck className="h-4 w-4 shrink-0 text-[#1D4ED8]" aria-hidden="true" />
             <span>
               <strong>{unsyncedBookings.length} Confirmed Paid Booking(s)</strong> (totalling{' '}
               <span className="font-mono font-bold">
@@ -235,7 +235,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             type="button"
             disabled={syncingBookings}
             onClick={handleSyncConfirmedBookings}
-            className="rounded-lg bg-[#0D9488] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors whitespace-nowrap"
+            className="rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors whitespace-nowrap"
           >
             {syncingBookings ? 'Importing...' : 'Import Confirmed Bookings'}
           </button>
@@ -256,8 +256,8 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
       <div className="grid gap-6 lg:grid-cols-12">
         <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-4 space-y-5">
           <div className="flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-[#0D9488]" aria-hidden="true" />
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">Log Trip Expense</h2>
+            <Wallet className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+            <h2 className="font-display text-base font-bold text-[#111827]">Log Trip Expense</h2>
           </div>
 
           <form onSubmit={handleAdd} className="space-y-3">
@@ -271,7 +271,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="e.g., Signal Hill Coffee & Pastries"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
               />
             </div>
 
@@ -284,7 +284,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   id="exp-cat"
                   value={category}
                   onChange={(e) => setCategory(e.target.value as BudgetExpense['category'])}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 >
                   <option value="Accommodation">Accommodation</option>
                   <option value="Tours & Passes">Tours &amp; Passes</option>
@@ -304,7 +304,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   value={amountZar}
                   onChange={(e) => setAmountZar(e.target.value)}
                   placeholder="250"
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono tabular-nums text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono tabular-nums text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
             </div>
@@ -319,7 +319,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   type="date"
                   value={expenseDate}
                   onChange={(e) => setExpenseDate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-2 text-xs font-mono text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-2.5 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 />
               </div>
               <div>
@@ -330,7 +330,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                   id="exp-method"
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#0D9488] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
                 >
                   <option value="Card">Card</option>
                   <option value="Digital Wallet">Digital Wallet</option>
@@ -343,7 +343,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             <button
               type="submit"
               disabled={submittingExpense}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#0D9488] py-2 text-xs font-semibold text-white hover:bg-[#0F766E] disabled:opacity-60 transition-colors"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1D4ED8] py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {submittingExpense ? 'Saving...' : 'Add Expense'}
@@ -351,11 +351,11 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
           </form>
 
           <div className="border-t border-slate-200 pt-4 space-y-2.5">
-            <p className="text-xs font-semibold text-[#0B1F3A]">Category Breakdown</p>
+            <p className="text-xs font-semibold text-[#111827]">Category Breakdown</p>
             {categoryTotals.map((row) => (
               <div key={row.cat} className="flex items-center justify-between text-xs">
                 <span className="text-slate-600">{row.cat}</span>
-                <span className="font-mono font-semibold tabular-nums text-[#0B1F3A]">
+                <span className="font-mono font-semibold tabular-nums text-[#111827]">
                   R {row.total.toLocaleString('en-ZA')}
                 </span>
               </div>
@@ -365,7 +365,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
 
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white lg:col-span-8">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-display text-base font-bold text-[#0B1F3A]">
+            <h2 className="font-display text-base font-bold text-[#111827]">
               Expense Ledger ({visibleExpenses.length})
             </h2>
             <div className="flex flex-wrap gap-1">
@@ -378,8 +378,8 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                     onClick={() => setCategoryFilter(cat)}
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                       categoryFilter === cat
-                        ? 'bg-[#0B1F3A] text-white'
-                        : 'bg-slate-100 text-slate-600 hover:text-[#0B1F3A]'
+                        ? 'bg-[#111827] text-white'
+                        : 'bg-slate-100 text-slate-600 hover:text-[#111827]'
                     }`}
                   >
                     {cat}
@@ -407,10 +407,10 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                     <td className="px-5 py-3 font-mono text-xs tabular-nums text-slate-600">
                       {exp.date}
                     </td>
-                    <td className="px-5 py-3 font-medium text-[#0B1F3A]">{exp.description}</td>
+                    <td className="px-5 py-3 font-medium text-[#111827]">{exp.description}</td>
                     <td className="px-5 py-3 text-xs text-slate-600">{exp.category}</td>
                     <td className="px-5 py-3 text-xs text-slate-600">{exp.paymentMethod}</td>
-                    <td className="px-5 py-3 text-right font-mono text-xs font-semibold tabular-nums text-[#0B1F3A]">
+                    <td className="px-5 py-3 text-right font-mono text-xs font-semibold tabular-nums text-[#111827]">
                       R {exp.amountZar.toLocaleString('en-ZA')}
                     </td>
                     {onDeleteExpense && (
