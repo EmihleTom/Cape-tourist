@@ -51,4 +51,21 @@ export const storageService = {
     });
     return getDownloadURL(snapshot.ref);
   },
+
+  async uploadOfferingPhoto(uid: string, file: File): Promise<string> {
+    if (!auth.currentUser || auth.currentUser.uid !== uid) {
+      throw new Error('You must be signed in to upload experience photos.');
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      throw new Error('Experience photo must be smaller than 8 MB.');
+    }
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Please choose a valid image file (PNG, JPG, or WebP).');
+    }
+    const storageRef = ref(storage, `offerings/${uid}/${Date.now()}_${sanitizeFileName(file.name)}`);
+    const snapshot = await uploadBytes(storageRef, file, {
+      contentType: file.type,
+    });
+    return getDownloadURL(snapshot.ref);
+  },
 };

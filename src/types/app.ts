@@ -47,11 +47,72 @@ export interface DemoUser {
   dataOrigin: DataOrigin;
 }
 
+export type ActivityCategory =
+  | 'Attractions and sightseeing'
+  | 'Outdoor adventures'
+  | 'Water activities'
+  | 'Nature and wildlife'
+  | 'Family entertainment'
+  | 'Culture and heritage'
+  | 'Food and culinary experiences'
+  | 'Markets and shopping'
+  | 'Art and creative experiences'
+  | 'Guided tours'
+  | 'Sports and recreation'
+  | 'Day trips and excursions';
+
+export interface DirectoryCategoryConfig {
+  id: string;
+  name: ActivityCategory;
+  enabled: boolean;
+  featured: boolean;
+  description: string;
+  dataOrigin: DataOrigin;
+}
+
+export interface FavouriteItem {
+  id: string;
+  userId: string;
+  listingId: string;
+  listingTitle: string;
+  listingType: 'Attraction' | 'Activity' | 'Provider';
+  precinct: string;
+  createdAtLabel: string;
+  dataOrigin: DataOrigin;
+}
+
 export interface AttractionItem {
   id: string;
   title: string;
   precinct: string;
   category: 'Coastal' | 'Mountain' | 'Heritage' | 'Accessibility';
+  activityCategories?: ActivityCategory[];
+  entryType?: 'Attraction' | 'Activity';
+  featured?: boolean;
+  popular?: boolean;
+  recentlyAdded?: boolean;
+  recommended?: boolean;
+  familyFriendly?: boolean;
+  accessible?: boolean;
+  ageRequirement?: string;
+  minAge?: number;
+  groupSizeMax?: number;
+  availableToday?: boolean;
+  availableDates?: string[];
+  durationUnit?: DurationUnit;
+  defaultDurationValue?: number;
+  pricingModel?: PricingModel;
+  includedServices?: string[];
+  whatToBring?: string[];
+  cancellationPolicy?: string;
+  safetyInfo?: string;
+  nearbyTransport?: string[];
+  galleryImages?: string[];
+  providerId?: string;
+  providerName?: string;
+  verifiedProvider?: boolean;
+  supportedPaymentMethods?: PaymentMethodType[];
+  offeringId?: string;
   safetyStatus: 'Nominal' | 'Wind Advisory' | 'Guided Recommended';
   accessibilitySummary: string;
   duration: string;
@@ -350,6 +411,12 @@ export interface ReviewItem {
   rating: number;
   comment: string;
   createdAtLabel: string;
+  providerReply?: string;
+  providerReplyBy?: string;
+  providerRepliedAt?: string;
+  moderationStatus?: ModerationStatus;
+  flaggedReason?: string;
+  verifiedBooking?: boolean;
   dataOrigin: DataOrigin;
 }
 
@@ -412,8 +479,22 @@ export interface ProviderListing {
   offeringType?: OfferingType;
   experienceTitle: string;
   category?: string;
+  activityCategory?: ActivityCategory;
   zone?: string;
   description?: string;
+  imageUrl?: string;
+  galleryImages?: string[];
+  ageRequirement?: string;
+  familyFriendly?: boolean;
+  includedServices?: string[];
+  whatToBring?: string[];
+  cancellationPolicy?: string;
+  safetyInfo?: string;
+  verifiedListing?: boolean;
+  lat?: number;
+  lng?: number;
+  nearbyTransport?: string[];
+  availableDates?: string[];
   durationUnit?: DurationUnit;
   defaultDurationValue?: number;
   pricingModel?: PricingModel;
@@ -423,7 +504,7 @@ export interface ProviderListing {
   priceZar: number;
   accessible?: boolean;
   safetyChecklistComplete: boolean;
-  status: 'Active' | 'Paused';
+  status: 'Active' | 'Paused' | 'Flagged' | 'Removed';
   blockedDates?: string[];
   dataOrigin: DataOrigin;
 }
@@ -505,6 +586,29 @@ export interface AiTranslationResponse {
   pronunciationGuide: string;
   culturalEtiquetteTip: string;
   safetyPhraseVariant: string;
+  model: string;
+  dataOrigin: DataOrigin;
+}
+
+export interface AiExperienceRecommendation {
+  listingId: string;
+  title: string;
+  category: string;
+  precinct: string;
+  matchedReason: string;
+  suggestedDay: number;
+  suggestedTimeWindow: string;
+  estimatedZar: number;
+  ageSuitability: string;
+  stepFree: boolean;
+  transportTip: string;
+  safetyNote: string;
+}
+
+export interface AiExperienceRecommendationResponse {
+  summary: string;
+  advisoryNote: string;
+  recommendations: AiExperienceRecommendation[];
   model: string;
   dataOrigin: DataOrigin;
 }

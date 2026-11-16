@@ -1,5 +1,6 @@
 import type {
   AiConciergeResponse,
+  AiExperienceRecommendationResponse,
   AiPlannerResponse,
   AiTranslationResponse,
   AppAiContext,
@@ -141,6 +142,33 @@ export const aiService = {
     scenario: string;
   }): Promise<AiTranslationResponse> {
     return postJson<AiTranslationResponse>('/api/ai/translate', params);
+  },
+
+  async recommendExperiences(params: {
+    tripLengthDays: number;
+    interests: string[];
+    budgetZar: number;
+    preferredLocation: string;
+    availableTime: string;
+    groupProfile: string;
+    minChildAge: number;
+    accessibilityNeeds: boolean;
+    preferredLanguage: PreferredLanguage;
+    catalogSummary: Array<{
+      id: string;
+      title: string;
+      precinct: string;
+      categories: string[];
+      priceZar: number;
+      duration: string;
+      minAge?: number;
+      accessible?: boolean;
+      familyFriendly?: boolean;
+      safetyStatus: string;
+    }>;
+    context: AppAiContext;
+  }): Promise<AiExperienceRecommendationResponse> {
+    return postJson<AiExperienceRecommendationResponse>('/api/ai/recommend-experiences', params);
   },
 
   async moderateCommunityPost(params: {

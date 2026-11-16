@@ -32,6 +32,8 @@ export const FIREBASE_COLLECTIONS = {
   savedPaymentMethods: 'saved_payment_methods',
   providerPaymentSettings: 'provider_payment_settings',
   paymentAuditLogs: 'payment_audit_logs',
+  favourites: 'favourites',
+  activityCategories: 'activity_categories',
 } as const;
 
 export function getFirebaseConfig(): FirebaseWebConfig {

@@ -274,13 +274,22 @@ service cloud.firestore {
           'authorId', 'authorName', 'targetId', 'rating', 'comment', 'createdAt', 'updatedAt'
         ]) &&
         data.keys().hasOnly([
-          'authorId', 'authorName', 'targetId', 'rating', 'comment', 'createdAt', 'updatedAt'
+          'authorId', 'authorName', 'targetId', 'rating', 'comment',
+          'providerReply', 'providerReplyBy', 'providerRepliedAt',
+          'moderationStatus', 'flaggedReason', 'verifiedBooking',
+          'createdAt', 'updatedAt'
         ]) &&
         isValidId(data.authorId) &&
         data.authorName is string && data.authorName.size() >= 2 && data.authorName.size() <= 100 &&
         isValidId(data.targetId) &&
         data.rating is int && data.rating >= 1 && data.rating <= 5 &&
         data.comment is string && data.comment.size() >= 4 && data.comment.size() <= 600 &&
+        (!('providerReply' in data) || (data.providerReply is string && data.providerReply.size() <= 500)) &&
+        (!('providerReplyBy' in data) || (data.providerReplyBy is string && data.providerReplyBy.size() <= 140)) &&
+        (!('providerRepliedAt' in data) || (data.providerRepliedAt is string && data.providerRepliedAt.size() <= 40)) &&
+        (!('moderationStatus' in data) || data.moderationStatus in ['Approved', 'Under Review', 'Removed']) &&
+        (!('flaggedReason' in data) || (data.flaggedReason is string && data.flaggedReason.size() <= 240)) &&
+        (!('verifiedBooking' in data) || data.verifiedBooking is bool) &&
         data.createdAt is timestamp &&
         data.updatedAt is timestamp;
     }
@@ -433,10 +442,13 @@ service cloud.firestore {
         ]) &&
         data.keys().hasOnly([
           'id', 'providerId', 'providerName', 'offeringType', 'experienceTitle',
-          'category', 'zone', 'description', 'durationUnit', 'defaultDurationValue',
-          'unitPriceZar', 'pricingModel', 'availableUnits', 'bookedUnits',
-          'nextDeparture', 'accessible', 'safetyChecklistComplete', 'status',
-          'blockedDates', 'createdAt', 'updatedAt'
+          'category', 'activityCategory', 'zone', 'description', 'imageUrl', 'galleryImages',
+          'ageRequirement', 'familyFriendly', 'includedServices', 'whatToBring',
+          'cancellationPolicy', 'safetyInfo', 'verifiedListing', 'lat', 'lng',
+          'nearbyTransport', 'availableDates',
+          'durationUnit', 'defaultDurationValue', 'unitPriceZar', 'pricingModel',
+          'availableUnits', 'bookedUnits', 'nextDeparture', 'accessible',
+          'safetyChecklistComplete', 'status', 'blockedDates', 'createdAt', 'updatedAt'
         ]) &&
         isValidId(data.id) &&
         isValidId(data.providerId) &&
@@ -444,8 +456,22 @@ service cloud.firestore {
         data.offeringType in ['Accommodation', 'Transport', 'Activity'] &&
         data.experienceTitle is string && data.experienceTitle.size() >= 2 && data.experienceTitle.size() <= 160 &&
         data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        (!('activityCategory' in data) || (data.activityCategory is string && data.activityCategory.size() <= 80)) &&
         data.zone is string && data.zone.size() >= 2 && data.zone.size() <= 120 &&
         (!('description' in data) || (data.description is string && data.description.size() <= 500)) &&
+        (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 500)) &&
+        (!('galleryImages' in data) || (data.galleryImages is list && data.galleryImages.size() <= 10)) &&
+        (!('ageRequirement' in data) || (data.ageRequirement is string && data.ageRequirement.size() <= 80)) &&
+        (!('familyFriendly' in data) || data.familyFriendly is bool) &&
+        (!('includedServices' in data) || (data.includedServices is list && data.includedServices.size() <= 20)) &&
+        (!('whatToBring' in data) || (data.whatToBring is list && data.whatToBring.size() <= 20)) &&
+        (!('cancellationPolicy' in data) || (data.cancellationPolicy is string && data.cancellationPolicy.size() <= 400)) &&
+        (!('safetyInfo' in data) || (data.safetyInfo is string && data.safetyInfo.size() <= 400)) &&
+        (!('verifiedListing' in data) || data.verifiedListing is bool) &&
+        (!('lat' in data) || (data.lat is number && data.lat >= -90 && data.lat <= 90)) &&
+        (!('lng' in data) || (data.lng is number && data.lng >= -180 && data.lng <= 180)) &&
+        (!('nearbyTransport' in data) || (data.nearbyTransport is list && data.nearbyTransport.size() <= 10)) &&
+        (!('availableDates' in data) || (data.availableDates is list && data.availableDates.size() <= 60)) &&
         data.durationUnit in ['hours', 'days', 'nights', 'sessions'] &&
         data.defaultDurationValue is int && data.defaultDurationValue >= 1 && data.defaultDurationValue <= 60 &&
         data.unitPriceZar is number && data.unitPriceZar >= 0 && data.unitPriceZar <= 500000 &&
@@ -455,7 +481,7 @@ service cloud.firestore {
         data.nextDeparture is string && data.nextDeparture.size() >= 2 && data.nextDeparture.size() <= 80 &&
         data.accessible is bool &&
         data.safetyChecklistComplete is bool &&
-        data.status in ['Active', 'Paused'] &&
+        data.status in ['Active', 'Paused', 'Flagged', 'Removed'] &&
         (!('blockedDates' in data) || (
           data.blockedDates is list &&
           data.blockedDates.size() <= 30 &&
@@ -588,6 +614,37 @@ service cloud.firestore {
         data.amountZar is number && data.amountZar >= 0 && data.amountZar <= 500000 &&
         data.notes is string && data.notes.size() <= 400 &&
         data.createdAt is timestamp;
+    }
+
+    function isValidFavourite(data) {
+      return data.keys().hasAll([
+          'id', 'userId', 'listingId', 'listingTitle', 'listingType', 'precinct', 'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'userId', 'listingId', 'listingTitle', 'listingType', 'precinct', 'createdAt'
+        ]) &&
+        isValidId(data.id) &&
+        isValidId(data.userId) &&
+        isValidId(data.listingId) &&
+        data.listingTitle is string && data.listingTitle.size() >= 2 && data.listingTitle.size() <= 160 &&
+        data.listingType in ['Attraction', 'Activity', 'Provider'] &&
+        data.precinct is string && data.precinct.size() >= 2 && data.precinct.size() <= 120 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidActivityCategory(data) {
+      return data.keys().hasAll([
+          'id', 'name', 'enabled', 'featured', 'description', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'name', 'enabled', 'featured', 'description', 'updatedAt'
+        ]) &&
+        isValidId(data.id) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+        data.enabled is bool &&
+        data.featured is bool &&
+        data.description is string && data.description.size() <= 300 &&
+        data.updatedAt is timestamp;
     }
 
     // --- Collection Rules ---
@@ -851,7 +908,7 @@ service cloud.firestore {
       allow delete: if isValidId(notificationId) && isVerified() && (existing().userId == request.auth.uid || isAdmin());
     }
 
-    // 7. Reviews
+    // 7. Reviews (with Provider Responses & Admin Moderation)
     match /reviews/{reviewId} {
       allow get: if isValidId(reviewId) && isSignedIn();
       allow list: if isSignedIn() && existing().rating >= 1 && existing().rating <= 5;
@@ -859,6 +916,7 @@ service cloud.firestore {
         isVerified() &&
         isValidReview(incoming()) &&
         incoming().authorId == request.auth.uid &&
+        (!('moderationStatus' in incoming()) || incoming().moderationStatus in ['Approved', 'Under Review']) &&
         incoming().createdAt == request.time &&
         incoming().updatedAt == request.time;
       allow update: if isValidId(reviewId) &&
@@ -869,6 +927,10 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time && (
           isAdmin() ||
+          (isServiceProvider() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'providerReply', 'providerReplyBy', 'providerRepliedAt', 'updatedAt'
+            ])) ||
           (existing().authorId == request.auth.uid &&
             incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'comment', 'updatedAt']))
         );
@@ -1003,10 +1065,10 @@ service cloud.firestore {
     // 12. Provider Offerings & Availability Inventory
     match /provider_offerings/{offeringId} {
       allow get: if isValidId(offeringId) && isSignedIn();
-      allow list: if isSignedIn() && existing().status in ['Active', 'Paused'];
+      allow list: if isSignedIn() && existing().status in ['Active', 'Paused', 'Flagged', 'Removed'];
       allow create: if isValidId(offeringId) &&
         isVerified() &&
-        isServiceProvider() &&
+        (isServiceProvider() || isAdmin()) &&
         isValidProviderOffering(incoming()) &&
         incoming().id == offeringId &&
         incoming().providerId == request.auth.uid &&
@@ -1023,7 +1085,10 @@ service cloud.firestore {
           (existing().providerId == request.auth.uid &&
             isServiceProvider() &&
             incoming().diff(existing()).affectedKeys().hasOnly([
-              'offeringType', 'experienceTitle', 'category', 'zone', 'description',
+              'offeringType', 'experienceTitle', 'category', 'activityCategory', 'zone',
+              'description', 'imageUrl', 'galleryImages', 'ageRequirement', 'familyFriendly',
+              'includedServices', 'whatToBring', 'cancellationPolicy', 'safetyInfo',
+              'lat', 'lng', 'nearbyTransport', 'availableDates',
               'durationUnit', 'defaultDurationValue', 'unitPriceZar', 'pricingModel',
               'availableUnits', 'bookedUnits', 'nextDeparture', 'accessible',
               'safetyChecklistComplete', 'status', 'blockedDates', 'updatedAt'
@@ -1162,6 +1227,33 @@ service cloud.firestore {
         incoming().actorId == request.auth.uid &&
         incoming().createdAt == request.time;
       allow update, delete: if false;
+    }
+
+    // 17. User Favourites (Attractions, Activities, and Providers)
+    match /favourites/{favId} {
+      allow get: if isValidId(favId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(favId) &&
+        isVerified() &&
+        isValidFavourite(incoming()) &&
+        incoming().id == favId &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(favId) && isVerified() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 18. Admin-Managed Activity Categories
+    match /activity_categories/{categoryId} {
+      allow get: if isValidId(categoryId) && isSignedIn();
+      allow list: if isSignedIn() && existing().name is string;
+      allow create, update: if isValidId(categoryId) &&
+        isVerified() &&
+        isAdmin() &&
+        isValidActivityCategory(incoming()) &&
+        incoming().id == categoryId &&
+        incoming().updatedAt == request.time;
+      allow delete: if isValidId(categoryId) && isAdmin();
     }
   }
 }

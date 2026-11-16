@@ -8,12 +8,16 @@ import {
   Database,
   Flag,
   LayoutDashboard,
+  Layers,
   MapPin,
   Megaphone,
+  MessageSquareWarning,
   Pin,
   Search,
   ShieldAlert,
   ShieldCheck,
+  Star,
+  Store,
   Trash2,
   Users,
   Wallet,
@@ -21,6 +25,7 @@ import {
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { StatusText } from '@/src/components/common/StatusText';
 import { AdminPaymentManagementSection } from '@/src/components/payments/AdminPaymentManagementSection';
+import { DEFAULT_ACTIVITY_CATEGORIES } from '@/src/data/capeTownDirectory';
 import { ROLE_LABELS } from '@/src/data/navigation';
 import { getArchitectureReadiness } from '@/src/services/firebase/config';
 import type {
@@ -30,11 +35,14 @@ import type {
   CommunityPost,
   DemoUser,
   DestinationAnnouncement,
+  DirectoryCategoryConfig,
   ModerationStatus,
   NavSectionId,
   PaymentAuditLog,
   PaymentRecord,
   ProviderApplication,
+  ProviderListing,
+  ReviewItem,
   SafetyAdvisory,
   UserRole,
 } from '@/src/types/app';
@@ -51,6 +59,9 @@ interface AdminDashboardProps {
   paymentAuditLogs: PaymentAuditLog[];
   bookings?: BookingItem[];
   communityPosts?: CommunityPost[];
+  listings?: ProviderListing[];
+  categories?: DirectoryCategoryConfig[];
+  reviews?: ReviewItem[];
   weather?: CapeTownWeather;
   initialTab?: AdminDashboardTab;
   onTabChange?: (tab: AdminDashboardTab) => void;
@@ -58,6 +69,13 @@ interface AdminDashboardProps {
     postId: string,
     status: ModerationStatus,
     verifiedGuide?: boolean
+  ) => Promise<void> | void;
+  onUpdateListing?: (id: string, updates: Partial<ProviderListing>) => Promise<void> | void;
+  onUpdateCategory?: (category: DirectoryCategoryConfig) => Promise<void> | void;
+  onModerateReview?: (
+    reviewId: string,
+    status: ModerationStatus,
+    flaggedReason?: string
   ) => Promise<void> | void;
   onIssueRefund: (
     paymentId: string,
@@ -116,10 +134,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   paymentAuditLogs,
   bookings = [],
   communityPosts = [],
+  listings = [],
+  categories = DEFAULT_ACTIVITY_CATEGORIES,
+  reviews = [],
   weather,
   initialTab = 'overview',
   onTabChange,
   onModeratePost,
+  onUpdateListing,
+  onUpdateCategory,
+  onModerateReview,
   onIssueRefund,
   onUpdateApplicationStatus,
   onUpdateUserRole,
@@ -1253,6 +1277,347 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   ))}
                 </div>
               )}
+            </section>
+          )}
+
+          {/* Directory Offerings Verification & Removal */}
+          {onUpdateListing && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Store className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                  <h2 className="font-display text-base font-bold text-[#111827]">
+                    Directory Offerings Verification &amp; Moderation ({listings.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-slate-500">
+                  Verify accurate operator listings or remove misleading / outdated offerings from Discover Cape Town
+                </span>
+              </div>
+
+              <div className="divide-y divide-slate-200">
+                {listings.length === 0 ? (
+                  <p className="py-4 text-xs text-slate-500">No provider offerings submitted yet.</p>
+                ) : (
+                  listings.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="text-xs space-y-0.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-[#111827]">
+                            {item.experienceTitle}
+                          </span>
+                          <span className="font-mono text-[11px] text-slate-600 tabular-nums">
+                            R {item.priceZar.toLocaleString('en-ZA')}
+                          </span>
+                          <StatusText
+                            label={
+                              item.verifiedListing
+                                ? 'Admin Verified'
+                                : item.dataOrigin === 'demo'
+                                ? 'Demo Listing'
+                                : 'Unverified'
+                            }
+                            tone={item.verifiedListing ? 'nominal' : 'advisory'}
+                          />
+                          <StatusText
+                            label={item.status}
+                            tone={
+                              item.status === 'Active'
+                                ? 'nominal'
+                                : item.status === 'Removed'
+                                ? 'alert'
+                                : 'advisory'
+                            }
+                          />
+                        </div>
+                        <p className="text-slate-600">
+                          {item.providerName || 'Service Provider'} ·{' '}
+                          {item.activityCategory || item.offeringType || 'Activity'} ·{' '}
+                          {item.zone || 'Cape Town'}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          disabled={busyKey === `lst-${item.id}`}
+                          onClick={async () => {
+                            setAdminError('');
+                            setBusyKey(`lst-${item.id}`);
+                            try {
+                              await onUpdateListing(item.id, {
+                                verifiedListing: !item.verifiedListing,
+                                status: item.status === 'Removed' ? 'Active' : item.status,
+                              });
+                            } catch (err) {
+                              setAdminError(
+                                err instanceof Error ? err.message : 'Unable to update listing verification.'
+                              );
+                            } finally {
+                              setBusyKey(null);
+                            }
+                          }}
+                          className="rounded-md bg-[#15803D] px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap"
+                        >
+                          {item.verifiedListing ? 'Unverify' : 'Verify Listing'}
+                        </button>
+                        {item.status !== 'Removed' ? (
+                          <button
+                            type="button"
+                            disabled={busyKey === `lst-${item.id}`}
+                            onClick={async () => {
+                              setAdminError('');
+                              setBusyKey(`lst-${item.id}`);
+                              try {
+                                await onUpdateListing(item.id, { status: 'Removed' });
+                              } catch (err) {
+                                setAdminError(
+                                  err instanceof Error ? err.message : 'Unable to remove listing.'
+                                );
+                              } finally {
+                                setBusyKey(null);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60 whitespace-nowrap"
+                          >
+                            <Trash2 className="h-3 w-3" aria-hidden="true" />
+                            Remove Misleading
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busyKey === `lst-${item.id}`}
+                            onClick={async () => {
+                              setAdminError('');
+                              setBusyKey(`lst-${item.id}`);
+                              try {
+                                await onUpdateListing(item.id, { status: 'Active' });
+                              } catch (err) {
+                                setAdminError(
+                                  err instanceof Error ? err.message : 'Unable to restore listing.'
+                                );
+                              } finally {
+                                setBusyKey(null);
+                              }
+                            }}
+                            className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#111827] hover:bg-slate-50 whitespace-nowrap"
+                          >
+                            Restore Active
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Activity Categories Governance */}
+          {onUpdateCategory && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                  <h2 className="font-display text-base font-bold text-[#111827]">
+                    Activity Categories Governance ({categories.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-slate-500">
+                  Enable, disable, or feature directory categories in Discover Cape Town
+                </span>
+              </div>
+
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="flex flex-col justify-between gap-2.5 rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-bold text-[#111827]">{cat.name}</span>
+                        <StatusText
+                          label={cat.enabled ? 'Enabled' : 'Disabled'}
+                          tone={cat.enabled ? 'nominal' : 'alert'}
+                        />
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-600">{cat.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={busyKey === `cat-${cat.id}`}
+                        onClick={async () => {
+                          setAdminError('');
+                          setBusyKey(`cat-${cat.id}`);
+                          try {
+                            await onUpdateCategory({ ...cat, enabled: !cat.enabled });
+                          } catch (err) {
+                            setAdminError(
+                              err instanceof Error ? err.message : 'Unable to update category.'
+                            );
+                          } finally {
+                            setBusyKey(null);
+                          }
+                        }}
+                        className="flex-1 rounded border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[#111827] hover:bg-slate-100 disabled:opacity-60"
+                      >
+                        {cat.enabled ? 'Disable' : 'Enable'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyKey === `cat-${cat.id}`}
+                        onClick={async () => {
+                          setAdminError('');
+                          setBusyKey(`cat-${cat.id}`);
+                          try {
+                            await onUpdateCategory({ ...cat, featured: !cat.featured });
+                          } catch (err) {
+                            setAdminError(
+                              err instanceof Error ? err.message : 'Unable to update category.'
+                            );
+                          } finally {
+                            setBusyKey(null);
+                          }
+                        }}
+                        className={`flex-1 rounded px-2.5 py-1 text-[11px] font-semibold disabled:opacity-60 ${
+                          cat.featured
+                            ? 'bg-[#1D4ED8] text-white hover:bg-[#1E40AF]'
+                            : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {cat.featured ? 'Featured' : 'Set Featured'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Customer Review Moderation */}
+          {onModerateReview && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <MessageSquareWarning className="h-4 w-4 text-amber-700" aria-hidden="true" />
+                  <h2 className="font-display text-base font-bold text-[#111827]">
+                    Experience Review Moderation ({reviews.length})
+                  </h2>
+                </div>
+                <span className="text-xs text-slate-500">
+                  Approve authentic visitor reviews or remove misleading feedback
+                </span>
+              </div>
+
+              <div className="divide-y divide-slate-200">
+                {reviews.length === 0 ? (
+                  <p className="py-4 text-xs text-slate-500">No reviews recorded yet.</p>
+                ) : (
+                  reviews.map((rev) => {
+                    const modStatus = rev.moderationStatus || 'Approved';
+                    return (
+                      <div
+                        key={rev.id}
+                        className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="text-xs space-y-0.5">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-semibold text-[#111827]">{rev.authorName}</span>
+                            <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8]">
+                              <Star className="h-3 w-3 fill-[#1D4ED8]" aria-hidden="true" />
+                              {rev.rating}/5
+                            </span>
+                            <span className="text-slate-500">Target: {rev.targetId}</span>
+                            <StatusText
+                              label={modStatus}
+                              tone={
+                                modStatus === 'Approved'
+                                  ? 'nominal'
+                                  : modStatus === 'Removed'
+                                  ? 'alert'
+                                  : 'advisory'
+                              }
+                            />
+                          </div>
+                          <p className="text-slate-700">{rev.comment}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={busyKey === `modrev-${rev.id}`}
+                            onClick={async () => {
+                              setAdminError('');
+                              setBusyKey(`modrev-${rev.id}`);
+                              try {
+                                await onModerateReview(rev.id, 'Approved');
+                              } catch (err) {
+                                setAdminError(
+                                  err instanceof Error ? err.message : 'Unable to approve review.'
+                                );
+                              } finally {
+                                setBusyKey(null);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md bg-[#15803D] px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyKey === `modrev-${rev.id}`}
+                            onClick={async () => {
+                              setAdminError('');
+                              setBusyKey(`modrev-${rev.id}`);
+                              try {
+                                await onModerateReview(rev.id, 'Under Review', 'Flagged by Administrator');
+                              } catch (err) {
+                                setAdminError(
+                                  err instanceof Error ? err.message : 'Unable to flag review.'
+                                );
+                              } finally {
+                                setBusyKey(null);
+                              }
+                            }}
+                            className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                          >
+                            Flag
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyKey === `modrev-${rev.id}`}
+                            onClick={async () => {
+                              setAdminError('');
+                              setBusyKey(`modrev-${rev.id}`);
+                              try {
+                                await onModerateReview(
+                                  rev.id,
+                                  'Removed',
+                                  'Removed by Administrator moderation'
+                                );
+                              } catch (err) {
+                                setAdminError(
+                                  err instanceof Error ? err.message : 'Unable to remove review.'
+                                );
+                              } finally {
+                                setBusyKey(null);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                          >
+                            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </section>
           )}
         </div>

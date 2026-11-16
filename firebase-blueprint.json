@@ -534,6 +534,29 @@
           "minLength": 4,
           "maxLength": 600
         },
+        "providerReply": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "providerReplyBy": {
+          "type": "string",
+          "maxLength": 140
+        },
+        "providerRepliedAt": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "moderationStatus": {
+          "type": "string",
+          "enum": ["Approved", "Under Review", "Removed"]
+        },
+        "flaggedReason": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "verifiedBooking": {
+          "type": "boolean"
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -910,7 +933,54 @@
         },
         "status": {
           "type": "string",
-          "enum": ["Active", "Paused"]
+          "enum": ["Active", "Paused", "Flagged", "Removed"]
+        },
+        "activityCategory": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "imageUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "galleryImages": {
+          "type": "array"
+        },
+        "ageRequirement": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "familyFriendly": {
+          "type": "boolean"
+        },
+        "includedServices": {
+          "type": "array"
+        },
+        "whatToBring": {
+          "type": "array"
+        },
+        "cancellationPolicy": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "safetyInfo": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "verifiedListing": {
+          "type": "boolean"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "nearbyTransport": {
+          "type": "array"
+        },
+        "availableDates": {
+          "type": "array"
         },
         "blockedDates": {
           "type": "array"
@@ -1100,6 +1170,35 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "paymentId", "bookingId", "actorId", "actorRole", "action", "newStatus", "amountZar", "notes", "createdAt"]
+    },
+    "Favourite": {
+      "title": "Favourite",
+      "description": "Tourist saved attraction, activity, or service provider bookmark.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "listingId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "listingTitle": { "type": "string", "minLength": 2, "maxLength": 160 },
+        "listingType": { "type": "string", "enum": ["Attraction", "Activity", "Provider"] },
+        "precinct": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "listingId", "listingTitle", "listingType", "precinct", "createdAt"]
+    },
+    "ActivityCategory": {
+      "title": "ActivityCategory",
+      "description": "Curated marketplace activity category visibility and featured configuration managed by Administrators.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "enabled": { "type": "boolean" },
+        "featured": { "type": "boolean" },
+        "description": { "type": "string", "maxLength": 300 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "enabled", "featured", "description", "updatedAt"]
     }
   },
   "firestore": {
@@ -1145,7 +1244,7 @@
     },
     "/reviews/{reviewId}": {
       "schema": { "$ref": "#/entities/Review" },
-      "description": "Verified user reviews on Cape Town businesses and attractions."
+      "description": "Verified user reviews on Cape Town businesses, attractions, and activities, with provider responses and moderation."
     },
     "/community_posts/{postId}": {
       "schema": { "$ref": "#/entities/CommunityPost" },
@@ -1178,6 +1277,14 @@
     "/payment_audit_logs/{logId}": {
       "schema": { "$ref": "#/entities/PaymentAuditLog" },
       "description": "Immutable append-only payment and refund audit history."
+    },
+    "/favourites/{favId}": {
+      "schema": { "$ref": "#/entities/Favourite" },
+      "description": "Saved Cape Town attraction, activity, and provider bookmarks owned by userId."
+    },
+    "/activity_categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/ActivityCategory" },
+      "description": "Marketplace activity category settings managed by Administrators."
     }
   }
 }

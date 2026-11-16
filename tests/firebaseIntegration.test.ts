@@ -25,6 +25,13 @@ import { aiService, buildSafeAiContext, OFFLINE_CAPE_TOWN_PHRASEBOOK } from '../
 import { offlineTravelService } from '../src/services/offlineTravelService.ts';
 import { formatAuthorByVisibility } from '../src/pages/features/CommunityHubPage.tsx';
 import {
+  ACTIVITY_CATEGORIES,
+  CAPE_TOWN_ATTRACTIONS_DIRECTORY,
+  CAPE_TOWN_BOOKABLE_ACTIVITIES,
+  CAPE_TOWN_DIRECTORY_ITEMS,
+  DEFAULT_ACTIVITY_CATEGORIES,
+} from '../src/data/capeTownDirectory.ts';
+import {
   DEMO_ANNOUNCEMENTS,
   DEMO_ATTRACTIONS,
   DEMO_BOOKINGS,
@@ -130,14 +137,16 @@ async function runTests() {
   // Verify all 15 navigation sections exist
   assert.equal(NAV_ITEMS.length, 15, 'All 15 planned navigation features must be registered');
 
-  // 5. All 16 Domain Collections + New Feature Services + Storage Rules Verification
-  assert.equal(Object.keys(FIREBASE_COLLECTIONS).length, 17); // 16 domain collections + admins marker
+  // 5. All 18 Domain Collections + Admins Marker + Service Exports + Storage Rules Verification
+  assert.equal(Object.keys(FIREBASE_COLLECTIONS).length, 19); // 18 domain collections + admins marker
   assert.equal(FIREBASE_COLLECTIONS.announcements, 'announcements');
   assert.equal(FIREBASE_COLLECTIONS.providerOfferings, 'provider_offerings');
   assert.equal(FIREBASE_COLLECTIONS.payments, 'payments');
   assert.equal(FIREBASE_COLLECTIONS.savedPaymentMethods, 'saved_payment_methods');
   assert.equal(FIREBASE_COLLECTIONS.providerPaymentSettings, 'provider_payment_settings');
   assert.equal(FIREBASE_COLLECTIONS.paymentAuditLogs, 'payment_audit_logs');
+  assert.equal(FIREBASE_COLLECTIONS.favourites, 'favourites');
+  assert.equal(FIREBASE_COLLECTIONS.activityCategories, 'activity_categories');
 
   for (const methodName of [
     'createBusinessApplication',
@@ -181,6 +190,13 @@ async function runTests() {
     'upsertProviderPaymentSettings',
     'subscribePaymentAuditLogs',
     'appendPaymentAuditLog',
+    'replyToReview',
+    'moderateReview',
+    'subscribeFavourites',
+    'addFavourite',
+    'removeFavourite',
+    'subscribeActivityCategories',
+    'upsertActivityCategory',
   ] as const) {
     assert.equal(
       typeof dataService[methodName],
@@ -192,11 +208,13 @@ async function runTests() {
   assert.equal(typeof storageService.uploadUserAvatar, 'function');
   assert.equal(typeof storageService.uploadIncidentPhoto, 'function');
   assert.equal(typeof storageService.uploadBusinessComplianceDoc, 'function');
+  assert.equal(typeof storageService.uploadOfferingPhoto, 'function');
 
   const storageRules = fs.readFileSync('storage.rules', 'utf8');
   assert.ok(storageRules.includes('match /users/{userId}/avatar/'));
   assert.ok(storageRules.includes('match /incidents/{userId}/'));
   assert.ok(storageRules.includes('match /businesses/{userId}/'));
+  assert.ok(storageRules.includes('match /offerings/{userId}/'));
 
   // 6. Cape Town Weather Service (Open-Meteo or clearly labeled demo fallback)
   const weather = await fetchCapeTownWeather();
@@ -701,15 +719,20 @@ async function runTests() {
   assert.ok(
     adminDashSrc.includes('Overview & Dispatch') &&
       adminDashSrc.includes('Accreditations & RBAC') &&
-      adminDashSrc.includes('Payments & Audit'),
-    'AdminDashboard must organize operations into segmented workspace tabs'
+      adminDashSrc.includes('Payments & Audit') &&
+      adminDashSrc.includes('Activity Categories Governance') &&
+      adminDashSrc.includes('Experience Review Moderation') &&
+      adminDashSrc.includes('Directory Offerings Verification'),
+    'AdminDashboard must organize operations and include category, listing, and review governance'
   );
   const providerDashSrc = fs.readFileSync('src/pages/dashboards/ProviderDashboard.tsx', 'utf8');
   assert.ok(
     providerDashSrc.includes('Offering Capacity Utilization Pulse') &&
       providerDashSrc.includes('Operations & Bookings') &&
-      providerDashSrc.includes('Offerings & Calendar'),
-    'ProviderDashboard must include segmented tabs and live capacity utilization tracking'
+      providerDashSrc.includes('Offerings & Calendar') &&
+      providerDashSrc.includes('Customer Reviews & Provider Responses') &&
+      providerDashSrc.includes('uploadOfferingPhoto'),
+    'ProviderDashboard must include segmented tabs, marketplace offering fields, photo upload, and review responses'
   );
   const safetyDashSrc = fs.readFileSync('src/pages/dashboards/SafetyManagementDashboard.tsx', 'utf8');
   assert.ok(
@@ -719,8 +742,96 @@ async function runTests() {
     'SafetyManagementDashboard must include Peninsula Corridor Risk Matrix and Rapid Dispatch Templates'
   );
 
+  // 12. Discover Cape Town Attractions & Activities Directory Marketplace Verification
+  assert.equal(ACTIVITY_CATEGORIES.length, 12, 'Must define all 12 activity categories');
+  assert.equal(DEFAULT_ACTIVITY_CATEGORIES.length, 12);
+  assert.ok(
+    CAPE_TOWN_ATTRACTIONS_DIRECTORY.length >= 24,
+    'Must populate at least 24 named Cape Town attractions'
+  );
+  assert.ok(
+    CAPE_TOWN_BOOKABLE_ACTIVITIES.length >= 16,
+    'Must populate at least 16 bookable Cape Town activity types'
+  );
+  assert.ok(CAPE_TOWN_DIRECTORY_ITEMS.length >= 40);
+
+  const joinedTitles = CAPE_TOWN_DIRECTORY_ITEMS.map((i) => i.title.toLowerCase()).join(' | ');
+  for (const requiredAttraction of [
+    'table mountain',
+    "lion's head",
+    'signal hill',
+    'cape point',
+    'cape of good hope',
+    'robben island',
+    'boulders beach',
+    'kirstenbosch',
+    'waterfront',
+    'two oceans aquarium',
+    'cape wheel',
+    'bo-kaap',
+    'district six museum',
+    'castle of good hope',
+    "company's garden",
+    'muizenberg beach',
+    'camps bay beach',
+    'clifton',
+    "chapman's peak drive",
+    'world of birds',
+    'zeitz mocaa',
+    'old biscuit mill',
+    'green point urban park',
+    'hout bay harbour',
+  ]) {
+    assert.ok(
+      joinedTitles.includes(requiredAttraction),
+      `Missing required Cape Town attraction in directory: ${requiredAttraction}`
+    );
+  }
+
+  for (const item of CAPE_TOWN_DIRECTORY_ITEMS) {
+    assert.ok(Boolean(item.ageRequirement), `Missing ageRequirement on ${item.id}`);
+    assert.ok(Boolean(item.cancellationPolicy), `Missing cancellationPolicy on ${item.id}`);
+    assert.ok(Boolean(item.safetyInfo), `Missing safetyInfo on ${item.id}`);
+    assert.ok(
+      Array.isArray(item.includedServices) && item.includedServices.length > 0,
+      `Missing includedServices on ${item.id}`
+    );
+    assert.ok(
+      Array.isArray(item.whatToBring) && item.whatToBring.length > 0,
+      `Missing whatToBring on ${item.id}`
+    );
+    assert.ok(!item.imageUrl.startsWith('http'), `Local bundled asset expected on ${item.id}`);
+  }
+
+  const explorePageSrc = fs.readFileSync('src/pages/features/ExplorePage.tsx', 'utf8');
+  assert.ok(
+    explorePageSrc.includes('AI Experience Matcher') &&
+      explorePageSrc.includes('Available Today') &&
+      explorePageSrc.includes('Family-Friendly') &&
+      explorePageSrc.includes('ExperienceDetailModal'),
+    'ExplorePage must wire advanced filters, AI Experience Matcher, and ExperienceDetailModal'
+  );
+  const detailModalSrc = fs.readFileSync('src/components/explore/ExperienceDetailModal.tsx', 'utf8');
+  assert.ok(
+    detailModalSrc.includes('CheckoutPaymentStep') &&
+      detailModalSrc.includes('PaymentReceiptModal') &&
+      detailModalSrc.includes('https://www.google.com/maps/dir/'),
+    'ExperienceDetailModal must integrate booking checkout, receipts, and Google Maps directions'
+  );
+  assert.ok(
+    capeTownMapSrc.includes('https://www.google.com/maps/dir/') &&
+      capeTownMapSrc.includes('Nearby Transport') &&
+      capeTownMapSrc.includes('onToggleFavourite'),
+    'CapeTownMap must support Get Directions, Nearby Transport, and Save Favourites'
+  );
+  assert.equal(typeof aiService.recommendExperiences, 'function');
+  assert.ok(
+    serverSrc.includes('/ai/recommend-experiences'),
+    'server.ts must expose /api/ai/recommend-experiences endpoint'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 17 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Favourites + Provider/Admin governance), TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
   );
 }
 

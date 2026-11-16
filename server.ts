@@ -506,6 +506,138 @@ export function createApiRouter() {
     }
   });
 
+  // 3b. Smart Experience Discovery Recommender
+  router.post('/ai/recommend-experiences', async (req, res) => {
+    const {
+      tripLengthDays = 3,
+      interests = ['Attractions and sightseeing', 'Nature and wildlife'],
+      budgetZar = 3500,
+      preferredLocation = 'All Precincts',
+      availableTime = 'Morning (08:00–12:00)',
+      groupProfile = 'Couple / Friends',
+      minChildAge = 18,
+      accessibilityNeeds = false,
+      preferredLanguage = 'English',
+      catalogSummary = [],
+      context,
+    } = req.body as {
+      tripLengthDays?: number;
+      interests?: string[];
+      budgetZar?: number;
+      preferredLocation?: string;
+      availableTime?: string;
+      groupProfile?: string;
+      minChildAge?: number;
+      accessibilityNeeds?: boolean;
+      preferredLanguage?: 'English' | 'Afrikaans' | 'isiXhosa';
+      catalogSummary?: Array<{
+        id: string;
+        title: string;
+        precinct: string;
+        categories: string[];
+        priceZar: number;
+        duration: string;
+        minAge?: number;
+        accessible?: boolean;
+        familyFriendly?: boolean;
+        safetyStatus: string;
+      }>;
+      context?: Record<string, unknown>;
+    };
+
+    const ai = getAiClient();
+    if (!ai) {
+      res.status(503).json({
+        error:
+          'Server-side GEMINI_API_KEY is not configured. Configure it in Settings > Secrets to enable Gemini experience matching.',
+      });
+      return;
+    }
+
+    const safeDays = Math.max(1, Math.min(14, Math.round(Number(tripLengthDays) || 3)));
+    const safeBudget = Math.max(0, Math.min(200000, Math.round(Number(budgetZar) || 3500)));
+    const safeChildAge = Math.max(0, Math.min(99, Math.round(Number(minChildAge) ?? 18)));
+
+    const systemInstruction = [
+      'You are CapeSafe Experience Concierge recommending verified Cape Town attractions and activities strictly from the provided catalogSummary JSON.',
+      `Write all text fields in ${preferredLanguage}.`,
+      `Trip length: ${safeDays} days; Budget ceiling: R ${safeBudget} ZAR; Preferred precinct: ${preferredLocation}; Available window: ${availableTime}; Group: ${groupProfile}.`,
+      `CRITICAL AGE & ACCESSIBILITY FILTER: Only select experiences whose minAge <= ${safeChildAge}.`,
+      accessibilityNeeds
+        ? 'CRITICAL: Only select experiences where accessible === true (step-free/assisted access verified).'
+        : 'Flag stepFree accurately from catalogSummary.',
+      'Consider current Cape Town wind/cableway conditions in context when picking morning vs afternoon or mountain vs sheltered indoor/coastal stops.',
+      'Return 3 to 5 best-matched recommendations using exact listingId and title values from catalogSummary.',
+    ].join(' ');
+
+    try {
+      const result = await generateJsonWithRetry<{
+        summary: string;
+        advisoryNote: string;
+        recommendations: Array<{
+          listingId: string;
+          title: string;
+          category: string;
+          precinct: string;
+          matchedReason: string;
+          suggestedDay: number;
+          suggestedTimeWindow: string;
+          estimatedZar: number;
+          ageSuitability: string;
+          stepFree: boolean;
+          transportTip: string;
+          safetyNote: string;
+        }>;
+      }>(ai, {
+        model: MODEL_NAME,
+        contents: `Interests: ${JSON.stringify(interests)}\nCatalog Summary:\n${JSON.stringify(catalogSummary.slice(0, 48))}\nLive Conditions Context:\n${JSON.stringify(context ?? {})}`,
+        config: {
+          systemInstruction,
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              summary: { type: Type.STRING },
+              advisoryNote: { type: Type.STRING },
+              recommendations: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    listingId: { type: Type.STRING },
+                    title: { type: Type.STRING },
+                    category: { type: Type.STRING },
+                    precinct: { type: Type.STRING },
+                    matchedReason: { type: Type.STRING },
+                    suggestedDay: { type: Type.INTEGER },
+                    suggestedTimeWindow: { type: Type.STRING },
+                    estimatedZar: { type: Type.INTEGER },
+                    ageSuitability: { type: Type.STRING },
+                    stepFree: { type: Type.BOOLEAN },
+                    transportTip: { type: Type.STRING },
+                    safetyNote: { type: Type.STRING },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      res.json({
+        summary: result.summary,
+        advisoryNote: result.advisoryNote,
+        recommendations: Array.isArray(result.recommendations) ? result.recommendations.slice(0, 5) : [],
+        model: MODEL_NAME,
+        dataOrigin: 'live',
+      });
+    } catch (err) {
+      const formatted = formatGeminiError(err);
+      res.status(formatted.status).json({ error: formatted.message });
+    }
+  });
+
   // 4. Community Post Moderation Endpoint
   router.post('/community/moderate', async (req, res) => {
     const { content, zone = 'Cape Town' } = req.body as { content?: string; zone?: string };

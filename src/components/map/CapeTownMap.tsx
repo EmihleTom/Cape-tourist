@@ -7,7 +7,16 @@ import {
   Pin,
   useMap,
 } from '@vis.gl/react-google-maps';
-import { Compass, Layers, MapPin, ShieldAlert, Store } from 'lucide-react';
+import {
+  Bus,
+  Compass,
+  Heart,
+  Layers,
+  MapPin,
+  Navigation,
+  ShieldAlert,
+  Store,
+} from 'lucide-react';
 import type { AttractionItem, ProviderApplication, SafetyAdvisory } from '@/src/types/app';
 
 export interface MapMarkerItem {
@@ -19,6 +28,7 @@ export interface MapMarkerItem {
   badge: string;
   lat: number;
   lng: number;
+  nearbyTransport?: string[];
   dataOrigin: 'demo' | 'live';
 }
 
@@ -28,6 +38,9 @@ interface CapeTownMapProps {
   incidents?: SafetyAdvisory[];
   userLocation?: { lat: number; lng: number; label?: string } | null;
   selectedId?: string | null;
+  favouriteIds?: string[];
+  onToggleFavourite?: (id: string) => void;
+  onOpenDetails?: (id: string) => void;
   onSelectMarker?: (marker: MapMarkerItem) => void;
   heightClassName?: string;
   defaultLayers?: {
@@ -39,31 +52,36 @@ interface CapeTownMapProps {
 
 const CAPE_TOWN_CENTER = { lat: -33.965, lng: 18.4241 };
 
-const ZONE_COORDINATES: Array<{ match: string; lat: number; lng: number }> = [
-  { match: 'waterfront', lat: -33.9036, lng: 18.4205 },
-  { match: 'sea point', lat: -33.9168, lng: 18.3879 },
-  { match: 'boulders', lat: -34.1975, lng: 18.4513 },
-  { match: "simon's town", lat: -34.1915, lng: 18.4335 },
-  { match: 'kirstenbosch', lat: -33.9875, lng: 18.4327 },
-  { match: 'newlands', lat: -33.982, lng: 18.445 },
-  { match: 'bo-kaap', lat: -33.9209, lng: 18.4148 },
-  { match: 'signal hill', lat: -33.9175, lng: 18.4028 },
-  { match: 'lion', lat: -33.9351, lng: 18.3891 },
-  { match: 'table mountain', lat: -33.9573, lng: 18.4031 },
-  { match: 'platteklip', lat: -33.9598, lng: 18.4094 },
-  { match: 'chapman', lat: -34.087, lng: 18.36 },
-  { match: 'hout bay', lat: -34.0485, lng: 18.3471 },
-  { match: 'muizenberg', lat: -34.1088, lng: 18.4706 },
-  { match: 'fish hoek', lat: -34.1369, lng: 18.4321 },
-  { match: 'langa', lat: -33.9438, lng: 18.5262 },
-  { match: 'city bowl', lat: -33.9249, lng: 18.4241 },
-  { match: 'camps bay', lat: -33.9508, lng: 18.3777 },
+const ZONE_COORDINATES: Array<{ match: string; lat: number; lng: number; transit: string }> = [
+  { match: 'waterfront', lat: -33.9036, lng: 18.4205, transit: 'MyCiTi A01 / 106 Waterfront Terminal' },
+  { match: 'green point', lat: -33.9032, lng: 18.4068, transit: 'MyCiTi Stadium Stop' },
+  { match: 'sea point', lat: -33.9168, lng: 18.3879, transit: 'MyCiTi Route 104 / 109 Promenade' },
+  { match: 'boulders', lat: -34.1975, lng: 18.4513, transit: 'Metrorail Southern Line (Simon’s Town)' },
+  { match: "simon's town", lat: -34.1915, lng: 18.4335, transit: 'Metrorail Southern Line Terminus' },
+  { match: 'kirstenbosch', lat: -33.9875, lng: 18.4327, transit: 'Table Mountain / Suburbs Shuttle Gate 1' },
+  { match: 'newlands', lat: -33.982, lng: 18.445, transit: 'Metrorail Southern Line (Newlands)' },
+  { match: 'bo-kaap', lat: -33.9209, lng: 18.4148, transit: 'MyCiTi Route 106 (Wale St)' },
+  { match: 'signal hill', lat: -33.9175, lng: 18.4028, transit: 'Verified E-Hailing Pick-Up Bay' },
+  { match: 'lion', lat: -33.9351, lng: 18.3891, transit: 'MyCiTi Route 106 (Kloof Nek)' },
+  { match: 'table mountain', lat: -33.9573, lng: 18.4031, transit: 'Lower Tafelberg Park & Ride Shuttle' },
+  { match: 'platteklip', lat: -33.9598, lng: 18.4094, transit: 'Lower Tafelberg Shuttle' },
+  { match: 'chapman', lat: -34.087, lng: 18.36, transit: 'Peninsula Eco Charter Coastal Corridor' },
+  { match: 'hout bay', lat: -34.0485, lng: 18.3471, transit: 'MyCiTi Route 108 Hout Bay Harbour' },
+  { match: 'muizenberg', lat: -34.1088, lng: 18.4706, transit: 'Metrorail Southern Line (Muizenberg)' },
+  { match: 'fish hoek', lat: -34.1369, lng: 18.4321, transit: 'Metrorail Southern Line (Fish Hoek)' },
+  { match: 'langa', lat: -33.9438, lng: 18.5262, transit: 'MyCiTi N2 Express / Certified Shuttle' },
+  { match: 'city bowl', lat: -33.9249, lng: 18.4241, transit: 'MyCiTi Civic Centre Hub' },
+  { match: 'woodstock', lat: -33.9273, lng: 18.4573, transit: 'MyCiTi Route 102 (Albert Rd)' },
+  { match: 'camps bay', lat: -33.9508, lng: 18.3777, transit: 'MyCiTi Route 106 (Victoria Rd)' },
+  { match: 'cape point', lat: -34.3568, lng: 18.4974, transit: 'Peninsula Eco Shuttle / Chartered Coach' },
 ];
 
-export function resolveZoneCoordinates(zone: string): { lat: number; lng: number } {
+export function resolveZoneCoordinates(zone: string): { lat: number; lng: number; transit?: string } {
   const lower = zone.toLowerCase();
   const matched = ZONE_COORDINATES.find((entry) => lower.includes(entry.match));
-  return matched ? { lat: matched.lat, lng: matched.lng } : CAPE_TOWN_CENTER;
+  return matched
+    ? { lat: matched.lat, lng: matched.lng, transit: matched.transit }
+    : CAPE_TOWN_CENTER;
 }
 
 function getMapsApiKey(): string {
@@ -86,6 +104,9 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
   incidents = [],
   userLocation = null,
   selectedId = null,
+  favouriteIds = [],
+  onToggleFavourite,
+  onOpenDetails,
   onSelectMarker,
   heightClassName = 'h-[430px]',
   defaultLayers = { attractions: true, businesses: true, incidents: true },
@@ -106,6 +127,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
 
   if (showAttractions) {
     attractions.forEach((attr) => {
+      const zoneFallback = resolveZoneCoordinates(attr.precinct);
       markers.push({
         id: attr.id,
         kind: 'attraction',
@@ -115,6 +137,11 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
         badge: attr.safetyStatus,
         lat: attr.lat,
         lng: attr.lng,
+        nearbyTransport: attr.nearbyTransport?.length
+          ? attr.nearbyTransport
+          : zoneFallback.transit
+          ? [zoneFallback.transit]
+          : undefined,
         dataOrigin: attr.dataOrigin,
       });
     });
@@ -124,7 +151,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
     businesses.forEach((biz) => {
       const coords =
         typeof biz.lat === 'number' && typeof biz.lng === 'number'
-          ? { lat: biz.lat, lng: biz.lng }
+          ? { lat: biz.lat, lng: biz.lng, transit: resolveZoneCoordinates(biz.zone).transit }
           : resolveZoneCoordinates(biz.zone);
       markers.push({
         id: biz.id,
@@ -135,6 +162,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
         badge: biz.status,
         lat: coords.lat,
         lng: coords.lng,
+        nearbyTransport: coords.transit ? [coords.transit] : undefined,
         dataOrigin: biz.dataOrigin,
       });
     });
@@ -142,8 +170,6 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
 
   if (showIncidents) {
     incidents.forEach((inc) => {
-      // Only plot exact coordinates when explicit location consent was granted;
-      // otherwise plot at general precinct center for situational awareness.
       const hasConsentedCoords =
         inc.locationConsent === true &&
         typeof inc.sharedLat === 'number' &&
@@ -234,7 +260,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
               }`}
             >
               <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-              Attractions ({attractions.length})
+              Attractions &amp; Activities ({attractions.length})
             </button>
           )}
           {businesses.length > 0 && (
@@ -248,7 +274,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
               }`}
             >
               <Store className="h-3.5 w-3.5" aria-hidden="true" />
-              Businesses ({businesses.length})
+              Providers ({businesses.length})
             </button>
           )}
           {incidents.length > 0 && (
@@ -262,11 +288,65 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
               }`}
             >
               <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
-              Safety &amp; Incidents ({incidents.length})
+              Safety Alerts ({incidents.length})
             </button>
           )}
         </div>
       </div>
+
+      {/* Active Pin Summary Drawer (works in both Google Maps and Fallback Coordinate Explorer) */}
+      {activeMarker && (
+        <div className="flex flex-col gap-2 border-b border-slate-200 bg-[#EFF6FF]/60 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-0.5 min-w-0">
+            <p className="font-bold text-[#111827] truncate">
+              {activeMarker.title} · <span className="text-[#1D4ED8]">{activeMarker.subtitle}</span>
+            </p>
+            {activeMarker.nearbyTransport && activeMarker.nearbyTransport.length > 0 && (
+              <p className="text-[11px] text-slate-600 flex items-center gap-1.5 truncate">
+                <Bus className="h-3.5 w-3.5 shrink-0 text-[#1D4ED8]" aria-hidden="true" />
+                Nearby Transport: {activeMarker.nearbyTransport.slice(0, 2).join(' · ')}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${activeMarker.lat},${activeMarker.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md bg-[#111827] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E293B] whitespace-nowrap"
+            >
+              <Navigation className="h-3.5 w-3.5" aria-hidden="true" />
+              Get Directions
+            </a>
+            {activeMarker.kind === 'attraction' && onToggleFavourite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavourite(activeMarker.id)}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50 whitespace-nowrap"
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 ${
+                    favouriteIds.includes(activeMarker.id)
+                      ? 'fill-red-600 text-red-600'
+                      : 'text-slate-600'
+                  }`}
+                  aria-hidden="true"
+                />
+                {favouriteIds.includes(activeMarker.id) ? 'Saved' : 'Save Favourite'}
+              </button>
+            )}
+            {activeMarker.kind === 'attraction' && onOpenDetails && (
+              <button
+                type="button"
+                onClick={() => onOpenDetails(activeMarker.id)}
+                className="rounded-md bg-[#1D4ED8] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] whitespace-nowrap"
+              >
+                Details &amp; Book
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Live Google Map or Graceful Fallback Coordinate Explorer */}
       {apiKey ? (
@@ -315,17 +395,37 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
                   position={{ lat: activeMarker.lat, lng: activeMarker.lng }}
                   onCloseClick={() => setActiveMarkerId(null)}
                 >
-                  <div className="max-w-[230px] p-1 text-slate-800">
+                  <div className="max-w-[250px] p-1 text-slate-800 space-y-1.5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#1D4ED8]">
                       {activeMarker.kind} · {activeMarker.badge}
                     </p>
-                    <p className="mt-0.5 text-sm font-bold text-[#111827]">
-                      {activeMarker.title}
-                    </p>
+                    <p className="text-sm font-bold text-[#111827]">{activeMarker.title}</p>
                     <p className="text-[11px] text-slate-500">{activeMarker.subtitle}</p>
-                    <p className="mt-1.5 text-xs text-slate-700 leading-snug">
-                      {activeMarker.detail}
-                    </p>
+                    <p className="text-xs text-slate-700 leading-snug">{activeMarker.detail}</p>
+                    {activeMarker.nearbyTransport && activeMarker.nearbyTransport.length > 0 && (
+                      <p className="text-[11px] text-slate-600">
+                        <strong>Transit:</strong> {activeMarker.nearbyTransport[0]}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${activeMarker.lat},${activeMarker.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded bg-[#111827] px-2 py-1 text-[11px] font-semibold text-white"
+                      >
+                        Directions
+                      </a>
+                      {activeMarker.kind === 'attraction' && onOpenDetails && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenDetails(activeMarker.id)}
+                          className="rounded bg-[#1D4ED8] px-2 py-1 text-[11px] font-semibold text-white"
+                        >
+                          Details &amp; Book
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </InfoWindow>
               )}
@@ -337,7 +437,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
           <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 sm:flex-row sm:items-center sm:justify-between">
             <span>
               Interactive Google Maps tiles activate automatically once{' '}
-              <code className="font-mono font-semibold">VITE_GOOGLE_MAPS_API_KEY</code> is available in runtime secrets. Showing synchronized Cape Peninsula coordinate pins below.
+              <code className="font-mono font-semibold">VITE_GOOGLE_MAPS_API_KEY</code> is available in runtime secrets. Synchronized Cape Peninsula coordinate pins and Google Maps directions links are active below.
             </span>
             <a
               href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio"
@@ -349,7 +449,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
             </a>
           </div>
 
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid max-h-[320px] gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
             {markers.map((marker) => {
               const isSelected = activeMarkerId === marker.id;
               return (

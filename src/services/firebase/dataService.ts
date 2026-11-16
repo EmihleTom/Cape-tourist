@@ -16,9 +16,13 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import {
+  CAPE_TOWN_DIRECTORY_ITEMS,
+  DEFAULT_ACTIVITY_CATEGORIES,
+  DEMO_DIRECTORY_REVIEWS,
+} from '@/src/data/capeTownDirectory';
+import {
   DEMO_ACCESSIBILITY_ROUTES,
   DEMO_ANNOUNCEMENTS,
-  DEMO_ATTRACTIONS,
   DEMO_BOOKINGS,
   DEMO_CHALLENGES,
   DEMO_CHECKINS,
@@ -37,6 +41,7 @@ import {
   DEMO_TRUSTED_CONTACTS,
 } from '@/src/data/demoData';
 import type {
+  ActivityCategory,
   AnnouncementCategory,
   BookingItem,
   BookingStatus,
@@ -46,7 +51,9 @@ import type {
   CommunityPost,
   DemoUser,
   DestinationAnnouncement,
+  DirectoryCategoryConfig,
   DurationUnit,
+  FavouriteItem,
   IncidentCategory,
   InPersonPaymentMethod,
   ModerationStatus,
@@ -92,7 +99,10 @@ export const dataService = {
 
   getInitialSnapshot() {
     return {
-      attractions: DEMO_ATTRACTIONS,
+      attractions: CAPE_TOWN_DIRECTORY_ITEMS,
+      categories: DEFAULT_ACTIVITY_CATEGORIES,
+      reviews: DEMO_DIRECTORY_REVIEWS,
+      favourites: [] as FavouriteItem[],
       bookings: DEMO_BOOKINGS,
       tripActivities: DEMO_TRIP_ACTIVITIES,
       advisories: DEMO_SAFETY_ADVISORIES,
@@ -324,8 +334,38 @@ export const dataService = {
             offeringType: (data.offeringType as OfferingType) || 'Activity',
             experienceTitle: String(data.experienceTitle || ''),
             category: String(data.category || ''),
+            activityCategory: data.activityCategory
+              ? (data.activityCategory as ActivityCategory)
+              : undefined,
             zone: String(data.zone || ''),
             description: data.description ? String(data.description) : undefined,
+            imageUrl: data.imageUrl ? String(data.imageUrl) : undefined,
+            galleryImages: Array.isArray(data.galleryImages)
+              ? data.galleryImages.map((x) => String(x))
+              : undefined,
+            ageRequirement: data.ageRequirement ? String(data.ageRequirement) : undefined,
+            familyFriendly:
+              typeof data.familyFriendly === 'boolean' ? data.familyFriendly : undefined,
+            includedServices: Array.isArray(data.includedServices)
+              ? data.includedServices.map((x) => String(x))
+              : undefined,
+            whatToBring: Array.isArray(data.whatToBring)
+              ? data.whatToBring.map((x) => String(x))
+              : undefined,
+            cancellationPolicy: data.cancellationPolicy
+              ? String(data.cancellationPolicy)
+              : undefined,
+            safetyInfo: data.safetyInfo ? String(data.safetyInfo) : undefined,
+            verifiedListing:
+              typeof data.verifiedListing === 'boolean' ? data.verifiedListing : undefined,
+            lat: typeof data.lat === 'number' ? data.lat : undefined,
+            lng: typeof data.lng === 'number' ? data.lng : undefined,
+            nearbyTransport: Array.isArray(data.nearbyTransport)
+              ? data.nearbyTransport.map((x) => String(x))
+              : undefined,
+            availableDates: Array.isArray(data.availableDates)
+              ? data.availableDates.map((x) => String(x))
+              : undefined,
             durationUnit: (data.durationUnit as DurationUnit) || 'sessions',
             defaultDurationValue: Number(data.defaultDurationValue || 1),
             pricingModel: (data.pricingModel as PricingModel) || 'per_guest',
@@ -363,8 +403,39 @@ export const dataService = {
         offeringType: offering.offeringType || 'Activity',
         experienceTitle: clamp(offering.experienceTitle, 160),
         category: clamp(offering.category || offering.offeringType || 'Experience', 80),
+        ...(offering.activityCategory ? { activityCategory: offering.activityCategory } : {}),
         zone: clamp(offering.zone || 'Cape Town', 120),
         ...(offering.description ? { description: clamp(offering.description, 500) } : {}),
+        ...(offering.imageUrl ? { imageUrl: clamp(offering.imageUrl, 500) } : {}),
+        ...(offering.galleryImages?.length
+          ? { galleryImages: offering.galleryImages.slice(0, 6).map((u) => clamp(u, 500)) }
+          : {}),
+        ...(offering.ageRequirement
+          ? { ageRequirement: clamp(offering.ageRequirement, 120) }
+          : {}),
+        ...(typeof offering.familyFriendly === 'boolean'
+          ? { familyFriendly: offering.familyFriendly }
+          : {}),
+        ...(offering.includedServices?.length
+          ? { includedServices: offering.includedServices.slice(0, 10).map((s) => clamp(s, 140)) }
+          : {}),
+        ...(offering.whatToBring?.length
+          ? { whatToBring: offering.whatToBring.slice(0, 10).map((s) => clamp(s, 140)) }
+          : {}),
+        ...(offering.cancellationPolicy
+          ? { cancellationPolicy: clamp(offering.cancellationPolicy, 300) }
+          : {}),
+        ...(offering.safetyInfo ? { safetyInfo: clamp(offering.safetyInfo, 300) } : {}),
+        verifiedListing: Boolean(offering.verifiedListing),
+        ...(typeof offering.lat === 'number' && typeof offering.lng === 'number'
+          ? { lat: offering.lat, lng: offering.lng }
+          : {}),
+        ...(offering.nearbyTransport?.length
+          ? { nearbyTransport: offering.nearbyTransport.slice(0, 6).map((t) => clamp(t, 140)) }
+          : {}),
+        ...(offering.availableDates?.length
+          ? { availableDates: offering.availableDates.slice(0, 30).map((d) => clamp(d, 20)) }
+          : {}),
         durationUnit: offering.durationUnit || 'sessions',
         defaultDurationValue: Math.max(1, Math.min(60, Math.round(offering.defaultDurationValue || 1))),
         unitPriceZar: Math.max(0, Number(offering.priceZar)),
@@ -394,6 +465,9 @@ export const dataService = {
     if (typeof updates.safetyChecklistComplete === 'boolean') {
       payload.safetyChecklistComplete = updates.safetyChecklistComplete;
     }
+    if (typeof updates.verifiedListing === 'boolean') {
+      payload.verifiedListing = updates.verifiedListing;
+    }
     if (typeof updates.capacity === 'number') {
       payload.availableUnits = Math.max(1, Math.min(500, Math.round(updates.capacity)));
     }
@@ -403,6 +477,12 @@ export const dataService = {
     if (typeof updates.priceZar === 'number') {
       payload.unitPriceZar = Math.max(0, Number(updates.priceZar));
     }
+    if (updates.activityCategory) payload.activityCategory = updates.activityCategory;
+    if (updates.ageRequirement) payload.ageRequirement = clamp(updates.ageRequirement, 120);
+    if (updates.cancellationPolicy) {
+      payload.cancellationPolicy = clamp(updates.cancellationPolicy, 300);
+    }
+    if (updates.safetyInfo) payload.safetyInfo = clamp(updates.safetyInfo, 300);
     if (updates.blockedDates) {
       payload.blockedDates = updates.blockedDates.slice(0, 30).map((d) => clamp(d, 20));
     }
@@ -888,7 +968,7 @@ export const dataService = {
     }
   },
 
-  // --- 7. Reviews ---
+  // --- 7. Reviews (+ Provider Replies & Admin Moderation) ---
   subscribeReviews(onData: (items: ReviewItem[]) => void): Unsubscribe {
     const path = FIREBASE_COLLECTIONS.reviews;
     const q = query(collection(db, path), orderBy('createdAt', 'desc'));
@@ -905,6 +985,12 @@ export const dataService = {
             rating: Number(data.rating || 5),
             comment: String(data.comment || ''),
             createdAtLabel: formatTimestamp(data.createdAt),
+            providerReply: data.providerReply ? String(data.providerReply) : undefined,
+            providerReplyBy: data.providerReplyBy ? String(data.providerReplyBy) : undefined,
+            providerRepliedAt: data.providerRepliedAt ? String(data.providerRepliedAt) : undefined,
+            moderationStatus: (data.moderationStatus as ModerationStatus) || 'Approved',
+            flaggedReason: data.flaggedReason ? String(data.flaggedReason) : undefined,
+            verifiedBooking: Boolean(data.verifiedBooking),
             dataOrigin: 'live',
           };
         });
@@ -919,7 +1005,8 @@ export const dataService = {
     authorName: string,
     targetId: string,
     rating: number,
-    comment: string
+    comment: string,
+    verifiedBooking = false
   ): Promise<void> {
     const path = FIREBASE_COLLECTIONS.reviews;
     try {
@@ -929,11 +1016,144 @@ export const dataService = {
         targetId: clamp(targetId, 128),
         rating: Math.max(1, Math.min(5, Math.round(rating))),
         comment: clamp(comment, 600),
+        moderationStatus: 'Approved',
+        verifiedBooking: Boolean(verifiedBooking),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async replyToReview(reviewId: string, providerReply: string, providerReplyBy: string): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.reviews}/${reviewId}`;
+    try {
+      await updateDoc(doc(db, FIREBASE_COLLECTIONS.reviews, reviewId), {
+        providerReply: clamp(providerReply, 500),
+        providerReplyBy: clamp(providerReplyBy, 120),
+        providerRepliedAt: 'Just now',
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  async moderateReview(
+    reviewId: string,
+    moderationStatus: ModerationStatus,
+    flaggedReason?: string
+  ): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.reviews}/${reviewId}`;
+    try {
+      await updateDoc(doc(db, FIREBASE_COLLECTIONS.reviews, reviewId), {
+        moderationStatus,
+        ...(flaggedReason !== undefined ? { flaggedReason: clamp(flaggedReason, 240) } : {}),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
+    }
+  },
+
+  // --- 7b. Tourist Favourites ---
+  subscribeFavourites(uid: string, onData: (items: FavouriteItem[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.favourites;
+    const q = query(collection(db, path), where('userId', '==', uid));
+    return onSnapshot(
+      q,
+      (snap) => {
+        const items: FavouriteItem[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            userId: String(data.userId || uid),
+            listingId: String(data.listingId || ''),
+            listingTitle: String(data.listingTitle || ''),
+            listingType: (data.listingType as FavouriteItem['listingType']) || 'Attraction',
+            precinct: String(data.precinct || 'Cape Town'),
+            createdAtLabel: formatTimestamp(data.createdAt),
+            dataOrigin: 'live',
+          };
+        });
+        onData(items);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async addFavourite(
+    uid: string,
+    fav: Omit<FavouriteItem, 'id' | 'userId' | 'createdAtLabel' | 'dataOrigin'>
+  ): Promise<string> {
+    const ref = doc(collection(db, FIREBASE_COLLECTIONS.favourites));
+    const path = `${FIREBASE_COLLECTIONS.favourites}/${ref.id}`;
+    try {
+      await setDoc(ref, {
+        id: ref.id,
+        userId: uid,
+        listingId: clamp(fav.listingId, 128),
+        listingTitle: clamp(fav.listingTitle, 160),
+        listingType: fav.listingType || 'Attraction',
+        precinct: clamp(fav.precinct || 'Cape Town', 120),
+        createdAt: serverTimestamp(),
+      });
+      return ref.id;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+      return ref.id;
+    }
+  },
+
+  async removeFavourite(favId: string): Promise<void> {
+    const path = `${FIREBASE_COLLECTIONS.favourites}/${favId}`;
+    try {
+      await deleteDoc(doc(db, FIREBASE_COLLECTIONS.favourites, favId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  // --- 7c. Admin Activity Categories Configuration ---
+  subscribeActivityCategories(onData: (items: DirectoryCategoryConfig[]) => void): Unsubscribe {
+    const path = FIREBASE_COLLECTIONS.activityCategories;
+    return onSnapshot(
+      collection(db, path),
+      (snap) => {
+        const items: DirectoryCategoryConfig[] = snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: String(data.name || '') as ActivityCategory,
+            enabled: data.enabled !== false,
+            featured: Boolean(data.featured),
+            description: String(data.description || ''),
+            dataOrigin: 'live',
+          };
+        });
+        onData(items);
+      },
+      (error) => handleFirestoreError(error, OperationType.LIST, path)
+    );
+  },
+
+  async upsertActivityCategory(
+    category: Omit<DirectoryCategoryConfig, 'dataOrigin'>
+  ): Promise<void> {
+    const ref = doc(db, FIREBASE_COLLECTIONS.activityCategories, category.id);
+    const path = `${FIREBASE_COLLECTIONS.activityCategories}/${category.id}`;
+    try {
+      await setDoc(ref, {
+        id: category.id,
+        name: clamp(category.name, 80),
+        enabled: Boolean(category.enabled),
+        featured: Boolean(category.featured),
+        description: clamp(category.description || '', 240),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, path);
     }
   },
 

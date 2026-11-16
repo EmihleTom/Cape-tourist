@@ -11,7 +11,7 @@ import type { UserRole } from './src/types/app.ts';
 const rulesContent = fs.readFileSync('firestore.rules', 'utf8');
 const blueprint = JSON.parse(fs.readFileSync('firebase-blueprint.json', 'utf8'));
 
-// 1. Verify all 16 domain collections + subcollections exist in both blueprint and firestore.rules
+// 1. Verify all 18 domain collections + subcollections exist in both blueprint and firestore.rules
 const requiredCollections = [
   'users',
   'tourism_businesses',
@@ -29,6 +29,8 @@ const requiredCollections = [
   'saved_payment_methods',
   'provider_payment_settings',
   'payment_audit_logs',
+  'favourites',
+  'activity_categories',
 ];
 
 for (const col of requiredCollections) {
@@ -161,12 +163,25 @@ assert.ok(
   'payment_audit_logs must be strictly append-only (no update or delete)'
 );
 
-// 7. Verify all 4 User Roles map to distinct role dashboards
+// 7. Verify Cape Town Directory Marketplace Rules (Favourites, Admin Categories, Provider Review Replies)
+assert.ok(
+  rulesContent.includes('function isValidFavourite(data)') &&
+    rulesContent.includes('function isValidActivityCategory(data)'),
+  'Missing isValidFavourite or isValidActivityCategory validator in firestore.rules'
+);
+assert.ok(
+  rulesContent.includes("'providerReply'") &&
+    rulesContent.includes("'providerReplyBy'") &&
+    rulesContent.includes("'providerRepliedAt'"),
+  'Missing provider review reply field allowlist in firestore.rules'
+);
+
+// 8. Verify all 4 User Roles map to distinct role dashboards
 const roles: UserRole[] = ['tourist', 'admin', 'provider', 'safety'];
 const titles = new Set(roles.map((r) => ROLE_LABELS[r].dashboardTitle));
 assert.equal(titles.size, 4, 'Each of the 4 roles must map to a unique dashboard');
 
 console.log(
-  'PASSED: All 16 Firestore collections, zero-PAN/CVV payment rules, refund-only admin governance, immutable audit logs, trusted_contacts & challenge_progress subcollections, privacy controls, community moderation, location consent, booking confirmation & offering availability invariants, and 4 RBAC role mappings verified.'
+  'PASSED: All 18 Firestore collections, zero-PAN/CVV payment rules, refund-only admin governance, immutable audit logs, favourites & activity categories, provider review replies, trusted_contacts & challenge_progress subcollections, privacy controls, community moderation, location consent, booking confirmation & offering availability invariants, and 4 RBAC role mappings verified.'
 );
 

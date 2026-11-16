@@ -6,9 +6,12 @@ import {
   CheckCircle2,
   ClipboardList,
   Edit3,
+  Image as ImageIcon,
+  MessageSquare,
   Plus,
   Search,
   ShieldCheck,
+  Star,
   Upload,
   Wallet,
   XCircle,
@@ -17,8 +20,10 @@ import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { StatusText } from '@/src/components/common/StatusText';
 import { resolveZoneCoordinates } from '@/src/components/map/CapeTownMap';
 import { ProviderPaymentSettingsSection } from '@/src/components/payments/ProviderPaymentSettingsSection';
+import { ACTIVITY_CATEGORIES, IMG } from '@/src/data/capeTownDirectory';
 import { storageService } from '@/src/services/firebase/storageService';
 import type {
+  ActivityCategory,
   BookingItem,
   DemoUser,
   DurationUnit,
@@ -29,15 +34,28 @@ import type {
   PricingModel,
   ProviderListing,
   ProviderPaymentSettings,
+  ReviewItem,
 } from '@/src/types/app';
 import { isAwaitingBookingStatus } from '@/src/utils/bookingCalculations';
 
 export type ProviderDashboardTab = 'bookings' | 'offerings' | 'payments' | 'accreditation';
 
+const OFFERING_PHOTO_PRESETS = [
+  { label: 'Table Mountain Cableway', url: IMG.cableway },
+  { label: 'Waterfront Harbour Cruise', url: IMG.harbour },
+  { label: 'Muizenberg Surf & Kayak', url: IMG.surfKayak },
+  { label: 'Cape Point Peninsula', url: IMG.capePoint },
+  { label: 'Kirstenbosch Canopy', url: IMG.kirstenbosch },
+  { label: 'Bo-Kaap Heritage Walk', url: IMG.bokaap },
+  { label: 'Zeitz MOCAA Art', url: IMG.zeitzArt },
+  { label: 'Old Biscuit Mill Food', url: IMG.biscuitMill },
+];
+
 interface ProviderDashboardProps {
   user: DemoUser;
   listings: ProviderListing[];
   bookings: BookingItem[];
+  reviews?: ReviewItem[];
   paymentSettings?: ProviderPaymentSettings;
   payments: PaymentRecord[];
   initialTab?: ProviderDashboardTab;
@@ -61,6 +79,7 @@ interface ProviderDashboardProps {
     status: BookingItem['status'],
     meta?: { confirmedBy?: string; cancellationReason?: string }
   ) => Promise<void> | void;
+  onReplyToReview?: (reviewId: string, replyText: string) => Promise<void> | void;
   onSubmitAccreditation?: (payload: {
     businessName: string;
     category: string;
@@ -79,6 +98,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
   user,
   listings,
   bookings,
+  reviews = [],
   paymentSettings,
   payments,
   initialTab = 'bookings',
@@ -90,6 +110,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
   onCreateOffering,
   onUpdateOffering,
   onUpdateBookingStatus,
+  onReplyToReview,
   onSubmitAccreditation,
   onNavigate,
 }) => {
@@ -104,17 +125,35 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
     onTabChange?.(tab);
   };
 
-  // Offering Creator State (Availability & Provider-Defined Pricing)
+  // Offering Creator State (Availability & Provider-Defined Pricing + Marketplace Metadata)
   const [offeringType, setOfferingType] = useState<OfferingType>('Activity');
+  const [activityCategory, setActivityCategory] = useState<ActivityCategory>('Guided tours');
   const [expTitle, setExpTitle] = useState('');
   const [expZone, setExpZone] = useState("Simon's Town · False Bay");
+  const [expDescription, setExpDescription] = useState('');
+  const [expPhotoPreset, setExpPhotoPreset] = useState<string>(IMG.surfKayak);
+  const [expPhotoFile, setExpPhotoFile] = useState<File | null>(null);
   const [durationUnit, setDurationUnit] = useState<DurationUnit>('sessions');
-  const [defaultDurationValue] = useState(1);
+  const [defaultDurationValue, setDefaultDurationValue] = useState(1);
   const [unitPriceZar, setUnitPriceZar] = useState(450);
   const [pricingModel, setPricingModel] = useState<PricingModel>('per_guest');
   const [capacity, setCapacity] = useState(12);
   const [nextDeparture] = useState('09:00');
   const [accessibleOffering, setAccessibleOffering] = useState(true);
+  const [familyFriendlyOffering, setFamilyFriendlyOffering] = useState(true);
+  const [ageRequirement, setAgeRequirement] = useState('All Ages (under 16 with adult)');
+  const [includedServicesText, setIncludedServicesText] = useState(
+    'Accredited local guide, safety briefing, life vest / gear'
+  );
+  const [whatToBringText, setWhatToBringText] = useState(
+    'Sunscreen, drinking water, windbreaker, closed walking shoes'
+  );
+  const [cancellationPolicyText, setCancellationPolicyText] = useState(
+    'Free reschedule or refund up to 24 hours before departure.'
+  );
+  const [safetyInfoText, setSafetyInfoText] = useState(
+    'SAMSA / CATHSSETA certified operator; weather check 2 hours prior.'
+  );
   const [creatingOffering, setCreatingOffering] = useState(false);
   const [offeringFeedback, setOfferingFeedback] = useState('');
 
@@ -127,6 +166,10 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
 
   // Blackout Date Input per Listing
   const [blockDateInputs, setBlockDateInputs] = useState<Record<string, string>>({});
+
+  // Review Reply Drafts
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [reviewFeedback, setReviewFeedback] = useState('');
 
   // Booking Queue Filter & Action Feedback
   const [bookingFilter, setBookingFilter] = useState<'All' | 'Awaiting Confirmation' | 'Confirmed'>(
@@ -225,11 +268,43 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
     }
     setCreatingOffering(true);
     try {
+      let resolvedImageUrl = expPhotoPreset;
+      if (expPhotoFile && user.authMode === 'firebase' && user.emailVerified) {
+        resolvedImageUrl = await storageService.uploadOfferingPhoto(user.id, expPhotoFile);
+      }
+      const zoneTrimmed = expZone.trim() || 'Cape Town';
+      const coords = resolveZoneCoordinates(zoneTrimmed);
+      const parseList = (raw: string) =>
+        raw
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+
       await onCreateOffering({
         offeringType,
         experienceTitle: expTitle.trim(),
         category: offeringType,
-        zone: expZone.trim() || 'Cape Town',
+        activityCategory,
+        zone: zoneTrimmed,
+        description:
+          expDescription.trim() ||
+          `Accredited Cape Town ${activityCategory.toLowerCase()} experience operating in ${zoneTrimmed}.`,
+        imageUrl: resolvedImageUrl,
+        galleryImages: [resolvedImageUrl],
+        ageRequirement: ageRequirement.trim() || 'All Ages',
+        familyFriendly: familyFriendlyOffering,
+        includedServices: parseList(includedServicesText),
+        whatToBring: parseList(whatToBringText),
+        cancellationPolicy: cancellationPolicyText.trim(),
+        safetyInfo: safetyInfoText.trim(),
+        lat: coords.lat,
+        lng: coords.lng,
+        nearbyTransport: [
+          `MyCiTi & Verified Shuttle Corridor (${zoneTrimmed})`,
+          'Verified E-Hailing Pick-Up Bay',
+        ],
+        availableDates: ['2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20'],
         durationUnit,
         defaultDurationValue: Math.max(1, defaultDurationValue),
         pricingModel,
@@ -243,8 +318,10 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
         blockedDates: [],
       });
       setExpTitle('');
+      setExpDescription('');
+      setExpPhotoFile(null);
       setOfferingFeedback(
-        `Added "${expTitle.trim()}" (${durationUnit}, R ${unitPriceZar}/${durationUnit.slice(0, -1)}).`
+        `Added "${expTitle.trim()}" under ${activityCategory} (${durationUnit}, R ${unitPriceZar}/${durationUnit.slice(0, -1)}).`
       );
     } catch (err) {
       setOfferingError(err instanceof Error ? err.message : 'Unable to create offering.');
@@ -902,12 +979,12 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
               </div>
             </div>
 
-            {/* Add Bookable Offering Form */}
+            {/* Add Bookable Offering Form (Full Marketplace Listing Fields) */}
             <form
               onSubmit={handleCreateOffering}
               className="grid gap-3 border-b border-slate-200 bg-slate-50/70 p-5 sm:grid-cols-12"
             >
-              <div className="sm:col-span-3">
+              <div className="sm:col-span-4">
                 <label
                   htmlFor="prov-off-title"
                   className="block text-[11px] font-semibold text-slate-700"
@@ -919,7 +996,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   type="text"
                   value={expTitle}
                   onChange={(e) => setExpTitle(e.target.value)}
-                  placeholder="e.g., Camps Bay Ocean Villa"
+                  placeholder="e.g., Hout Bay Sunset Kayak & Seal Viewing"
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
                 />
               </div>
@@ -928,7 +1005,7 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   htmlFor="prov-off-type"
                   className="block text-[11px] font-semibold text-slate-700"
                 >
-                  Type
+                  Booking Type
                 </label>
                 <select
                   id="prov-off-type"
@@ -941,6 +1018,43 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   <option value="Transport">Transport</option>
                 </select>
               </div>
+              <div className="sm:col-span-3">
+                <label
+                  htmlFor="prov-off-actcat"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Directory Category
+                </label>
+                <select
+                  id="prov-off-actcat"
+                  value={activityCategory}
+                  onChange={(e) => setActivityCategory(e.target.value as ActivityCategory)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                >
+                  {ACTIVITY_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-3">
+                <label
+                  htmlFor="prov-off-zone"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Operating Precinct
+                </label>
+                <input
+                  id="prov-off-zone"
+                  type="text"
+                  value={expZone}
+                  onChange={(e) => setExpZone(e.target.value)}
+                  placeholder="Precinct / departure hub"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+
               <div className="sm:col-span-2">
                 <label
                   htmlFor="prov-off-unit"
@@ -962,6 +1076,23 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
               </div>
               <div className="sm:col-span-2">
                 <label
+                  htmlFor="prov-off-durval"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Default Duration
+                </label>
+                <input
+                  id="prov-off-durval"
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={defaultDurationValue}
+                  onChange={(e) => setDefaultDurationValue(Math.max(1, Number(e.target.value) || 1))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
                   htmlFor="prov-off-price"
                   className="block text-[11px] font-semibold text-slate-700"
                 >
@@ -976,12 +1107,30 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono"
                 />
               </div>
-              <div className="sm:col-span-1">
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="prov-off-model"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Pricing Model
+                </label>
+                <select
+                  id="prov-off-model"
+                  aria-label="Pricing model"
+                  value={pricingModel}
+                  onChange={(e) => setPricingModel(e.target.value as PricingModel)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
+                >
+                  <option value="per_guest">/ guest</option>
+                  <option value="per_unit">/ booking</option>
+                </select>
+              </div>
+              <div className="sm:col-span-2">
                 <label
                   htmlFor="prov-off-cap"
                   className="block text-[11px] font-semibold text-slate-700"
                 >
-                  Units
+                  Max Group / Units
                 </label>
                 <input
                   id="prov-off-cap"
@@ -992,47 +1141,167 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-mono"
                 />
               </div>
-              <div className="sm:col-span-2 flex items-end gap-2">
-                <select
-                  aria-label="Pricing model"
-                  value={pricingModel}
-                  onChange={(e) => setPricingModel(e.target.value as PricingModel)}
-                  className="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="prov-off-age"
+                  className="block text-[11px] font-semibold text-slate-700"
                 >
-                  <option value="per_guest">/ guest</option>
-                  <option value="per_unit">/ booking</option>
+                  Age Suitability
+                </label>
+                <input
+                  id="prov-off-age"
+                  type="text"
+                  value={ageRequirement}
+                  onChange={(e) => setAgeRequirement(e.target.value)}
+                  placeholder="All Ages or Ages 12+"
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="prov-off-desc"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Experience Description
+                </label>
+                <input
+                  id="prov-off-desc"
+                  type="text"
+                  value={expDescription}
+                  onChange={(e) => setExpDescription(e.target.value)}
+                  placeholder="Describe route highlights, pace, and guide credentials..."
+                  maxLength={450}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+              <div className="sm:col-span-3">
+                <label
+                  htmlFor="prov-off-photo-preset"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Gallery Photo Preset
+                </label>
+                <select
+                  id="prov-off-photo-preset"
+                  value={expPhotoPreset}
+                  onChange={(e) => setExpPhotoPreset(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs"
+                >
+                  {OFFERING_PHOTO_PRESETS.map((p) => (
+                    <option key={p.label} value={p.url}>
+                      {p.label}
+                    </option>
+                  ))}
                 </select>
+              </div>
+              <div className="sm:col-span-3 flex items-end">
+                <label className="inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-[#111827] hover:bg-slate-100">
+                  <ImageIcon className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
+                  <span className="truncate">
+                    {expPhotoFile ? expPhotoFile.name : 'Upload Photo (Storage)'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setExpPhotoFile(e.target.files?.[0] ?? null)}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="prov-off-included"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Included Services (comma-separated)
+                </label>
+                <input
+                  id="prov-off-included"
+                  type="text"
+                  value={includedServicesText}
+                  onChange={(e) => setIncludedServicesText(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="prov-off-bring"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  What Visitors Should Bring (comma-separated)
+                </label>
+                <input
+                  id="prov-off-bring"
+                  type="text"
+                  value={whatToBringText}
+                  onChange={(e) => setWhatToBringText(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="prov-off-cancel"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Cancellation Policy
+                </label>
+                <input
+                  id="prov-off-cancel"
+                  type="text"
+                  value={cancellationPolicyText}
+                  onChange={(e) => setCancellationPolicyText(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+              <div className="sm:col-span-6">
+                <label
+                  htmlFor="prov-off-safety"
+                  className="block text-[11px] font-semibold text-slate-700"
+                >
+                  Safety Information &amp; Gear Standard
+                </label>
+                <input
+                  id="prov-off-safety"
+                  type="text"
+                  value={safetyInfoText}
+                  onChange={(e) => setSafetyInfoText(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
+                />
+              </div>
+
+              <div className="sm:col-span-9 flex flex-wrap items-center gap-4 pt-1">
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={accessibleOffering}
+                    onChange={(e) => setAccessibleOffering(e.target.checked)}
+                    className="rounded border-slate-300 text-[#1D4ED8]"
+                  />
+                  <span>Step-free / wheelchair-friendly boarding &amp; route verified</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={familyFriendlyOffering}
+                    onChange={(e) => setFamilyFriendlyOffering(e.target.checked)}
+                    className="rounded border-slate-300 text-[#1D4ED8]"
+                  />
+                  <span>Family-friendly suitability</span>
+                </label>
+              </div>
+              <div className="sm:col-span-3 flex items-end justify-end">
                 <button
                   type="submit"
                   disabled={creatingOffering}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 whitespace-nowrap"
                 >
                   <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                  Add
+                  {creatingOffering ? 'Publishing...' : 'Add Marketplace Offering'}
                 </button>
               </div>
-              <div className="sm:col-span-6">
-                <label htmlFor="prov-off-zone" className="sr-only">
-                  Operating Precinct
-                </label>
-                <input
-                  id="prov-off-zone"
-                  type="text"
-                  value={expZone}
-                  onChange={(e) => setExpZone(e.target.value)}
-                  placeholder="Precinct / departure hub"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs"
-                />
-              </div>
-              <label className="sm:col-span-6 flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={accessibleOffering}
-                  onChange={(e) => setAccessibleOffering(e.target.checked)}
-                  className="rounded border-slate-300 text-[#1D4ED8]"
-                />
-                <span>Step-free / wheelchair-friendly boarding &amp; route verified</span>
-              </label>
             </form>
             {offeringFeedback && (
               <p role="status" className="px-5 py-2 text-xs font-medium text-[#15803D]">
@@ -1251,6 +1520,112 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                   })}
                 </tbody>
               </table>
+            </div>
+          </section>
+
+          {/* Customer Reviews & Provider Responses */}
+          <section className="mt-6 rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+              <div>
+                <h2 className="font-display text-base font-bold text-[#111827] flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                  Customer Reviews &amp; Provider Responses (
+                  {reviews.filter((r) => r.moderationStatus !== 'Removed').length})
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Respond directly to verified visitor reviews so tourists see up-to-date operator guidance in the Discover Cape Town directory.
+                </p>
+              </div>
+              {reviewFeedback && (
+                <p role="status" className="text-xs font-medium text-[#15803D]">
+                  {reviewFeedback}
+                </p>
+              )}
+            </div>
+
+            <div className="divide-y divide-slate-200">
+              {reviews.filter((r) => r.moderationStatus !== 'Removed').length === 0 ? (
+                <p className="py-4 text-xs text-slate-500">
+                  No visitor reviews recorded yet.
+                </p>
+              ) : (
+                reviews
+                  .filter((r) => r.moderationStatus !== 'Removed')
+                  .map((rev) => {
+                    const draftVal = replyDrafts[rev.id] ?? rev.providerReply ?? '';
+                    const matchingOffering = listings.find((l) => l.id === rev.targetId);
+                    return (
+                      <div key={rev.id} className="py-3.5 first:pt-0 last:pb-0 space-y-2 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <span className="font-semibold text-[#111827]">{rev.authorName}</span>
+                            <span className="text-slate-500">
+                              {' '}
+                              · Target: {matchingOffering?.experienceTitle || rev.targetId} ·{' '}
+                              {rev.createdAtLabel}
+                            </span>
+                          </div>
+                          <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8] tabular-nums">
+                            <Star className="h-3.5 w-3.5 fill-[#1D4ED8]" aria-hidden="true" />
+                            {rev.rating}/5
+                          </span>
+                        </div>
+                        <p className="text-slate-700">{rev.comment}</p>
+                        {rev.providerReply && (
+                          <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                            <p className="font-semibold text-[#111827]">
+                              Published Reply ({rev.providerReplyBy || user.organization || user.name})
+                            </p>
+                            <p className="mt-0.5 text-slate-600">{rev.providerReply}</p>
+                          </div>
+                        )}
+                        {onReplyToReview && (
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center pt-1">
+                            <input
+                              type="text"
+                              aria-label={`Reply to review by ${rev.authorName}`}
+                              value={draftVal}
+                              onChange={(e) =>
+                                setReplyDrafts((prev) => ({ ...prev, [rev.id]: e.target.value }))
+                              }
+                              placeholder="Write a helpful operator response..."
+                              maxLength={480}
+                              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              disabled={busyActionId === `rev-${rev.id}` || draftVal.trim().length < 2}
+                              onClick={async () => {
+                                setReviewFeedback('');
+                                setOfferingError('');
+                                setBusyActionId(`rev-${rev.id}`);
+                                try {
+                                  await onReplyToReview(rev.id, draftVal.trim());
+                                  setReviewFeedback(`Response saved for ${rev.authorName}'s review.`);
+                                } catch (err) {
+                                  setOfferingError(
+                                    err instanceof Error
+                                      ? err.message
+                                      : 'Unable to publish provider response.'
+                                  );
+                                } finally {
+                                  setBusyActionId(null);
+                                }
+                              }}
+                              className="rounded-lg bg-[#111827] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60 whitespace-nowrap"
+                            >
+                              {busyActionId === `rev-${rev.id}`
+                                ? 'Saving...'
+                                : rev.providerReply
+                                ? 'Update Reply'
+                                : 'Post Response'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+              )}
             </div>
           </section>
         </div>

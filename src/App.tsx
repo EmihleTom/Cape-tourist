@@ -30,6 +30,7 @@ import { paymentService } from '@/src/services/paymentService';
 import { fetchCapeTownWeather } from '@/src/services/weatherService';
 import type { CheckoutCompletionPayload } from '@/src/components/payments/CheckoutPaymentStep';
 import type {
+  AiExperienceRecommendation,
   AiPlannerStop,
   AnnouncementCategory,
   AttractionItem,
@@ -41,6 +42,8 @@ import type {
   CommunityPost,
   DemoUser,
   DestinationAnnouncement,
+  DirectoryCategoryConfig,
+  FavouriteItem,
   InPersonPaymentMethod,
   ModerationStatus,
   NavSectionId,
@@ -94,18 +97,9 @@ export default function App() {
   const [transportRoutes] = useState(initialSnapshot.transportRoutes);
   const [expenses, setExpenses] = useState(initialSnapshot.expenses);
   const [communityPosts, setCommunityPosts] = useState(initialSnapshot.communityPosts);
-  const [reviews, setReviews] = useState<ReviewItem[]>([
-    {
-      id: 'rev-demo-1',
-      authorId: 'demo-tourist-1',
-      authorName: 'Maya van der Merwe',
-      targetId: 'attr-kirstenbosch',
-      rating: 5,
-      comment: 'Smooth step-free boardwalk access along the Boomslang canopy and helpful morning shuttle staff.',
-      createdAtLabel: 'Today · 09:10 SAST',
-      dataOrigin: 'demo',
-    },
-  ]);
+  const [reviews, setReviews] = useState<ReviewItem[]>(initialSnapshot.reviews);
+  const [categories, setCategories] = useState<DirectoryCategoryConfig[]>(initialSnapshot.categories);
+  const [favourites, setFavourites] = useState<FavouriteItem[]>(initialSnapshot.favourites);
   const [accessibilityRoutes] = useState(initialSnapshot.accessibilityRoutes);
   const [challenges, setChallenges] = useState(initialSnapshot.challenges);
   const [notifications, setNotifications] = useState(initialSnapshot.notifications);
@@ -299,7 +293,17 @@ export default function App() {
           const liveIds = new Set(liveSettings.map((item) => item.id));
           return [...liveSettings, ...demoOnes.filter((d) => !liveIds.has(d.id))];
         })
-      )
+      ),
+      dataService.subscribeFavourites(currentUser.id, (liveFavs) =>
+        mergeOrClearLive(setFavourites, liveFavs)
+      ),
+      dataService.subscribeActivityCategories((liveCategories) => {
+        if (liveCategories.length === 0) return;
+        setCategories((prev) => {
+          const liveMap = new Map(liveCategories.map((c) => [c.id, c]));
+          return prev.map((c) => liveMap.get(c.id) || c);
+        });
+      })
     );
 
     if (currentUser.role === 'provider') {
@@ -491,6 +495,9 @@ export default function App() {
     setSavedCards(freshSnapshot.savedCards);
     setProviderPaymentSettings(freshSnapshot.providerPaymentSettings);
     setPaymentAuditLogs(freshSnapshot.paymentAuditLogs);
+    setReviews(freshSnapshot.reviews);
+    setCategories(freshSnapshot.categories);
+    setFavourites(freshSnapshot.favourites);
     setAdminPreviewRole(null);
     setCurrentUser({ ...DEMO_USERS[0], authMode: 'demo', emailVerified: true });
     setSectionHistory([]);
@@ -523,9 +530,68 @@ export default function App() {
     }
   };
 
-  const handleAddReview = async (targetId: string, rating: number, comment: string) => {
+  const handleToggleFavourite = async (item: AttractionItem) => {
+    const existing = favourites.find((f) => f.listingId === item.id);
+    if (existing) {
+      if (isFirebaseVerified && existing.dataOrigin === 'live') {
+        await dataService.removeFavourite(existing.id);
+      } else {
+        setFavourites((prev) => prev.filter((f) => f.id !== existing.id));
+      }
+      return;
+    }
+
+    const favPayload = {
+      listingId: item.id,
+      listingTitle: item.title,
+      listingType: (item.entryType || 'Attraction') as FavouriteItem['listingType'],
+      precinct: item.precinct,
+    };
+
     if (isFirebaseVerified) {
-      await dataService.addReview(currentUser.id, currentUser.name, targetId, rating, comment);
+      await dataService.addFavourite(currentUser.id, favPayload);
+    } else {
+      setFavourites((prev) => [
+        {
+          ...favPayload,
+          id: `fav-${Date.now()}`,
+          userId: currentUser.id,
+          createdAtLabel: 'Just now',
+          dataOrigin: 'demo',
+        },
+        ...prev,
+      ]);
+    }
+  };
+
+  const handleAddAiRecommendationToTrip = async (rec: AiExperienceRecommendation) => {
+    await handleAddActivity({
+      day: rec.suggestedDay,
+      dayLabel: `Day ${rec.suggestedDay} · Cape Town Curated Stop`,
+      time: rec.suggestedTimeWindow,
+      title: rec.title,
+      zone: rec.precinct,
+      transportNote: rec.transportTip,
+      safetyNote: rec.safetyNote,
+      itemType: 'Activity',
+    });
+  };
+
+  const handleAddReview = async (targetId: string, rating: number, comment: string) => {
+    const hasVerifiedBooking = bookings.some(
+      (b) =>
+        (b.offeringId === targetId || b.title.toLowerCase().includes(targetId.replace('attr-', '').toLowerCase())) &&
+        (b.status === 'Confirmed' || b.status === 'Completed')
+    );
+    if (isFirebaseVerified) {
+      await dataService.addReview(
+        currentUser.id,
+        currentUser.name,
+        targetId,
+        rating,
+        comment,
+        hasVerifiedBooking
+      );
     } else {
       setReviews((prev) => [
         {
@@ -536,10 +602,69 @@ export default function App() {
           rating,
           comment,
           createdAtLabel: 'Just now',
+          moderationStatus: 'Approved',
+          verifiedBooking: hasVerifiedBooking,
           dataOrigin: 'demo',
         },
         ...prev,
       ]);
+    }
+  };
+
+  const handleReplyToReview = async (reviewId: string, replyText: string) => {
+    const target = reviews.find((r) => r.id === reviewId);
+    const replyBy = currentUser.organization || currentUser.name;
+    if (isFirebaseVerified && target && target.dataOrigin === 'live') {
+      await dataService.replyToReview(reviewId, replyText, replyBy);
+    } else {
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? {
+                ...r,
+                providerReply: replyText,
+                providerReplyBy: replyBy,
+                providerRepliedAt: 'Just now',
+              }
+            : r
+        )
+      );
+    }
+  };
+
+  const handleModerateReview = async (
+    reviewId: string,
+    status: ModerationStatus,
+    flaggedReason?: string
+  ) => {
+    const target = reviews.find((r) => r.id === reviewId);
+    if (isFirebaseVerified && target && target.dataOrigin === 'live') {
+      await dataService.moderateReview(reviewId, status, flaggedReason);
+    } else {
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.id === reviewId
+            ? {
+                ...r,
+                moderationStatus: status,
+                ...(flaggedReason !== undefined ? { flaggedReason } : {}),
+              }
+            : r
+        )
+      );
+    }
+  };
+
+  const handleUpdateCategory = async (category: DirectoryCategoryConfig) => {
+    setCategories((prev) => prev.map((c) => (c.id === category.id ? category : c)));
+    if (isFirebaseVerified && currentUser.role === 'admin') {
+      await dataService.upsertActivityCategory({
+        id: category.id,
+        name: category.name,
+        enabled: category.enabled,
+        featured: category.featured,
+        description: category.description,
+      });
     }
   };
 
@@ -1696,10 +1821,16 @@ export default function App() {
             paymentAuditLogs={paymentAuditLogs}
             bookings={bookings}
             communityPosts={communityPosts}
+            listings={providerListings}
+            categories={categories}
+            reviews={reviews}
             weather={weather}
             initialTab={adminDashboardTab}
             onTabChange={setAdminDashboardTab}
             onModeratePost={handleModeratePost}
+            onUpdateListing={handleUpdateOffering}
+            onUpdateCategory={handleUpdateCategory}
+            onModerateReview={handleModerateReview}
             onIssueRefund={handleAdminRefundPayment}
             onUpdateApplicationStatus={handleUpdateApplicationStatus}
             onUpdateUserRole={handleUpdateUserRole}
@@ -1716,6 +1847,7 @@ export default function App() {
             user={currentUser}
             listings={providerListings}
             bookings={bookings}
+            reviews={reviews}
             paymentSettings={
               providerPaymentSettings.find((s) => s.providerId === currentUser.id) ||
               providerPaymentSettings[0]
@@ -1730,6 +1862,7 @@ export default function App() {
             onCreateOffering={handleCreateOffering}
             onUpdateOffering={handleUpdateOffering}
             onUpdateBookingStatus={handleUpdateBookingStatus}
+            onReplyToReview={handleReplyToReview}
             onSubmitAccreditation={handleSubmitAccreditation}
             onNavigate={navigateToSection}
           />
@@ -1781,12 +1914,26 @@ export default function App() {
       case 'explore':
         return (
           <ExplorePage
+            user={currentUser}
             attractions={attractions}
+            offerings={providerListings}
             businesses={providerApplications}
             advisories={advisories}
+            announcements={announcements}
+            weather={weather}
+            bookings={bookings}
+            activities={tripActivities}
             reviews={reviews}
+            categories={categories}
+            favourites={favourites}
+            savedCards={savedCards}
+            providerPaymentSettings={providerPaymentSettings}
+            onToggleFavourite={handleToggleFavourite}
             onAddToTrip={handleAddToTripFromExplore}
+            onAddAiRecommendationToTrip={handleAddAiRecommendationToTrip}
             onAddReview={handleAddReview}
+            onRemoveSavedCard={handleRemoveSavedCard}
+            onCompleteCheckout={handleCompleteCheckout}
           />
         );
       case 'bookings':
@@ -1794,7 +1941,7 @@ export default function App() {
           <BookingsPage
             user={currentUser}
             bookings={bookings}
-            offerings={providerListings}
+            offerings={providerListings.filter((l) => l.status !== 'Removed')}
             payments={payments}
             savedCards={savedCards}
             providerPaymentSettings={providerPaymentSettings}
@@ -1846,7 +1993,9 @@ export default function App() {
         return (
           <TransportPage
             routes={transportRoutes}
-            transportOfferings={providerListings.filter((l) => l.offeringType === 'Transport')}
+            transportOfferings={providerListings.filter(
+              (l) => l.offeringType === 'Transport' && l.status !== 'Removed'
+            )}
             weather={weather}
             onAddRouteToTrip={handleAddRouteToTrip}
             onNavigate={setActiveSection}
