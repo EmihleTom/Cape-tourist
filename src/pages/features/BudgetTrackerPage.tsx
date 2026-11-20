@@ -275,7 +275,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="exp-cat" className="block text-xs font-semibold text-slate-700">
                   Category
@@ -309,7 +309,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="exp-date" className="block text-xs font-semibold text-slate-700">
                   Date
@@ -343,7 +343,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             <button
               type="submit"
               disabled={submittingExpense}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#1D4ED8] py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
+              className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {submittingExpense ? 'Saving...' : 'Add Expense'}
@@ -368,7 +368,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             <h2 className="font-display text-base font-bold text-[#111827]">
               Expense Ledger ({visibleExpenses.length})
             </h2>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex items-center gap-1 overflow-x-auto max-w-full pb-0.5">
               {(['All', 'Accommodation', 'Tours & Passes', 'Transport', 'Dining'] as const).map(
                 (cat) => (
                   <button
@@ -376,7 +376,7 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
                     type="button"
                     aria-pressed={categoryFilter === cat}
                     onClick={() => setCategoryFilter(cat)}
-                    className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                    className={`min-h-[34px] shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                       categoryFilter === cat
                         ? 'bg-[#111827] text-white'
                         : 'bg-slate-100 text-slate-600 hover:text-[#111827]'
@@ -389,7 +389,46 @@ export const BudgetTrackerPage: React.FC<BudgetTrackerPageProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile Card Ledger */}
+          <div className="md:hidden divide-y divide-slate-200">
+            {visibleExpenses.map((exp) => (
+              <div key={exp.id} className="flex items-start justify-between gap-3 p-4 text-xs">
+                <div className="space-y-1 min-w-0">
+                  <p className="font-mono text-[11px] text-slate-500 tabular-nums">
+                    {exp.date} · {exp.category}
+                  </p>
+                  <p className="text-sm font-bold text-[#111827]">{exp.description}</p>
+                  <p className="text-slate-600">{exp.paymentMethod}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className="font-mono text-sm font-bold tabular-nums text-[#111827]">
+                    R {exp.amountZar.toLocaleString('en-ZA')}
+                  </span>
+                  {onDeleteExpense && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setBudgetError('');
+                        try {
+                          await onDeleteExpense(exp.id);
+                        } catch (err) {
+                          setBudgetError(
+                            err instanceof Error ? err.message : 'Unable to delete expense.'
+                          );
+                        }
+                      }}
+                      aria-label={`Delete ${exp.description}`}
+                      className="inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-md border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                 <tr>

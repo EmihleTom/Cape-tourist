@@ -407,7 +407,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
   return (
     <section
       aria-label="Secure Checkout & Payment Selection"
-      className="space-y-5 rounded-xl border border-[#1D4ED8]/40 bg-white p-5 sm:p-6"
+      className="space-y-5 rounded-xl border border-[#1D4ED8]/40 bg-white p-4 sm:p-6"
     >
       {/* Top Bar */}
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -652,7 +652,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 type="button"
                 disabled={payshapBusy}
                 onClick={handleInitiatePayShap}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+                className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
               >
                 <Smartphone className="h-4 w-4" aria-hidden="true" />
                 {payshapBusy ? 'Generating PayShap Request...' : 'Initiate PayShap Payment'}
@@ -715,7 +715,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                     type="button"
                     disabled={payshapBusy}
                     onClick={() => handleVerifyPayShap('Paid')}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+                    className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg bg-[#1D4ED8] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
                   >
                     <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
                     {payshapBusy ? 'Verifying...' : 'Check PayShap Confirmation'}
@@ -989,7 +989,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
             <button
               type="submit"
               disabled={cardBusy}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+              className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
             >
               <Lock className="h-3.5 w-3.5" aria-hidden="true" />
               {cardBusy
@@ -1056,7 +1056,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
               type="button"
               disabled={inPersonBusy}
               onClick={handleReservePayInPerson}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#111827] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60"
+              className="inline-flex min-h-[44px] w-full sm:w-auto items-center justify-center gap-2 rounded-lg bg-[#111827] px-5 py-2.5 text-xs font-semibold text-white hover:bg-[#1E293B] disabled:opacity-60"
             >
               <Banknote className="h-4 w-4" aria-hidden="true" />
               {inPersonBusy ? 'Submitting Reservation...' : 'Confirm Booking Request (Pay in Person)'}

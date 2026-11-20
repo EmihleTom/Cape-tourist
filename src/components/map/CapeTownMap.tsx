@@ -248,26 +248,26 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-0.5">
           {attractions.length > 0 && (
             <button
               type="button"
               onClick={() => setShowAttractions((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
+              className={`inline-flex min-h-[36px] shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
                 showAttractions
                   ? 'border-[#1D4ED8] bg-[#EFF6FF] text-[#1E40AF]'
                   : 'border-slate-300 bg-white text-slate-600'
               }`}
             >
               <Compass className="h-3.5 w-3.5" aria-hidden="true" />
-              Attractions &amp; Activities ({attractions.length})
+              Attractions ({attractions.length})
             </button>
           )}
           {businesses.length > 0 && (
             <button
               type="button"
               onClick={() => setShowBusinesses((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
+              className={`inline-flex min-h-[36px] shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
                 showBusinesses
                   ? 'border-[#111827] bg-[#111827] text-white'
                   : 'border-slate-300 bg-white text-slate-600'
@@ -281,7 +281,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
             <button
               type="button"
               onClick={() => setShowIncidents((prev) => !prev)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
+              className={`inline-flex min-h-[36px] shrink-0 whitespace-nowrap items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold transition-colors ${
                 showIncidents
                   ? 'border-amber-700 bg-amber-50 text-amber-900'
                   : 'border-slate-300 bg-white text-slate-600'
@@ -449,7 +449,7 @@ export const CapeTownMap: React.FC<CapeTownMapProps> = ({
             </a>
           </div>
 
-          <div className="grid max-h-[320px] gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid max-h-[320px] gap-2.5 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {markers.map((marker) => {
               const isSelected = activeMarkerId === marker.id;
               return (

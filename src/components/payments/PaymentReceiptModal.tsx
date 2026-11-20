@@ -26,9 +26,9 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="payment-receipt-heading"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#090D16]/60 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#090D16]/60 p-2 sm:p-4 overflow-y-auto"
     >
-      <div className="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-xl">
+      <div className="w-full max-w-lg max-h-[94vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
         <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1D4ED8]">
@@ -81,7 +81,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
             </div>
           )}
 
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg border border-slate-200 p-4">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 rounded-lg border border-slate-200 p-4">
             <div>
               <dt className="text-[11px] text-slate-500">Booking Reference</dt>
               <dd className="font-mono font-semibold text-[#111827]">{payment.bookingReference}</dd>
@@ -92,7 +92,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
                 {payment.paymentReference}
               </dd>
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <dt className="text-[11px] text-slate-500">Experience / Service</dt>
               <dd className="font-semibold text-[#111827]">{payment.serviceTitle}</dd>
             </div>
@@ -123,7 +123,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               </dd>
             </div>
             {typeof payment.balanceDueInPerson === 'number' && payment.balanceDueInPerson > 0 && (
-              <div className="col-span-2 rounded bg-amber-50 px-2.5 py-1.5 text-amber-900">
+              <div className="sm:col-span-2 rounded bg-amber-50 px-2.5 py-1.5 text-amber-900">
                 Remaining Balance Due in Person:{' '}
                 <strong className="font-mono tabular-nums">
                   R {payment.balanceDueInPerson.toLocaleString('en-ZA')}
@@ -131,7 +131,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               </div>
             )}
             {typeof payment.refundedAmount === 'number' && payment.refundedAmount > 0 && (
-              <div className="col-span-2 rounded bg-slate-100 px-2.5 py-1.5 text-slate-800">
+              <div className="sm:col-span-2 rounded bg-slate-100 px-2.5 py-1.5 text-slate-800">
                 Refunded Amount:{' '}
                 <strong className="font-mono tabular-nums">
                   R {payment.refundedAmount.toLocaleString('en-ZA')}
@@ -139,14 +139,14 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               </div>
             )}
             {payment.paymentProviderReference && (
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <dt className="text-[11px] text-slate-500">Gateway Verification Ref</dt>
                 <dd className="font-mono text-[11px] text-slate-700 break-all">
                   {payment.paymentProviderReference}
                 </dd>
               </div>
             )}
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <dt className="text-[11px] text-slate-500">Updated</dt>
               <dd className="text-slate-700">{payment.paidAtLabel || payment.updatedAtLabel}</dd>
             </div>

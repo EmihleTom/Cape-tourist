@@ -157,7 +157,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
       </section>
 
       {/* Active Challenge Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {challenges.map((ch) => {
           const pct = Math.min(100, Math.round((ch.progress / ch.target) * 100));
           const complete = ch.progress >= ch.target;
@@ -200,7 +200,7 @@ export const ChallengesPage: React.FC<ChallengesPageProps> = ({
                 type="button"
                 disabled={complete || busyChallengeId === ch.id}
                 onClick={() => void handleIncrement(ch.id)}
-                className="mt-5 w-full rounded-lg border border-slate-300 bg-slate-50 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-60 transition-colors"
+                className="mt-5 min-h-[40px] w-full rounded-lg border border-slate-300 bg-slate-50 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] disabled:opacity-60 transition-colors"
               >
                 {complete
                   ? `Completed · ${ch.badgeTitle || 'Badge Earned'}`

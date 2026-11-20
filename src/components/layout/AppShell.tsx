@@ -442,11 +442,103 @@ export const AppShell: React.FC<AppShellProps> = ({
     </div>
   );
 
+  const tabletRailItems: NavSectionId[] = [
+    'dashboard',
+    'explore',
+    'bookings',
+    'trips',
+    'ai-assistant',
+    'safety',
+    'check-in',
+    'notifications',
+  ];
+
   return (
-    <div className="flex min-h-screen bg-slate-50 text-slate-900">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block lg:w-64 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 overflow-x-clip">
+      {/* Desktop & Large Desktop Persistent Sidebar (1024px+) */}
+      <aside className="hidden lg:block lg:w-64 2xl:w-72 lg:shrink-0 lg:sticky lg:top-0 lg:h-screen">
         {renderSidebarContent()}
+      </aside>
+
+      {/* Tablet Adaptive Icon Navigation Rail (768px–1023px) */}
+      <aside
+        aria-label="Tablet quick navigation rail"
+        className="hidden md:flex lg:hidden w-16 shrink-0 sticky top-0 h-screen flex-col items-center justify-between border-r border-white/10 bg-[#111827] py-3 text-slate-100"
+      >
+        <div className="flex flex-col items-center gap-2 w-full px-2">
+          <button
+            type="button"
+            onClick={onGoLanding}
+            title="CapeSafe Connect 360 Home"
+            className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#1D4ED8] font-display text-xs font-bold text-white hover:bg-[#1E40AF] transition-colors"
+          >
+            CS
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            title="Expand full 15-feature navigation drawer"
+            aria-label="Expand full navigation drawer"
+            className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/15 bg-[#1E293B] text-slate-200 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Menu className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <nav aria-label="Tablet rail sections" className="flex flex-1 flex-col items-center gap-1.5 overflow-y-auto py-3 w-full px-2">
+          {tabletRailItems.map((id) => {
+            const item = NAV_ITEMS.find((n) => n.id === id);
+            if (!item) return null;
+            const Icon = item.icon;
+            const active = activeSection === id;
+            const hasUnread = id === 'notifications' && unreadNotifications > 0;
+            return (
+              <button
+                key={`rail-${id}`}
+                type="button"
+                onClick={() =>
+                  handleNavigate(id, id === 'dashboard' ? { dashboardTab: 'overview' } : undefined)
+                }
+                title={item.label}
+                aria-label={item.label}
+                className={`relative flex h-11 w-11 items-center justify-center rounded-lg transition-colors ${
+                  active
+                    ? 'bg-[#1D4ED8] text-white'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {hasUnread && (
+                  <span className="absolute right-1.5 top-1.5 font-mono text-[9px] font-bold text-blue-300 tabular-nums">
+                    {unreadNotifications}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="flex flex-col items-center gap-1.5 px-2">
+          <button
+            type="button"
+            onClick={() => handleNavigate('settings')}
+            title="Account & Settings"
+            aria-label="Account and Settings"
+            className={`flex h-11 w-11 items-center justify-center rounded-lg transition-colors ${
+              activeSection === 'settings'
+                ? 'bg-[#1D4ED8] text-white'
+                : 'text-slate-300 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <span className="font-display text-xs font-bold">
+              {user.name
+                .split(' ')
+                .map((p) => p[0])
+                .slice(0, 2)
+                .join('')}
+            </span>
+          </button>
+        </div>
       </aside>
 
       {/* Mobile Full Slide-Over Drawer */}
@@ -554,13 +646,13 @@ export const AppShell: React.FC<AppShellProps> = ({
 
       {/* Main Content Area */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm px-4 py-3 sm:px-6 lg:sticky lg:top-0 lg:z-30">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5 min-w-0">
+        <header className="border-b border-slate-200 bg-white/95 backdrop-blur-sm px-3 py-2 sm:px-6 sm:py-3 md:sticky md:top-0 md:z-30">
+          <div className="mx-auto flex max-w-[1440px] 2xl:max-w-[1640px] items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 lg:hidden shrink-0"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 md:hidden shrink-0"
                 aria-label="Open all 15 features menu"
               >
                 <Menu className="h-5 w-5" />
@@ -574,7 +666,7 @@ export const AppShell: React.FC<AppShellProps> = ({
                       ? onGoBack()
                       : handleNavigate('dashboard', { dashboardTab: 'overview' })
                   }
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex min-h-[40px] sm:min-h-[34px] items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0"
                 >
                   <ArrowLeft className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                   <span className="hidden sm:inline">{canGoBack ? 'Back' : 'Dashboard'}</span>
@@ -585,65 +677,93 @@ export const AppShell: React.FC<AppShellProps> = ({
                 <button
                   type="button"
                   onClick={() => handleNavigate('dashboard', { dashboardTab: 'overview' })}
-                  className="font-medium text-slate-600 hover:text-[#111827] whitespace-nowrap"
+                  className="font-medium text-slate-600 hover:text-[#111827] whitespace-nowrap hidden sm:inline"
                 >
                   {ROLE_LABELS[effectiveRole].short}
                 </button>
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400 hidden sm:inline" aria-hidden="true" />
                 <span className="truncate font-semibold text-[#111827]">
                   {activeSection === 'dashboard' ? ROLE_LABELS[effectiveRole].dashboardTitle : currentNav.label}
                 </span>
               </nav>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setQuickJumpOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-[#1D4ED8] hover:text-[#111827] transition-colors whitespace-nowrap shrink-0"
+                className="inline-flex min-h-[40px] sm:min-h-[34px] items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-[#1D4ED8] hover:text-[#111827] transition-colors whitespace-nowrap shrink-0"
                 title="Open Quick Jump (Ctrl+K or Cmd+K)"
+                aria-label="Quick Jump navigation search"
               >
                 <Search className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
                 <span className="hidden sm:inline">Jump to...</span>
-                <kbd className="hidden md:inline font-mono text-[10px] text-slate-500">⌘K</kbd>
+                <kbd className="hidden xl:inline font-mono text-[10px] text-slate-500">⌘K</kbd>
               </button>
 
               {canSwitchPortals && (
-                <div className="hidden md:flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-                  {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => {
-                        onSwitchRole(r);
-                        onSelectSection('dashboard', { dashboardTab: 'overview' });
-                      }}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
-                        effectiveRole === r
-                          ? 'bg-[#111827] text-white'
-                          : 'text-slate-600 hover:text-[#111827]'
-                      }`}
-                    >
-                      {ROLE_LABELS[r].short}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {/* Compact Role Selector on Tablet (768px–1023px) */}
+                  <select
+                    aria-label="Switch workspace portal"
+                    value={effectiveRole}
+                    onChange={(e) => {
+                      onSwitchRole(e.target.value as UserRole);
+                      onSelectSection('dashboard', { dashboardTab: 'overview' });
+                    }}
+                    className="hidden md:block xl:hidden rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-[#111827]"
+                  >
+                    {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABELS[r].short}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Full Segmented Role Switcher on Large Screens (1280px+) */}
+                  <div className="hidden xl:flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+                    {(Object.keys(ROLE_LABELS) as UserRole[]).map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => {
+                          onSwitchRole(r);
+                          onSelectSection('dashboard', { dashboardTab: 'overview' });
+                        }}
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
+                          effectiveRole === r
+                            ? 'bg-[#111827] text-white'
+                            : 'text-slate-600 hover:text-[#111827]'
+                        }`}
+                      >
+                        {ROLE_LABELS[r].short}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
-              <PWAInstallButton variant="subtle" />
+              <div className="hidden sm:block">
+                <PWAInstallButton variant="subtle" />
+              </div>
               <button
                 type="button"
                 onClick={() => handleNavigate('check-in')}
-                className="rounded-lg bg-[#1D4ED8] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap shrink-0"
+                className="min-h-[40px] sm:min-h-[34px] rounded-lg bg-[#1D4ED8] px-3 sm:px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap shrink-0"
               >
-                Quick Check-In
+                <span className="sm:hidden">Check-In</span>
+                <span className="hidden sm:inline">Quick Check-In</span>
               </button>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-10">
-          <div className="mx-auto max-w-7xl space-y-6">
+        <main
+          className={`flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 2xl:px-10 md:pb-10 ${
+            effectiveRole === 'tourist' ? 'pb-20' : 'pb-8'
+          }`}
+        >
+          <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] space-y-5 sm:space-y-6">
             {user.authMode === 'firebase' && user.emailVerified === false && (
               <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-2.5">
@@ -690,40 +810,42 @@ export const AppShell: React.FC<AppShellProps> = ({
         </main>
       </div>
 
-      {/* Responsive Mobile Bottom Navigation */}
-      <nav
-        aria-label="Mobile quick navigation"
-        className="fixed inset-x-0 bottom-0 z-40 grid h-14 grid-cols-5 border-t border-slate-200 bg-white lg:hidden"
-      >
-        {mobileQuickItems.map((id) => {
-          const item = NAV_ITEMS.find((n) => n.id === id)!;
-          const Icon = item.icon;
-          const active = activeSection === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() =>
-                handleNavigate(id, id === 'dashboard' ? { dashboardTab: 'overview' } : undefined)
-              }
-              className={`flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-                active ? 'text-[#1D4ED8]' : 'text-slate-600 hover:text-[#111827]'
-              }`}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span className="truncate max-w-full px-1">{item.shortLabel}</span>
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-slate-600 hover:text-[#111827]"
+      {/* Responsive Mobile Bottom Navigation (Tourist Experience on Mobile < 768px) */}
+      {effectiveRole === 'tourist' && (
+        <nav
+          aria-label="Mobile tourist quick navigation"
+          className="fixed inset-x-0 bottom-0 z-40 grid h-14 grid-cols-5 border-t border-slate-200 bg-white/95 backdrop-blur-md pb-safe md:hidden"
         >
-          <Menu className="h-4 w-4" aria-hidden="true" />
-          <span>All (15)</span>
-        </button>
-      </nav>
+          {mobileQuickItems.map((id) => {
+            const item = NAV_ITEMS.find((n) => n.id === id)!;
+            const Icon = item.icon;
+            const active = activeSection === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() =>
+                  handleNavigate(id, id === 'dashboard' ? { dashboardTab: 'overview' } : undefined)
+                }
+                className={`flex min-h-[44px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors ${
+                  active ? 'text-[#1D4ED8]' : 'text-slate-600 hover:text-[#111827]'
+                }`}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span className="truncate max-w-full px-1">{item.shortLabel}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex min-h-[44px] flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-slate-600 hover:text-[#111827]"
+          >
+            <Menu className="h-4 w-4" aria-hidden="true" />
+            <span>All (15)</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 };

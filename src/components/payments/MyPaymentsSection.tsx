@@ -107,7 +107,7 @@ export const MyPaymentsSection: React.FC<MyPaymentsSectionProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
             {(
               ['All', 'Successful', 'Pending', 'Failed', 'Refunds', 'Pay in Person'] as const
             ).map((tab) => (
@@ -116,7 +116,7 @@ export const MyPaymentsSection: React.FC<MyPaymentsSectionProps> = ({
                 type="button"
                 aria-pressed={filterTab === tab}
                 onClick={() => setFilterTab(tab)}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`min-h-[36px] rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   filterTab === tab
                     ? 'bg-[#111827] text-white'
                     : 'text-slate-600 hover:text-[#111827]'

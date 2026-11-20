@@ -401,7 +401,7 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
       )}
 
       {/* Interactive KPI Strip */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => {
@@ -469,11 +469,11 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
       </section>
 
       {/* Workspace Segmented Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div
           role="tablist"
           aria-label="Safety Operations dashboard sections"
-          className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-1"
+          className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-white p-1"
         >
           {[
             {
@@ -559,7 +559,7 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                   </button>
                 )}
               </div>
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 {corridorSummary.map((corridor) => {
                   const selected = zoneKeywordFilter === corridor.key;
                   return (

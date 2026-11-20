@@ -170,7 +170,7 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
       </div>
 
       {/* My Trips Overview KPI Strip */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Confirmed Stay</span>
@@ -328,14 +328,14 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
             {(['All', 'Accommodation', 'Transport', 'Activity'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 aria-pressed={typeFilter === t}
                 onClick={() => setTypeFilter(t)}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`min-h-[34px] shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                   typeFilter === t
                     ? 'bg-[#111827] text-white'
                     : 'text-slate-600 hover:text-[#111827]'
@@ -412,12 +412,12 @@ export const MyTripsPage: React.FC<MyTripsPageProps> = ({
               value={time}
               onChange={(e) => setTime(e.target.value)}
               aria-label="Time"
-              className="w-20 rounded-lg border border-slate-300 px-2 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
+              className="w-28 sm:w-20 shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-xs font-mono text-slate-900 focus:border-[#1D4ED8] focus:outline-none"
             />
             <button
               type="submit"
               disabled={submittingStop}
-              className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors whitespace-nowrap"
+              className="flex min-h-[40px] flex-1 items-center justify-center gap-1 rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60 transition-colors whitespace-nowrap"
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {submittingStop ? 'Adding...' : 'Add'}

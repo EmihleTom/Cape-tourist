@@ -177,7 +177,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
       </div>
 
       {/* 6 KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3.5">
           <div className="flex items-center justify-between text-[11px] text-slate-500">
             <span>Settled Volume</span>
@@ -290,7 +290,7 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
       </div>
 
       {/* Filters */}
-      <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5 sm:grid-cols-4 text-xs">
+      <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3.5 sm:grid-cols-2 lg:grid-cols-4 text-xs">
         <div>
           <label htmlFor="adm-pay-search" className="block font-semibold text-slate-600">
             Search Ref / Service
@@ -427,8 +427,92 @@ export const AdminPaymentManagementSection: React.FC<AdminPaymentManagementSecti
         </form>
       )}
 
-      {/* Transactions Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
+      {/* Mobile Transactions List (<768px) */}
+      <div className="md:hidden divide-y divide-slate-200 rounded-xl border border-slate-200">
+        {filteredPayments.length === 0 ? (
+          <p className="p-5 text-center text-xs text-slate-500">
+            No transactions matched the current filter.
+          </p>
+        ) : (
+          filteredPayments.map((pay) => {
+            const canRefund =
+              pay.paymentStatus === 'Paid' ||
+              pay.paymentStatus === 'Partially Paid' ||
+              pay.paymentStatus === 'Partially Refunded';
+            return (
+              <div key={`mob-pay-${pay.id}`} className="p-4 space-y-2.5 text-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono font-semibold text-[#111827] truncate">
+                      {pay.bookingReference}
+                    </p>
+                    <p className="font-mono text-[11px] text-slate-500 truncate">
+                      {pay.paymentReference}
+                    </p>
+                  </div>
+                  <StatusText
+                    label={pay.paymentStatus}
+                    tone={
+                      pay.paymentStatus === 'Paid' || pay.paymentStatus === 'Partially Paid'
+                        ? 'nominal'
+                        : pay.paymentStatus === 'Failed'
+                        ? 'alert'
+                        : 'advisory'
+                    }
+                  />
+                </div>
+                <p className="font-semibold text-sm text-[#111827]">{pay.serviceTitle}</p>
+                <p className="text-slate-600">
+                  {pay.providerName} · {pay.userName || pay.userId}
+                </p>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-2">
+                  <div>
+                    <span className="font-medium text-slate-700">{pay.paymentMethod}</span>
+                    {pay.cardLastFour && (
+                      <span className="ml-1 font-mono text-[11px] text-slate-500">
+                        •••• {pay.cardLastFour}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-mono text-sm font-bold text-[#111827] tabular-nums">
+                    R {pay.amount.toLocaleString('en-ZA')}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveReceipt(pay)}
+                    className="min-h-[38px] inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50"
+                  >
+                    <Receipt className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
+                    Inspect
+                  </button>
+                  {canRefund && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRefundTarget(pay);
+                        setRefundAmountInput(
+                          String(Math.max(1, pay.amount - (pay.refundedAmount || 0)))
+                        );
+                        setRefundErr('');
+                        setRefundMsg('');
+                      }}
+                      className="min-h-[38px] inline-flex items-center gap-1 rounded border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                      Refund
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Transactions Table (>=768px) */}
+      <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-600">
             <tr>

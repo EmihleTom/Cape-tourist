@@ -351,7 +351,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
             <button
               type="submit"
               disabled={savingSettings}
-              className="ml-auto rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+              className="ml-auto min-h-[40px] w-full sm:w-auto rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
             >
               {savingSettings ? 'Saving Settings...' : 'Save Payment Settings'}
             </button>
@@ -369,7 +369,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
             </h3>
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
             {(['All', 'Unpaid Bookings', 'Online Payments', 'Pay in Person'] as const).map(
               (tab) => (
                 <button
@@ -377,7 +377,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                   type="button"
                   aria-pressed={ledgerFilter === tab}
                   onClick={() => setLedgerFilter(tab)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  className={`min-h-[34px] shrink-0 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
                     ledgerFilter === tab
                       ? 'bg-[#111827] text-white'
                       : 'text-slate-600 hover:text-[#111827]'
@@ -512,7 +512,7 @@ export const ProviderPaymentSettingsSection: React.FC<ProviderPaymentSettingsSec
                               setMarkingId(null);
                             }
                           }}
-                          className="inline-flex items-center gap-1 rounded-md bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap"
+                          className="inline-flex min-h-[40px] items-center gap-1 rounded-md bg-[#15803D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60 whitespace-nowrap"
                         >
                           <Banknote className="h-3.5 w-3.5" aria-hidden="true" />
                           {markingId === pay.id ? 'Recording...' : 'Mark Payment Received'}

@@ -441,7 +441,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* Interactive KPI Strip */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => {
@@ -514,11 +514,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </section>
 
       {/* Workspace Segmented Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div
           role="tablist"
           aria-label="Administrator dashboard sections"
-          className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-1"
+          className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-white p-1"
         >
           {[
             {
@@ -679,7 +679,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 )}
               </div>
 
-              <div className="grid gap-2.5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
                 {precinctDensity.map((item) => {
                   const selected = incZoneFilter === item.zone;
                   return (
@@ -969,7 +969,94 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Card Queue (<768px) */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {filteredApplications.length === 0 ? (
+                <p className="px-4 py-6 text-center text-xs text-slate-500">
+                  No applications matched this filter.
+                </p>
+              ) : (
+                filteredApplications.map((app) => (
+                  <div key={`mob-app-${app.id}`} className="p-4 space-y-2.5 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-sm text-[#111827]">{app.businessName}</p>
+                        <p className="text-slate-500">
+                          {app.category} · {app.zone}
+                        </p>
+                      </div>
+                      <StatusText
+                        label={app.status}
+                        tone={
+                          app.status === 'Approved'
+                            ? 'nominal'
+                            : app.status === 'Pending Review'
+                            ? 'advisory'
+                            : 'alert'
+                        }
+                      />
+                    </div>
+                    <p className="text-slate-600">{app.complianceDocs}</p>
+                    <p className="font-mono text-[11px] text-slate-500 tabular-nums">
+                      Submitted {app.submittedDate}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {app.status !== 'Approved' && (
+                        <button
+                          type="button"
+                          disabled={busyKey === `app-${app.id}`}
+                          onClick={async () => {
+                            setAdminError('');
+                            setBusyKey(`app-${app.id}`);
+                            try {
+                              await onUpdateApplicationStatus(app.id, 'Approved');
+                            } catch (err) {
+                              setAdminError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Unable to approve application.'
+                              );
+                            } finally {
+                              setBusyKey(null);
+                            }
+                          }}
+                          className="min-h-[38px] inline-flex items-center gap-1 rounded-md bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+                        >
+                          <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                          Approve
+                        </button>
+                      )}
+                      {app.status !== 'Action Required' && (
+                        <button
+                          type="button"
+                          disabled={busyKey === `app-${app.id}`}
+                          onClick={async () => {
+                            setAdminError('');
+                            setBusyKey(`app-${app.id}`);
+                            try {
+                              await onUpdateApplicationStatus(app.id, 'Action Required');
+                            } catch (err) {
+                              setAdminError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Unable to flag compliance docs.'
+                              );
+                            } finally {
+                              setBusyKey(null);
+                            }
+                          }}
+                          className="min-h-[38px] rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+                        >
+                          Flag Docs
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                   <tr>
@@ -1121,7 +1208,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile RBAC Role Cards (<768px) */}
+            <div className="md:hidden divide-y divide-slate-200">
+              {filteredUsers.map((u) => {
+                const hasUpgradeRequest = Boolean(u.requestedRole && u.requestedRole !== u.role);
+                return (
+                  <div key={`mob-rbac-${u.id}`} className="p-4 space-y-2.5 text-xs">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm text-[#111827] truncate">{u.name}</p>
+                        <p className="text-slate-500 truncate">
+                          {u.organization || u.location} · {u.email}
+                        </p>
+                      </div>
+                      <StatusText
+                        label={ROLE_LABELS[u.role].short}
+                        tone={u.role === 'admin' ? 'advisory' : 'nominal'}
+                      />
+                    </div>
+                    <p className="text-slate-600">
+                      Requested: <strong>{ROLE_LABELS[u.requestedRole || u.role].label}</strong>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {hasUpgradeRequest && u.requestedRole && (
+                        <button
+                          type="button"
+                          disabled={busyKey === `role-${u.id}`}
+                          onClick={async () => {
+                            setAdminError('');
+                            setBusyKey(`role-${u.id}`);
+                            try {
+                              await onUpdateUserRole(u.id, u.requestedRole!);
+                            } catch (err) {
+                              setAdminError(
+                                err instanceof Error
+                                  ? err.message
+                                  : 'Unable to approve requested role.'
+                              );
+                            } finally {
+                              setBusyKey(null);
+                            }
+                          }}
+                          className="min-h-[38px] rounded-md bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-60"
+                        >
+                          Approve {ROLE_LABELS[u.requestedRole].short}
+                        </button>
+                      )}
+                      <select
+                        aria-label={`Assign role for ${u.name}`}
+                        disabled={busyKey === `role-${u.id}`}
+                        value={u.role}
+                        onChange={async (e) => {
+                          setAdminError('');
+                          setBusyKey(`role-${u.id}`);
+                          try {
+                            await onUpdateUserRole(u.id, e.target.value as UserRole);
+                          } catch (err) {
+                            setAdminError(
+                              err instanceof Error ? err.message : 'Unable to update user role.'
+                            );
+                          } finally {
+                            setBusyKey(null);
+                          }
+                        }}
+                        className="min-h-[38px] flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-[#111827]"
+                      >
+                        <option value="tourist">Tourist</option>
+                        <option value="provider">Service Provider</option>
+                        <option value="safety">Safety Management</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
                   <tr>
@@ -1430,7 +1593,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </span>
               </div>
 
-              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                 {categories.map((cat) => (
                   <div
                     key={cat.id}

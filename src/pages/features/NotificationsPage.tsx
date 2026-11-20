@@ -76,14 +76,14 @@ export const NotificationsPage: React.FC<NotificationsPageProps> = ({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-white p-1 w-fit">
+      <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-white p-1 w-fit">
         {(['All', 'Safety', 'Booking', 'Transport', 'System'] as const).map((cat) => (
           <button
             key={cat}
             type="button"
             aria-pressed={filter === cat}
             onClick={() => setFilter(cat)}
-            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+            className={`min-h-[34px] shrink-0 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
               filter === cat ? 'bg-[#111827] text-white' : 'text-slate-600 hover:text-[#111827]'
             }`}
           >

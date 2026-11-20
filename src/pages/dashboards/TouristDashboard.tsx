@@ -172,7 +172,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
         <div
           role="tablist"
           aria-label="Tourist dashboard views"
-          className="flex flex-wrap items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 self-start"
+          className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1 self-start"
         >
           <button
             type="button"
@@ -181,7 +181,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             aria-selected={activeTab === 'overview'}
             aria-controls="panel-tourist-overview"
             onClick={() => selectTab('overview')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+            className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
               activeTab === 'overview'
                 ? 'bg-[#111827] text-white'
                 : 'text-slate-600 hover:text-[#111827]'
@@ -197,7 +197,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             aria-selected={activeTab === 'payments'}
             aria-controls="panel-tourist-payments"
             onClick={() => selectTab('payments')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+            className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
               activeTab === 'payments'
                 ? 'bg-[#111827] text-white'
                 : 'text-slate-600 hover:text-[#111827]'
@@ -251,13 +251,13 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
           className="space-y-6"
         >
       {/* Welcome & Quick Action Header */}
-      <section className="grid gap-6 rounded-xl border border-slate-200 bg-white p-6 lg:grid-cols-12 lg:items-stretch">
+      <section className="grid gap-6 rounded-xl border border-slate-200 bg-white p-4 sm:p-6 lg:grid-cols-12 lg:items-stretch">
         <div className="flex flex-col justify-between lg:col-span-8">
           <div>
             <p className="text-xs font-semibold text-[#1D4ED8]">
               Tourist Workspace · {user.location}
             </p>
-            <h1 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-[#111827] sm:text-3xl">
+            <h1 className="mt-1.5 font-display text-2xl font-bold tracking-tight text-[#111827] sm:text-3xl 2xl:text-4xl">
               Welcome back, {user.name.split(' ')[0]}
             </h1>
             <p className="mt-2 text-sm text-slate-600 max-w-2xl leading-relaxed">
@@ -265,11 +265,11 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 grid grid-cols-1 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
             <button
               type="button"
               onClick={() => onNavigate('check-in')}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
             >
               <Timer className="h-4 w-4" aria-hidden="true" />
               Manage Trail Check-In
@@ -277,7 +277,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('explore')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <Compass className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
               Open Interactive Map
@@ -285,7 +285,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('pass')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <QrCode className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
               Open Digital Pass
@@ -293,7 +293,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             <button
               type="button"
               onClick={() => onNavigate('ai-assistant')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <Bot className="h-4 w-4 text-[#111827]" aria-hidden="true" />
               Ask CapeSafe AI
@@ -301,7 +301,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             <button
               type="button"
               onClick={() => selectTab('payments')}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <Wallet className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
               My Payments &amp; Receipts
@@ -310,7 +310,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
         </div>
 
         <div className="lg:col-span-4">
-          <div className="relative h-48 overflow-hidden rounded-lg border border-slate-200 lg:h-full">
+          <div className="relative h-52 sm:h-64 overflow-hidden rounded-lg border border-slate-200 lg:h-full 2xl:min-h-[260px]">
             <ImageWithFallback
               src={KIRSTENBOSCH_IMAGE_URL}
               alt="Kirstenbosch Boomslang Canopy walkway in morning sunlight"
@@ -326,7 +326,7 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
       </section>
 
       {/* 4-Column Metric Strip */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => onNavigate('bookings')}

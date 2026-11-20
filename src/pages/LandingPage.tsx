@@ -73,7 +73,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Hero Split */}
       <section id="top" className="border-b border-slate-200 bg-gradient-to-b from-[#EFF6FF]/75 via-slate-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
           <div className="grid items-stretch gap-8 lg:grid-cols-12 lg:gap-10">
             <div className="flex flex-col justify-between lg:col-span-5">
               <div>
@@ -88,11 +88,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   timed mountain check-ins, and MyCiTi mobility inside one installable web platform.
                 </p>
 
-                <div className="mt-8 flex flex-wrap items-center gap-3">
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
                     type="button"
                     onClick={() => onEnterDemoRole('tourist', 'dashboard')}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
+                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
                   >
                     Launch Demo Platform
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -100,7 +100,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <button
                     type="button"
                     onClick={() => onOpenAuth('register')}
-                    className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-[#111827] hover:bg-slate-100 transition-colors whitespace-nowrap"
+                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-[#111827] hover:bg-slate-100 transition-colors whitespace-nowrap"
                   >
                     Create Account
                   </button>
@@ -113,7 +113,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <div className="lg:col-span-7">
-              <div className="relative h-72 overflow-hidden rounded-xl border border-slate-200 bg-[#111827] sm:h-96 lg:h-full lg:min-h-[420px]">
+              <div className="relative h-64 overflow-hidden rounded-xl border border-slate-200 bg-[#111827] sm:h-96 lg:h-full lg:min-h-[440px] 2xl:min-h-[520px]">
                 <ImageWithFallback
                   src={HERO_IMAGE_URL}
                   alt="Table Mountain rising behind Cape Town Victoria and Alfred Waterfront coastline"
@@ -132,7 +132,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* 4-Column Operational Strip below Hero Split */}
-          <div className="mt-10 grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-5 lg:grid-cols-4 lg:gap-6">
+          <div className="mt-10 grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-white p-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <div>
               <p className="text-xs text-slate-500">Integrated Features</p>
               <p className="mt-1 font-display text-2xl font-bold tabular-nums text-[#111827]">15 Modules</p>
@@ -159,7 +159,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Core Capabilities */}
       <section id="capabilities" className="border-b border-slate-200 bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold text-[#1D4ED8]">Platform Architecture</p>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#111827] text-balance">
@@ -213,7 +213,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Curated Cape Town Destinations Preview */}
       <section id="destinations" className="border-b border-slate-200 bg-slate-50 py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold text-[#1D4ED8]">Explore Preview</p>
@@ -231,7 +231,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </button>
           </div>
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
               <div className="aspect-[4/3] overflow-hidden bg-slate-100">
                 <ImageWithFallback
@@ -274,7 +274,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
             </article>
 
-            <article className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <article className="overflow-hidden rounded-xl border border-slate-200 bg-white md:col-span-2 lg:col-span-1">
               <div className="aspect-[4/3] overflow-hidden bg-slate-100">
                 <ImageWithFallback
                   src={BOKAAP_IMAGE_URL}
@@ -300,7 +300,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* Safety Network Section */}
       <section id="safety-network" className="border-b border-slate-200 bg-[#111827] py-16 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-12 lg:items-center">
             <div className="lg:col-span-7">
               <p className="text-xs font-semibold text-blue-300">Safety Coordination</p>
@@ -358,7 +358,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 4 Role Portals */}
       <section id="portals" className="bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] 2xl:max-w-[1640px] px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold text-[#1D4ED8]">Hackathon Demonstration Access</p>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-[#111827]">

@@ -196,11 +196,11 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="exp-detail-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/70 p-3 sm:p-5 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/70 p-0 sm:p-4 lg:p-6 overflow-y-auto"
     >
-      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <div className="relative w-full max-w-5xl h-full sm:h-auto sm:max-h-[92vh] overflow-y-auto rounded-none sm:rounded-2xl border-0 sm:border sm:border-slate-200 bg-white shadow-2xl">
         {/* Sticky Top Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-4">
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-5 sm:py-4">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold text-[#1D4ED8] truncate">
               {item.entryType || 'Experience'} ·{' '}
@@ -219,7 +219,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
               type="button"
               onClick={() => onToggleFavourite(item)}
               aria-pressed={isFavourite}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`inline-flex min-h-[40px] sm:min-h-[32px] items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
                 isFavourite
                   ? 'border-red-200 bg-red-50 text-red-700'
                   : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
@@ -229,13 +229,13 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                 className={`h-3.5 w-3.5 ${isFavourite ? 'fill-red-600 text-red-600' : ''}`}
                 aria-hidden="true"
               />
-              {isFavourite ? 'Saved' : 'Save Favourite'}
+              <span className="hidden xs:inline">{isFavourite ? 'Saved' : 'Save Favourite'}</span>
             </button>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close experience details"
-              className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 hover:bg-slate-100 hover:text-[#111827]"
+              className="flex min-h-[40px] min-w-[40px] sm:min-h-[32px] sm:min-w-[32px] items-center justify-center rounded-lg border border-slate-300 bg-white p-1.5 text-slate-600 hover:bg-slate-100 hover:text-[#111827]"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -519,7 +519,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label
                         htmlFor="exp-date"
@@ -532,7 +532,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                         type="date"
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-xs text-slate-900"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs text-slate-900"
                       />
                     </div>
                     <div>
@@ -546,7 +546,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                         id="exp-time"
                         value={selectedTime}
                         onChange={(e) => setSelectedTime(e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-xs text-slate-900"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs text-slate-900"
                       >
                         <option value="08:30">08:30 SAST</option>
                         <option value="09:00">09:00 SAST</option>
@@ -557,7 +557,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label
                         htmlFor="exp-participants"
@@ -574,7 +574,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                         onChange={(e) =>
                           setParticipants(Math.max(1, Math.min(maxGuests, Number(e.target.value) || 1)))
                         }
-                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-xs text-slate-900"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs text-slate-900"
                       />
                     </div>
                     <div>
@@ -593,7 +593,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                         onChange={(e) =>
                           setDurationValue(Math.max(1, Math.min(12, Number(e.target.value) || 1)))
                         }
-                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-mono text-xs text-slate-900"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 font-mono text-xs text-slate-900"
                       />
                     </div>
                   </div>
@@ -621,7 +621,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                   {item.priceZar > 0 ? (
                     <button
                       type="submit"
-                      className="w-full rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors"
+                      className="min-h-[44px] w-full rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors"
                     >
                       Book &amp; Choose Payment Method
                     </button>
@@ -630,7 +630,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                   <button
                     type="button"
                     onClick={handleSaveToTrip}
-                    className={`flex w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors ${
+                    className={`flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors ${
                       tripAdded
                         ? 'border-[#15803D]/30 bg-[#F0FDF4] text-[#15803D]'
                         : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-100'

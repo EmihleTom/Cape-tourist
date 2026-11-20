@@ -830,8 +830,30 @@ async function runTests() {
     'server.ts must expose /api/ai/recommend-experiences endpoint'
   );
 
+  // 13. Responsive Multi-Device Breakpoints & Adaptive Navigation Verification
+  const indexCssSrc = fs.readFileSync('src/index.css', 'utf8');
+  assert.ok(
+    indexCssSrc.includes('--breakpoint-2xl: 90rem') &&
+      indexCssSrc.includes('--breakpoint-lg: 64rem') &&
+      indexCssSrc.includes('--breakpoint-md: 48rem'),
+    'src/index.css must define multi-device Tailwind v4 breakpoints (768px, 1024px, 1440px)'
+  );
+  const appShellSrc = fs.readFileSync('src/components/layout/AppShell.tsx', 'utf8');
+  assert.ok(
+    appShellSrc.includes('md:flex lg:hidden') &&
+      appShellSrc.includes("effectiveRole === 'tourist'") &&
+      appShellSrc.includes('2xl:w-72'),
+    'AppShell must provide adaptive Tablet icon rail, Tourist-only mobile bottom nav, and Large Desktop sidebar'
+  );
+  assert.ok(
+    explorePageSrc.includes('lg:grid-cols-12') &&
+      explorePageSrc.includes('lg:sticky lg:top-20') &&
+      explorePageSrc.includes('mobileViewMode'),
+    'ExplorePage must render desktop/large-desktop side-by-side map alongside listings and adaptive mobile switcher'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Favourites + Provider/Admin governance), TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Favourites + Provider/Admin governance), TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Responsive Multi-Device breakpoints & adaptive navigation, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
   );
 }
 

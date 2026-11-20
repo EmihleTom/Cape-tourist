@@ -474,7 +474,7 @@ export const AuthPages: React.FC<AuthPagesProps> = ({
                   key={r}
                   type="button"
                   onClick={() => handleDemoQuickLogin(r)}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] transition-colors whitespace-nowrap"
+                  className="min-h-[44px] sm:min-h-[36px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-[#111827] hover:border-[#1D4ED8] hover:bg-[#EFF6FF] transition-colors whitespace-nowrap"
                 >
                   {ROLE_LABELS[r].short}
                 </button>

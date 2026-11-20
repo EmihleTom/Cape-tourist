@@ -135,6 +135,8 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
   const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
+  const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map' | 'both'>('both');
+  const [desktopShowMap, setDesktopShowMap] = useState(true);
 
   // Reviews Section State
   const [reviewTargetId, setReviewTargetId] = useState(attractions[0]?.id || 'attr-waterfront');
@@ -845,7 +847,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:gap-5">
           {showcaseItems.map((item) => (
             <button
               key={`show-${item.id}`}
@@ -853,14 +855,14 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
               onClick={() => setActiveDetailId(item.id)}
               className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-left hover:border-[#1D4ED8] transition-colors"
             >
-              <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100">
+              <div className="aspect-[16/10] sm:aspect-[4/3] 2xl:aspect-[16/10] w-full overflow-hidden bg-slate-100">
                 <ImageWithFallback src={item.imageUrl} alt={item.title} />
               </div>
-              <div className="p-3.5 space-y-1">
+              <div className="p-3.5 sm:p-4 space-y-1">
                 <p className="text-[11px] font-semibold text-[#1D4ED8] truncate">
                   {item.activityCategories?.[0] || item.category}
                 </p>
-                <p className="font-display text-sm font-bold text-[#111827] group-hover:text-[#1D4ED8] line-clamp-1">
+                <p className="font-display text-sm 2xl:text-base font-bold text-[#111827] group-hover:text-[#1D4ED8] line-clamp-1">
                   {item.title}
                 </p>
                 <p className="text-[11px] text-slate-500 truncate">{item.precinct}</p>
@@ -875,18 +877,6 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           ))}
         </div>
       </section>
-
-      {/* Interactive Cape Town Tourism Map */}
-      <CapeTownMap
-        attractions={filteredDirectory}
-        businesses={filteredBusinesses}
-        incidents={advisories}
-        selectedId={selectedMapId}
-        favouriteIds={Array.from(favouriteIdSet)}
-        onToggleFavourite={handleToggleFavById}
-        onOpenDetails={(id) => setActiveDetailId(id)}
-        onSelectMarker={handleMarkerSelect}
-      />
 
       {/* 12 Activity Categories + Multi-Faceted Filter Bar */}
       <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
@@ -1102,251 +1092,343 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
         </p>
       )}
 
-      {/* Attractions & Bookable Activities Grid */}
-      {filteredDirectory.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
-              <h2 className="font-display text-lg font-bold text-[#111827]">
-                Cape Town Attractions &amp; Activities ({filteredDirectory.length})
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500">
-              Click any experience for full gallery, safety specs, age requirements &amp; checkout
-            </p>
+      {/* Workspace View Switchers (Mobile/Tablet List vs Map, Desktop Split Map Toggle) */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="flex items-center gap-2">
+          <Compass className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+          <h2 className="font-display text-base font-bold text-[#111827]">
+            Cape Town Experiences ({filteredDirectory.length}) &amp; Providers ({filteredBusinesses.length})
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile/Tablet View Mode (< 1024px) */}
+          <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1 lg:hidden">
+            {(
+              [
+                { id: 'both', label: 'List + Map' },
+                { id: 'list', label: 'List Only' },
+                { id: 'map', label: 'Map Only' },
+              ] as const
+            ).map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                aria-pressed={mobileViewMode === mode.id}
+                onClick={() => setMobileViewMode(mode.id)}
+                className={`min-h-[36px] rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                  mobileViewMode === mode.id
+                    ? 'bg-[#111827] text-white'
+                    : 'text-slate-600 hover:text-[#111827]'
+                }`}
+              >
+                {mode.label}
+              </button>
+            ))}
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredDirectory.map((item) => {
-              const isAdded = addedIds.includes(item.id);
-              const isFav = favouriteIdSet.has(item.id);
-              const isSelected = selectedMapId === item.id;
-              const ratingSummary = getRatingSummary(item.id);
+          {/* Desktop/Large Desktop Side-by-Side Map Toggle (1024px+) */}
+          <button
+            type="button"
+            aria-pressed={desktopShowMap}
+            onClick={() => setDesktopShowMap((prev) => !prev)}
+            className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            <MapPin className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
+            {desktopShowMap ? 'Hide Side Map' : 'Show Map Alongside Listings'}
+          </button>
+        </div>
+      </div>
 
-              return (
-                <article
-                  key={item.id}
-                  className={`flex flex-col overflow-hidden rounded-xl border bg-white transition-colors ${
-                    isSelected ? 'border-[#1D4ED8] ring-2 ring-[#1D4ED8]/30' : 'border-slate-200'
-                  }`}
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                    <ImageWithFallback src={item.imageUrl} alt={item.title} />
-                    {onToggleFavourite && (
-                      <button
-                        type="button"
-                        onClick={() => handleToggleFav(item)}
-                        aria-label={
-                          isFav ? `Remove ${item.title} from favourites` : `Save ${item.title} to favourites`
-                        }
-                        className="absolute right-3 top-3 rounded-full bg-white/95 p-2 text-slate-700 shadow-sm hover:text-red-600"
-                      >
-                        <Heart
-                          className={`h-4 w-4 ${isFav ? 'fill-red-600 text-red-600' : ''}`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    )}
-                  </div>
+      {/* Main Responsive Explore Workspace: Split Map Alongside Listings on Desktop/Large Desktop, Adaptive Stack on Tablet/Mobile */}
+      <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+        {/* Listings Column */}
+        <div
+          className={`space-y-6 ${
+            mobileViewMode === 'map' ? 'hidden lg:block' : 'block'
+          } ${desktopShowMap ? 'lg:col-span-7 2xl:col-span-7' : 'lg:col-span-12'}`}
+        >
+          {/* Attractions & Bookable Activities Grid */}
+          {filteredDirectory.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-slate-500">
+                  Click any experience for full gallery, safety specs, age requirements &amp; checkout
+                </p>
+              </div>
 
-                  <div className="flex flex-1 flex-col justify-between p-5">
-                    <div>
-                      <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
-                        <span className="truncate">
-                          {item.entryType || 'Attraction'} · {item.duration} ·{' '}
-                          {item.dataOrigin === 'live' ? 'Live Partner' : 'Curated Demo'}
-                        </span>
-                        <StatusText
-                          label={item.safetyStatus}
-                          tone={item.safetyStatus === 'Nominal' ? 'nominal' : 'advisory'}
-                        />
-                      </div>
+              <div
+                className={`grid gap-5 md:grid-cols-2 ${
+                  desktopShowMap ? 'lg:grid-cols-2 2xl:grid-cols-2' : 'lg:grid-cols-3 2xl:grid-cols-4'
+                }`}
+              >
+                {filteredDirectory.map((item) => {
+                  const isAdded = addedIds.includes(item.id);
+                  const isFav = favouriteIdSet.has(item.id);
+                  const isSelected = selectedMapId === item.id;
+                  const ratingSummary = getRatingSummary(item.id);
 
-                      <h3 className="mt-2 font-display text-lg font-bold text-[#111827]">
-                        {item.title}
-                      </h3>
-
-                      <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-1 truncate">
-                          <MapPin className="h-3.5 w-3.5 shrink-0 text-[#1D4ED8]" aria-hidden="true" />
-                          <span className="truncate">{item.precinct}</span>
-                        </span>
-                        {ratingSummary && (
-                          <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8] shrink-0">
-                            <Star className="h-3 w-3 fill-[#1D4ED8]" aria-hidden="true" />
-                            {ratingSummary.avgStr} ({ratingSummary.count})
-                          </span>
+                  return (
+                    <article
+                      key={item.id}
+                      className={`flex flex-col overflow-hidden rounded-xl border bg-white transition-colors ${
+                        isSelected ? 'border-[#1D4ED8] ring-2 ring-[#1D4ED8]/30' : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="relative aspect-[16/10] md:aspect-[4/3] overflow-hidden bg-slate-100">
+                        <ImageWithFallback src={item.imageUrl} alt={item.title} />
+                        {onToggleFavourite && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleFav(item)}
+                            aria-label={
+                              isFav
+                                ? `Remove ${item.title} from favourites`
+                                : `Save ${item.title} to favourites`
+                            }
+                            className="absolute right-3 top-3 flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-white/95 p-2 text-slate-700 shadow-sm hover:text-red-600"
+                          >
+                            <Heart
+                              className={`h-4 w-4 ${isFav ? 'fill-red-600 text-red-600' : ''}`}
+                              aria-hidden="true"
+                            />
+                          </button>
                         )}
                       </div>
 
-                      <p className="mt-2.5 text-xs text-slate-600 leading-relaxed line-clamp-3">
-                        {item.description}
+                      <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
+                        <div>
+                          <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                            <span className="truncate">
+                              {item.entryType || 'Attraction'} · {item.duration} ·{' '}
+                              {item.dataOrigin === 'live' ? 'Live Partner' : 'Curated Demo'}
+                            </span>
+                            <StatusText
+                              label={item.safetyStatus}
+                              tone={item.safetyStatus === 'Nominal' ? 'nominal' : 'advisory'}
+                            />
+                          </div>
+
+                          <h3 className="mt-2 font-display text-lg font-bold text-[#111827]">
+                            {item.title}
+                          </h3>
+
+                          <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500">
+                            <span className="flex items-center gap-1 truncate">
+                              <MapPin
+                                className="h-3.5 w-3.5 shrink-0 text-[#1D4ED8]"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate">{item.precinct}</span>
+                            </span>
+                            {ratingSummary && (
+                              <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8] shrink-0">
+                                <Star className="h-3 w-3 fill-[#1D4ED8]" aria-hidden="true" />
+                                {ratingSummary.avgStr} ({ratingSummary.count})
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="mt-2.5 text-xs text-slate-600 leading-relaxed line-clamp-3">
+                            {item.description}
+                          </p>
+
+                          <div className="mt-2.5 space-y-1 text-[11px] text-slate-500">
+                            <p>
+                              <strong className="font-semibold text-slate-700">Category:</strong>{' '}
+                              {(item.activityCategories || [item.category]).slice(0, 2).join(' · ')}
+                            </p>
+                            <p>
+                              <strong className="font-semibold text-slate-700">Age Policy:</strong>{' '}
+                              {item.ageRequirement || 'All Ages'}
+                            </p>
+                            <p>
+                              <strong className="font-semibold text-slate-700">Access:</strong>{' '}
+                              {item.accessibilitySummary}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3.5">
+                          <span className="font-mono text-xs font-bold tabular-nums text-[#111827]">
+                            {item.priceZar === 0 ? 'Free Public Access' : `R ${item.priceZar}`}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedMapId(item.id);
+                                if (mobileViewMode === 'list') setMobileViewMode('both');
+                              }}
+                              className="min-h-[38px] sm:min-h-[32px] rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50 whitespace-nowrap"
+                            >
+                              Map Pin
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAdd(item)}
+                              className={`inline-flex min-h-[38px] sm:min-h-[32px] items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                                isAdded
+                                  ? 'border-[#15803D]/30 bg-[#F0FDF4] text-[#15803D]'
+                                  : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
+                              }`}
+                            >
+                              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                              {isAdded ? 'In Trip' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveDetailId(item.id)}
+                              className="min-h-[38px] sm:min-h-[32px] rounded-lg bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
+                            >
+                              View Details &amp; Book
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Accredited Tourism Businesses Directory */}
+          {filteredBusinesses.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Store className="h-4 w-4 text-[#111827]" aria-hidden="true" />
+                <h2 className="font-display text-lg font-bold text-[#111827]">
+                  Accredited Cape Town Service Providers ({filteredBusinesses.length})
+                </h2>
+              </div>
+
+              <div
+                className={`grid gap-4 md:grid-cols-2 ${
+                  desktopShowMap ? '' : 'lg:grid-cols-3'
+                }`}
+              >
+                {filteredBusinesses.map((biz) => {
+                  const isSelected = selectedMapId === biz.id;
+                  const ratingSummary = getRatingSummary(biz.id);
+
+                  return (
+                    <article
+                      key={biz.id}
+                      className={`rounded-xl border bg-white p-5 space-y-2.5 transition-colors ${
+                        isSelected ? 'border-[#1D4ED8] ring-2 ring-[#1D4ED8]/30' : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-display text-base font-bold text-[#111827]">
+                              {biz.businessName}
+                            </h3>
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              {biz.dataOrigin === 'live' ? 'Live Firestore' : 'Demo Operator'}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {biz.category} · {biz.zone}
+                          </p>
+                        </div>
+                        <StatusText
+                          label={biz.status}
+                          tone={
+                            biz.status === 'Approved'
+                              ? 'nominal'
+                              : biz.status === 'Pending Review'
+                              ? 'advisory'
+                              : 'alert'
+                          }
+                        />
+                      </div>
+
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {biz.description || biz.complianceDocs}
                       </p>
 
-                      <div className="mt-2.5 space-y-1 text-[11px] text-slate-500">
-                        <p>
-                          <strong className="font-semibold text-slate-700">Category:</strong>{' '}
-                          {(item.activityCategories || [item.category]).slice(0, 2).join(' · ')}
-                        </p>
-                        <p>
-                          <strong className="font-semibold text-slate-700">Age Policy:</strong>{' '}
-                          {item.ageRequirement || 'All Ages'}
-                        </p>
-                        <p>
-                          <strong className="font-semibold text-slate-700">Access:</strong>{' '}
-                          {item.accessibilitySummary}
-                        </p>
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 text-xs">
+                        <div className="flex items-center gap-3 text-[11px] text-slate-500">
+                          <span className="inline-flex items-center gap-1">
+                            <ShieldCheck className="h-3.5 w-3.5 text-[#15803D]" aria-hidden="true" />
+                            {biz.complianceDocs}
+                          </span>
+                          {ratingSummary && (
+                            <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8]">
+                              <Star className="h-3 w-3 fill-[#1D4ED8]" aria-hidden="true" />
+                              {ratingSummary.avgStr} ({ratingSummary.count})
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMapId(biz.id);
+                              if (mobileViewMode === 'list') setMobileViewMode('both');
+                            }}
+                            className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#111827] hover:bg-slate-50"
+                          >
+                            Show on Map
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setReviewTargetId(biz.id)}
+                            className="rounded-md bg-[#111827] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#1E293B]"
+                          >
+                            Review
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3.5">
-                      <span className="font-mono text-xs font-bold tabular-nums text-[#111827]">
-                        {item.priceZar === 0 ? 'Free Public Access' : `R ${item.priceZar}`}
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setSelectedMapId(item.id)}
-                          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-[#111827] hover:bg-slate-50 whitespace-nowrap"
-                        >
-                          Map Pin
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAdd(item)}
-                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
-                            isAdded
-                              ? 'border-[#15803D]/30 bg-[#F0FDF4] text-[#15803D]'
-                              : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
-                          }`}
-                        >
-                          <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                          {isAdded ? 'In Trip' : 'Save'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setActiveDetailId(item.id)}
-                          className="rounded-lg bg-[#1D4ED8] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap"
-                        >
-                          View Details &amp; Book
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Accredited Tourism Businesses Directory */}
-      {filteredBusinesses.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-[#111827]" aria-hidden="true" />
-            <h2 className="font-display text-lg font-bold text-[#111827]">
-              Accredited Cape Town Service Providers ({filteredBusinesses.length})
-            </h2>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {filteredBusinesses.map((biz) => {
-              const isSelected = selectedMapId === biz.id;
-              const ratingSummary = getRatingSummary(biz.id);
-
-              return (
-                <article
-                  key={biz.id}
-                  className={`rounded-xl border bg-white p-5 space-y-2.5 transition-colors ${
-                    isSelected ? 'border-[#1D4ED8] ring-2 ring-[#1D4ED8]/30' : 'border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-display text-base font-bold text-[#111827]">
-                          {biz.businessName}
-                        </h3>
-                        <span className="text-[11px] font-semibold text-slate-500">
-                          {biz.dataOrigin === 'live' ? 'Live Firestore' : 'Demo Operator'}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {biz.category} · {biz.zone}
-                      </p>
-                    </div>
-                    <StatusText
-                      label={biz.status}
-                      tone={
-                        biz.status === 'Approved'
-                          ? 'nominal'
-                          : biz.status === 'Pending Review'
-                          ? 'advisory'
-                          : 'alert'
-                      }
-                    />
-                  </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {biz.description || biz.complianceDocs}
-                  </p>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 text-xs">
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <ShieldCheck className="h-3.5 w-3.5 text-[#15803D]" aria-hidden="true" />
-                        {biz.complianceDocs}
-                      </span>
-                      {ratingSummary && (
-                        <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#1D4ED8]">
-                          <Star className="h-3 w-3 fill-[#1D4ED8]" aria-hidden="true" />
-                          {ratingSummary.avgStr} ({ratingSummary.count})
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedMapId(biz.id)}
-                        className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#111827] hover:bg-slate-50"
-                      >
-                        Show on Map
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setReviewTargetId(biz.id)}
-                        className="rounded-md bg-[#111827] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#1E293B]"
-                      >
-                        Review
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {filteredDirectory.length === 0 && filteredBusinesses.length === 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
-          <p className="font-display text-base font-semibold text-[#111827]">
-            No matching Cape Town attractions or activities found
-          </p>
-          <p className="mt-1 text-xs text-slate-600">
-            Reset discovery filters or broaden your price, category, or duration selection.
-          </p>
-          <button
-            type="button"
-            onClick={resetAllFilters}
-            className="mt-4 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white"
-          >
-            Reset Discovery Filters
-          </button>
+          {filteredDirectory.length === 0 && filteredBusinesses.length === 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-10 text-center">
+              <p className="font-display text-base font-semibold text-[#111827]">
+                No matching Cape Town attractions or activities found
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                Reset discovery filters or broaden your price, category, or duration selection.
+              </p>
+              <button
+                type="button"
+                onClick={resetAllFilters}
+                className="mt-4 rounded-lg bg-[#1D4ED8] px-4 py-2 text-xs font-semibold text-white"
+              >
+                Reset Discovery Filters
+              </button>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Interactive Map Column — Sticky Alongside Listings on Desktop (1024px+) & Large Desktop (1440px+) */}
+        <aside
+          className={`${
+            mobileViewMode === 'list' ? 'hidden' : 'block'
+          } ${
+            desktopShowMap ? 'lg:block lg:col-span-5 2xl:col-span-5 lg:sticky lg:top-20' : 'lg:hidden'
+          }`}
+        >
+          <CapeTownMap
+            attractions={filteredDirectory}
+            businesses={filteredBusinesses}
+            incidents={advisories}
+            selectedId={selectedMapId}
+            favouriteIds={Array.from(favouriteIdSet)}
+            onToggleFavourite={handleToggleFavById}
+            onOpenDetails={(id) => setActiveDetailId(id)}
+            onSelectMarker={handleMarkerSelect}
+            heightClassName="h-[340px] sm:h-[420px] lg:h-[600px] 2xl:h-[700px]"
+          />
+        </aside>
+      </div>
 
       {/* Visitor Reviews Section (Firestore `reviews` collection + Provider Responses) */}
       <section className="grid gap-6 rounded-xl border border-slate-200 bg-white p-6 lg:grid-cols-12">

@@ -258,7 +258,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       />
 
       {/* Header + Category Switcher */}
-      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-[#111827]">
             Smart Bookings &amp; Secure Checkout
@@ -268,14 +268,14 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-slate-200 bg-slate-50 p-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1 self-start lg:self-auto">
           {(['All', 'Accommodation', 'Transport', 'Activity'] as const).map((t) => (
             <button
               key={t}
               type="button"
               aria-pressed={typeFilter === t}
               onClick={() => setTypeFilter(t)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+              className={`min-h-[38px] rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                 typeFilter === t
                   ? 'bg-[#1D4ED8] text-white'
                   : 'text-slate-600 hover:text-[#111827]'
@@ -325,7 +325,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               <span className="text-xs text-slate-500">Select an offering to calculate dates &amp; ZAR total</span>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
               {filteredOfferings.map((offering) => {
                 const isSelected = selectedOffering?.id === offering.id;
                 const avail = checkOfferingAvailability(offering, startDate, guests);
@@ -415,7 +415,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
           </section>
 
           {/* Smart Booking Calculator & Checkout Trigger */}
-          <section className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-5 h-fit space-y-4">
+          <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 lg:col-span-5 lg:sticky lg:top-20 h-fit space-y-4">
             <div className="border-b border-slate-200 pb-3">
               <h2 className="font-display text-base font-bold text-[#111827]">
                 Smart Reservation Calculator
@@ -428,7 +428,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
             </div>
 
             <form onSubmit={handleProceedToCheckout} className="space-y-3.5">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label htmlFor="bk-start-date" className="block text-xs font-semibold text-slate-700">
                     Start Date
@@ -455,7 +455,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <label htmlFor="bk-dur-val" className="block text-xs font-semibold text-slate-700">
                     Duration
@@ -547,10 +547,10 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               <button
                 type="submit"
                 disabled={!availability.available}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50 transition-colors"
+                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-4 py-2.5 text-xs font-semibold text-white hover:bg-[#1E40AF] disabled:opacity-50 transition-colors"
               >
-                <CreditCard className="h-4 w-4" aria-hidden="true" />
-                Proceed to Secure Payment (PayShap / Card / Pay in Person)
+                <CreditCard className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Proceed to Secure Payment</span>
               </button>
 
               {bookingFeedback && (
@@ -569,8 +569,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       )}
 
       {/* My Reservations Ledger */}
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="font-display text-lg font-bold text-[#111827]">
               My Reservations ({bookings.length})
@@ -580,7 +580,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
             {(
               [
                 'All',
@@ -596,7 +596,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 type="button"
                 aria-pressed={statusFilter === tab}
                 onClick={() => setStatusFilter(tab)}
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`min-h-[36px] rounded-md px-2.5 py-1 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
                   statusFilter === tab
                     ? 'bg-[#111827] text-white'
                     : 'text-slate-600 hover:text-[#111827]'
