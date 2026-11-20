@@ -71,7 +71,8 @@ export default function App() {
   const [view, setView] = useState<AuthView>('landing');
   const [activeSection, setActiveSection] = useState<NavSectionId>('dashboard');
   const [sectionHistory, setSectionHistory] = useState<NavSectionId[]>([]);
-  const [touristDashboardTab, setTouristDashboardTab] = useState<'overview' | 'payments'>('overview');
+  const [touristDashboardTab, setTouristDashboardTab] = useState<'overview' | 'wishlist' | 'payments'>('overview');
+  const [exploreFocusItemId, setExploreFocusItemId] = useState<string | null>(null);
   const [adminDashboardTab, setAdminDashboardTab] = useState<
     'overview' | 'governance' | 'announcements' | 'payments'
   >('overview');
@@ -396,7 +397,7 @@ export default function App() {
     }
     if (options?.dashboardTab) {
       const tab = options.dashboardTab;
-      if (tab === 'overview' || tab === 'payments') {
+      if (tab === 'overview' || tab === 'wishlist' || tab === 'payments') {
         setTouristDashboardTab(tab);
       }
       if (tab === 'overview' || tab === 'governance' || tab === 'announcements' || tab === 'payments') {
@@ -561,6 +562,14 @@ export default function App() {
         },
         ...prev,
       ]);
+    }
+  };
+
+  const handleRemoveWishlistItem = async (fav: FavouriteItem) => {
+    if (isFirebaseVerified && fav.dataOrigin === 'live') {
+      await dataService.removeFavourite(fav.id);
+    } else {
+      setFavourites((prev) => prev.filter((f) => f.id !== fav.id));
     }
   };
 
@@ -1888,6 +1897,8 @@ export default function App() {
           <TouristDashboard
             user={currentUser}
             attractions={attractions}
+            offerings={providerListings}
+            favourites={favourites}
             bookings={bookings}
             tripActivities={tripActivities}
             advisories={advisories}
@@ -1901,6 +1912,12 @@ export default function App() {
             initialTab={touristDashboardTab}
             onTabChange={setTouristDashboardTab}
             onRemoveSavedCard={handleRemoveSavedCard}
+            onRemoveWishlistItem={handleRemoveWishlistItem}
+            onAddToTrip={handleAddToTripFromExplore}
+            onOpenExploreItem={(listingId) => {
+              setExploreFocusItemId(listingId);
+              navigateToSection('explore');
+            }}
             onNavigate={navigateToSection}
           />
         );
@@ -1928,6 +1945,9 @@ export default function App() {
             favourites={favourites}
             savedCards={savedCards}
             providerPaymentSettings={providerPaymentSettings}
+            initialDetailId={exploreFocusItemId}
+            onClearInitialDetail={() => setExploreFocusItemId(null)}
+            onOpenWishlist={() => navigateToSection('dashboard', { dashboardTab: 'wishlist' })}
             onToggleFavourite={handleToggleFavourite}
             onAddToTrip={handleAddToTripFromExplore}
             onAddAiRecommendationToTrip={handleAddAiRecommendationToTrip}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Accessibility,
   CalendarCheck,
@@ -62,6 +62,9 @@ interface ExplorePageProps {
   favourites?: FavouriteItem[];
   savedCards?: SavedPaymentMethod[];
   providerPaymentSettings?: ProviderPaymentSettings[];
+  initialDetailId?: string | null;
+  onClearInitialDetail?: () => void;
+  onOpenWishlist?: () => void;
   onToggleFavourite?: (item: AttractionItem) => Promise<void> | void;
   onAddToTrip: (attraction: AttractionItem) => Promise<void> | void;
   onAddAiRecommendationToTrip?: (rec: AiExperienceRecommendation) => Promise<void> | void;
@@ -104,6 +107,9 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   favourites = [],
   savedCards = [],
   providerPaymentSettings = [],
+  initialDetailId = null,
+  onClearInitialDetail,
+  onOpenWishlist,
   onToggleFavourite,
   onAddToTrip,
   onAddAiRecommendationToTrip,
@@ -144,7 +150,15 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewNotice, setReviewNotice] = useState('');
+  const [wishlistNotice, setWishlistNotice] = useState('');
   const [exploreError, setExploreError] = useState('');
+
+  useEffect(() => {
+    if (initialDetailId) {
+      setActiveDetailId(initialDetailId);
+      onClearInitialDetail?.();
+    }
+  }, [initialDetailId, onClearInitialDetail]);
 
   // Smart AI Experience Recommender State
   const [showAiPanel, setShowAiPanel] = useState(false);
@@ -386,10 +400,16 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   const handleToggleFav = async (item: AttractionItem) => {
     if (!onToggleFavourite) return;
     setExploreError('');
+    const wasInWishlist = favouriteIdSet.has(item.id);
     try {
       await onToggleFavourite(item);
+      setWishlistNotice(
+        wasInWishlist
+          ? `Removed "${item.title}" from your Wishlist.`
+          : `Saved "${item.title}" to your Wishlist — view anytime in Tourist Dashboard -> My Wishlist.`
+      );
     } catch (err) {
-      setExploreError(err instanceof Error ? err.message : 'Unable to save favourite.');
+      setExploreError(err instanceof Error ? err.message : 'Unable to update wishlist.');
     }
   };
 
@@ -540,6 +560,20 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
               />
             </div>
 
+            {onOpenWishlist && (
+              <button
+                type="button"
+                onClick={onOpenWishlist}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap shrink-0"
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 ${favourites.length > 0 ? 'fill-red-600 text-red-600' : 'text-[#1D4ED8]'}`}
+                  aria-hidden="true"
+                />
+                My Wishlist ({favourites.length})
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setShowAiPanel((prev) => !prev)}
@@ -555,6 +589,33 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
             </button>
           </div>
         </div>
+
+        {wishlistNotice && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#15803D]/30 bg-[#F0FDF4] px-3.5 py-2.5 text-xs text-[#15803D]"
+          >
+            <span className="font-medium">{wishlistNotice}</span>
+            <div className="flex items-center gap-2 shrink-0">
+              {onOpenWishlist && (
+                <button
+                  type="button"
+                  onClick={onOpenWishlist}
+                  className="font-semibold text-[#1D4ED8] hover:underline whitespace-nowrap"
+                >
+                  Open My Wishlist
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setWishlistNotice('')}
+                className="text-[11px] font-semibold text-slate-600 hover:text-[#111827]"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Smart AI Experience Recommendation Engine */}
         {showAiPanel && (
@@ -773,7 +834,27 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                           <span className="font-mono font-bold text-[#111827] tabular-nums">
                             {rec.estimatedZar === 0 ? 'Free' : `R ${rec.estimatedZar}`}
                           </span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {matchedItem && onToggleFavourite && (
+                              <button
+                                type="button"
+                                aria-pressed={favouriteIdSet.has(matchedItem.id)}
+                                onClick={() => handleToggleFav(matchedItem)}
+                                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                                  favouriteIdSet.has(matchedItem.id)
+                                    ? 'border-red-200 bg-red-50 text-red-700'
+                                    : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
+                                }`}
+                              >
+                                <Heart
+                                  className={`h-3 w-3 ${
+                                    favouriteIdSet.has(matchedItem.id) ? 'fill-red-600 text-red-600' : ''
+                                  }`}
+                                  aria-hidden="true"
+                                />
+                                {favouriteIdSet.has(matchedItem.id) ? 'Wishlisted' : 'Wishlist'}
+                              </button>
+                            )}
                             {matchedItem && (
                               <button
                                 type="button"
@@ -1077,8 +1158,11 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                 : 'border-slate-200 bg-white text-slate-600 hover:text-[#111827]'
             }`}
           >
-            <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-            Saved Favourites ({favourites.length})
+            <Heart
+              className={`h-3.5 w-3.5 ${favouritesOnly ? 'fill-red-600 text-red-600' : ''}`}
+              aria-hidden="true"
+            />
+            Wishlist Only ({favourites.length})
           </button>
         </div>
       </section>
@@ -1181,10 +1265,11 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                           <button
                             type="button"
                             onClick={() => handleToggleFav(item)}
+                            aria-pressed={isFav}
                             aria-label={
                               isFav
-                                ? `Remove ${item.title} from favourites`
-                                : `Save ${item.title} to favourites`
+                                ? `Remove ${item.title} from wishlist`
+                                : `Save ${item.title} to wishlist`
                             }
                             className="absolute right-3 top-3 flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full bg-white/95 p-2 text-slate-700 shadow-sm hover:text-red-600"
                           >
@@ -1264,6 +1349,24 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                             >
                               Map Pin
                             </button>
+                            {onToggleFavourite && (
+                              <button
+                                type="button"
+                                aria-pressed={isFav}
+                                onClick={() => handleToggleFav(item)}
+                                className={`inline-flex min-h-[38px] sm:min-h-[32px] items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap ${
+                                  isFav
+                                    ? 'border-red-200 bg-red-50 text-red-700'
+                                    : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-50'
+                                }`}
+                              >
+                                <Heart
+                                  className={`h-3.5 w-3.5 ${isFav ? 'fill-red-600 text-red-600' : ''}`}
+                                  aria-hidden="true"
+                                />
+                                {isFav ? 'Wishlisted' : 'Wishlist'}
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleAdd(item)}
@@ -1274,7 +1377,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                               }`}
                             >
                               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                              {isAdded ? 'In Trip' : 'Save'}
+                              {isAdded ? 'In Trip' : 'Add to Trip'}
                             </button>
                             <button
                               type="button"

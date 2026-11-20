@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CloudSun,
   Compass,
+  Heart,
   LayoutDashboard,
   Megaphone,
   QrCode,
@@ -16,6 +17,7 @@ import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { ImageWithFallback } from '@/src/components/common/ImageWithFallback';
 import { StatusText } from '@/src/components/common/StatusText';
 import { MyPaymentsSection } from '@/src/components/payments/MyPaymentsSection';
+import { MyWishlistSection } from '@/src/components/wishlist/MyWishlistSection';
 import { CAPE_TOWN_DESTINATION_INFO, KIRSTENBOSCH_IMAGE_URL } from '@/src/data/demoData';
 import { isFirebaseConfigured } from '@/src/services/firebase/config';
 import { dataService } from '@/src/services/firebase/dataService';
@@ -27,8 +29,10 @@ import type {
   CheckInSession,
   DemoUser,
   DestinationAnnouncement,
+  FavouriteItem,
   NavSectionId,
   PaymentRecord,
+  ProviderListing,
   ProviderPaymentSettings,
   SafetyAdvisory,
   SavedPaymentMethod,
@@ -38,6 +42,8 @@ import type {
 interface TouristDashboardProps {
   user: DemoUser;
   attractions: AttractionItem[];
+  offerings?: ProviderListing[];
+  favourites?: FavouriteItem[];
   bookings: BookingItem[];
   tripActivities: TripActivity[];
   advisories: SafetyAdvisory[];
@@ -48,17 +54,22 @@ interface TouristDashboardProps {
   payments: PaymentRecord[];
   savedCards: SavedPaymentMethod[];
   providerPaymentSettings: ProviderPaymentSettings[];
-  initialTab?: 'overview' | 'payments';
-  onTabChange?: (tab: 'overview' | 'payments') => void;
+  initialTab?: TouristDashboardTab;
+  onTabChange?: (tab: TouristDashboardTab) => void;
   onRemoveSavedCard: (cardId: string) => Promise<void> | void;
+  onRemoveWishlistItem?: (item: FavouriteItem) => Promise<void> | void;
+  onAddToTrip?: (item: AttractionItem) => Promise<void> | void;
+  onOpenExploreItem?: (listingId: string) => void;
   onNavigate: (section: NavSectionId) => void;
 }
 
-export type TouristDashboardTab = 'overview' | 'payments';
+export type TouristDashboardTab = 'overview' | 'wishlist' | 'payments';
 
 export const TouristDashboard: React.FC<TouristDashboardProps> = ({
   user,
   attractions,
+  offerings = [],
+  favourites = [],
   bookings,
   tripActivities,
   advisories,
@@ -72,6 +83,9 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
   initialTab = 'overview',
   onTabChange,
   onRemoveSavedCard,
+  onRemoveWishlistItem,
+  onAddToTrip,
+  onOpenExploreItem,
   onNavigate,
 }) => {
   const [activeTab, setActiveTab] = useState<TouristDashboardTab>(initialTab);
@@ -136,6 +150,13 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
     (p) => p.paymentStatus === 'Paid' || p.paymentStatus === 'Partially Paid'
   ).length;
 
+  const userWishlist = useMemo(() => {
+    const isFirebaseTourist = user.authMode === 'firebase' && user.role === 'tourist';
+    return favourites.filter((fav) =>
+      isFirebaseTourist ? fav.userId === user.id : fav.userId === user.id || fav.dataOrigin === 'demo'
+    );
+  }, [favourites, user.authMode, user.role, user.id]);
+
   const confirmedBookings = bookings.filter((b) => b.status === 'Confirmed');
   const totalSpend = expenses.reduce((sum, item) => sum + item.amountZar, 0);
   const activeCheckIns = checkIns.filter((c) => c.status === 'Active');
@@ -193,6 +214,25 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
           <button
             type="button"
             role="tab"
+            id="tab-tourist-wishlist"
+            aria-selected={activeTab === 'wishlist'}
+            aria-controls="panel-tourist-wishlist"
+            onClick={() => selectTab('wishlist')}
+            className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              activeTab === 'wishlist'
+                ? 'bg-[#111827] text-white'
+                : 'text-slate-600 hover:text-[#111827]'
+            }`}
+          >
+            <Heart className="h-3.5 w-3.5" aria-hidden="true" />
+            My Wishlist
+            <span className="font-mono text-[11px] opacity-80 tabular-nums">
+              ({userWishlist.length})
+            </span>
+          </button>
+          <button
+            type="button"
+            role="tab"
             id="tab-tourist-payments"
             aria-selected={activeTab === 'payments'}
             aria-controls="panel-tourist-payments"
@@ -212,6 +252,10 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
         </div>
 
         <p className="text-xs text-slate-600">
+          <span className="font-mono font-semibold text-[#1D4ED8] tabular-nums">
+            {userWishlist.length}
+          </span>{' '}
+          saved ·{' '}
           <span className="font-mono font-semibold text-[#15803D] tabular-nums">
             {settledPaymentsCount}
           </span>{' '}
@@ -226,7 +270,25 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
         </p>
       </div>
 
-      {activeTab === 'payments' ? (
+      {activeTab === 'wishlist' ? (
+        <div
+          id="panel-tourist-wishlist"
+          role="tabpanel"
+          aria-labelledby="tab-tourist-wishlist"
+        >
+          <MyWishlistSection
+            wishlist={userWishlist}
+            attractions={attractions}
+            offerings={offerings}
+            onRemoveWishlistItem={(item) =>
+              onRemoveWishlistItem ? onRemoveWishlistItem(item) : Promise.resolve()
+            }
+            onAddToTrip={onAddToTrip}
+            onOpenExploreItem={onOpenExploreItem}
+            onNavigate={onNavigate}
+          />
+        </div>
+      ) : activeTab === 'payments' ? (
         <div
           id="panel-tourist-payments"
           role="tabpanel"
@@ -297,6 +359,14 @@ export const TouristDashboard: React.FC<TouristDashboardProps> = ({
             >
               <Bot className="h-4 w-4 text-[#111827]" aria-hidden="true" />
               Ask CapeSafe AI
+            </button>
+            <button
+              type="button"
+              onClick={() => selectTab('wishlist')}
+              className="inline-flex min-h-[44px] sm:min-h-[38px] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+            >
+              <Heart className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+              My Wishlist ({userWishlist.length})
             </button>
             <button
               type="button"

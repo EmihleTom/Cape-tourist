@@ -229,7 +229,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                 className={`h-3.5 w-3.5 ${isFavourite ? 'fill-red-600 text-red-600' : ''}`}
                 aria-hidden="true"
               />
-              <span className="hidden xs:inline">{isFavourite ? 'Saved' : 'Save Favourite'}</span>
+              <span>{isFavourite ? 'In Wishlist' : 'Save to Wishlist'}</span>
             </button>
             <button
               type="button"
@@ -626,6 +626,23 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                       Book &amp; Choose Payment Method
                     </button>
                   ) : null}
+
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavourite(item)}
+                    aria-pressed={isFavourite}
+                    className={`flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold transition-colors ${
+                      isFavourite
+                        ? 'border-red-200 bg-red-50 text-red-700'
+                        : 'border-slate-300 bg-white text-[#111827] hover:bg-slate-100'
+                    }`}
+                  >
+                    <Heart
+                      className={`h-3.5 w-3.5 ${isFavourite ? 'fill-red-600 text-red-600' : ''}`}
+                      aria-hidden="true"
+                    />
+                    {isFavourite ? 'Saved in My Wishlist (Book Later)' : 'Save to Wishlist (Book Later)'}
+                  </button>
 
                   <button
                     type="button"

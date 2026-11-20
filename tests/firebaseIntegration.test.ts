@@ -852,8 +852,35 @@ async function runTests() {
     'ExplorePage must render desktop/large-desktop side-by-side map alongside listings and adaptive mobile switcher'
   );
 
+  // 14. Explore Wishlist & TouristDashboard My Wishlist Tab Verification
+  const touristDashboardSrc = fs.readFileSync('src/pages/dashboards/TouristDashboard.tsx', 'utf8');
+  const myWishlistSrc = fs.readFileSync('src/components/wishlist/MyWishlistSection.tsx', 'utf8');
+  const appSrc = fs.readFileSync('src/App.tsx', 'utf8');
+
+  assert.ok(
+    explorePageSrc.includes('Wishlist Only') &&
+      explorePageSrc.includes('My Wishlist (') &&
+      explorePageSrc.includes('onOpenWishlist') &&
+      detailModalSrc.includes('Save to Wishlist (Book Later)'),
+    'ExplorePage and ExperienceDetailModal must provide Wishlist save/filter controls without requiring immediate booking'
+  );
+  assert.ok(
+    touristDashboardSrc.includes("'wishlist'") &&
+      touristDashboardSrc.includes('My Wishlist') &&
+      touristDashboardSrc.includes('panel-tourist-wishlist') &&
+      touristDashboardSrc.includes('MyWishlistSection'),
+    'TouristDashboard must expose the My Wishlist tab and panel'
+  );
+  assert.ok(
+    myWishlistSrc.includes('onRemoveWishlistItem') &&
+      myWishlistSrc.includes('onOpenExploreItem') &&
+      appSrc.includes('handleRemoveWishlistItem') &&
+      appSrc.includes("dashboardTab: 'wishlist'"),
+    'MyWishlistSection and App.tsx must wire wishlist removal, trip addition, and direct dashboard tab navigation'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Favourites + Provider/Admin governance), TouristDashboard My Payments tab, Admin/Provider/Safety Ops dashboard touch-ups, Responsive Multi-Device breakpoints & adaptive navigation, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Wishlist + Provider/Admin governance), TouristDashboard My Wishlist & My Payments tabs, Admin/Provider/Safety Ops dashboard touch-ups, Responsive Multi-Device breakpoints & adaptive navigation, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
   );
 }
 
