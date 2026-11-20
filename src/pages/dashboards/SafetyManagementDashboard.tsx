@@ -722,6 +722,34 @@ export const SafetyManagementDashboard: React.FC<SafetyManagementDashboardProps>
                           <p className="mt-1.5 text-xs text-slate-700 leading-relaxed">
                             {inc.summary}
                           </p>
+                          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                            {(['Open', 'Acknowledged', 'Resolved'] as const).map((stepName, idx) => {
+                              const currentStep =
+                                currentStatus === 'Resolved'
+                                  ? 2
+                                  : currentStatus === 'Acknowledged'
+                                  ? 1
+                                  : 0;
+                              const isCompleted = idx < currentStep;
+                              const isCurrent = idx === currentStep;
+                              return (
+                                <span
+                                  key={stepName}
+                                  className={`rounded px-2 py-0.5 font-semibold ${
+                                    isCurrent
+                                      ? stepName === 'Resolved'
+                                        ? 'bg-[#15803D] text-white'
+                                        : 'bg-[#111827] text-white'
+                                      : isCompleted
+                                      ? 'bg-emerald-50 text-[#15803D] border border-emerald-200'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {idx + 1}. {stepName}
+                                </span>
+                              );
+                            })}
+                          </div>
                           <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                             {inc.locationConsent &&
                               typeof inc.sharedLat === 'number' &&

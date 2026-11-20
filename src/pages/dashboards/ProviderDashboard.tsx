@@ -36,7 +36,10 @@ import type {
   ProviderPaymentSettings,
   ReviewItem,
 } from '@/src/types/app';
-import { isAwaitingBookingStatus } from '@/src/utils/bookingCalculations';
+import {
+  derivePickupVerificationCode,
+  isAwaitingBookingStatus,
+} from '@/src/utils/bookingCalculations';
 
 export type ProviderDashboardTab = 'bookings' | 'offerings' | 'payments' | 'accreditation';
 
@@ -179,6 +182,8 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
   const [busyActionId, setBusyActionId] = useState<string | null>(null);
   const [providerActionError, setProviderActionError] = useState('');
   const [offeringError, setOfferingError] = useState('');
+  const [handoffCodeInputs, setHandoffCodeInputs] = useState<Record<string, string>>({});
+  const [verifiedHandoffs, setVerifiedHandoffs] = useState<Record<string, 'matched' | 'mismatch'>>({});
 
   // Accreditation Form State
   const [businessName, setBusinessName] = useState(user.organization || '');
@@ -440,14 +445,28 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
       <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold text-[#15803D]">
-              Accredited Service Provider · {user.location}
-            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xs font-semibold text-[#15803D]">
+                Accredited Service Provider · {user.location}
+              </p>
+              <StatusText
+                label={
+                  verifiedChecklists === listings.length && listings.length > 0
+                    ? `Verification Current (${verifiedChecklists}/${listings.length} Audited)`
+                    : `Safety Audit Action (${verifiedChecklists}/${listings.length} Audited)`
+                }
+                tone={
+                  verifiedChecklists === listings.length && listings.length > 0
+                    ? 'nominal'
+                    : 'advisory'
+                }
+              />
+            </div>
             <h1 className="mt-1 font-display text-2xl font-bold text-[#111827] 2xl:text-3xl">
               {user.organization || user.name}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Configure provider-defined rates, manage unit availability &amp; blackout dates, reconcile in-person collections, and confirm incoming tourist bookings.
+              Configure provider-defined rates, manage unit availability &amp; blackout dates, verify visitor pickup handoff codes, and confirm incoming tourist bookings.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
@@ -748,76 +767,128 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
               {filteredBookings.length === 0 ? (
                 <p className="py-4 text-xs text-slate-500">No reservations in this queue.</p>
               ) : (
-                filteredBookings.map((bk) => (
-                  <div
-                    key={bk.id}
-                    className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="space-y-1 text-xs">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {bk.bookingReference && (
-                          <span className="font-mono font-semibold text-[#111827]">
-                            {bk.bookingReference}
-                          </span>
-                        )}
-                        <span className="font-semibold text-[#1D4ED8]">
-                          {bk.offeringType || bk.category}
-                        </span>
-                        <span className="font-mono text-slate-600 tabular-nums">
-                          {bk.date} {bk.timeSlot}
-                          {bk.endDate ? ` → ${bk.endDate} ${bk.endTime || ''}` : ''}
-                        </span>
-                        {bk.durationValue && bk.durationUnit && (
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px]">
-                            {bk.durationValue} {bk.durationUnit}
-                          </span>
-                        )}
-                        {bk.paymentMethod && (
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700">
-                            {bk.paymentMethod}
-                          </span>
-                        )}
-                        {bk.accessible && (
-                          <span className="inline-flex items-center gap-1 rounded bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#1E40AF]">
-                            <Accessibility className="h-3 w-3" aria-hidden="true" />
-                            Step-Free
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm font-bold text-[#111827]">{bk.title}</p>
-                      <p className="text-slate-600">
-                        {bk.guests} guest(s) · Total:{' '}
-                        <strong className="font-mono text-[#111827] tabular-nums">
-                          R {bk.priceZar.toLocaleString('en-ZA')}
-                        </strong>
-                        {bk.paymentStatus && (
-                          <span>
-                            {' '}
-                            · Payment: <strong className="text-[#111827]">{bk.paymentStatus}</strong>
-                          </span>
-                        )}
-                        {typeof bk.balanceDueInPersonZar === 'number' &&
-                          bk.balanceDueInPersonZar > 0 &&
-                          bk.paymentStatus !== 'Paid' && (
-                            <span className="text-amber-800 font-medium">
-                              {' '}
-                              (R {bk.balanceDueInPersonZar.toLocaleString('en-ZA')} due in person)
+                filteredBookings.map((bk) => {
+                  const expectedPickupCode = derivePickupVerificationCode(
+                    bk.id,
+                    bk.bookingReference
+                  );
+                  const enteredCode = handoffCodeInputs[bk.id] || '';
+                  const handoffStatus = verifiedHandoffs[bk.id];
+
+                  return (
+                    <div
+                      key={bk.id}
+                      className="flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1 text-xs">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {bk.bookingReference && (
+                            <span className="font-mono font-semibold text-[#111827]">
+                              {bk.bookingReference}
                             </span>
                           )}
-                      </p>
-                    </div>
+                          <span className="rounded bg-blue-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#1D4ED8] tabular-nums">
+                            Pickup: {expectedPickupCode}
+                          </span>
+                          <span className="font-semibold text-[#1D4ED8]">
+                            {bk.offeringType || bk.category}
+                          </span>
+                          <span className="font-mono text-slate-600 tabular-nums">
+                            {bk.date} {bk.timeSlot}
+                            {bk.endDate ? ` → ${bk.endDate} ${bk.endTime || ''}` : ''}
+                          </span>
+                          {bk.durationValue && bk.durationUnit && (
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px]">
+                              {bk.durationValue} {bk.durationUnit}
+                            </span>
+                          )}
+                          {bk.paymentMethod && (
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-700">
+                              {bk.paymentMethod}
+                            </span>
+                          )}
+                          {bk.accessible && (
+                            <span className="inline-flex items-center gap-1 rounded bg-[#EFF6FF] px-1.5 py-0.5 text-[10px] font-semibold text-[#1E40AF]">
+                              <Accessibility className="h-3 w-3" aria-hidden="true" />
+                              Step-Free
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-bold text-[#111827]">{bk.title}</p>
+                        <p className="text-slate-600">
+                          {bk.guests} guest(s) · Total:{' '}
+                          <strong className="font-mono text-[#111827] tabular-nums">
+                            R {bk.priceZar.toLocaleString('en-ZA')}
+                          </strong>
+                          {bk.paymentStatus && (
+                            <span>
+                              {' '}
+                              · Payment:{' '}
+                              <strong className="text-[#111827]">{bk.paymentStatus}</strong>
+                            </span>
+                          )}
+                          {typeof bk.balanceDueInPersonZar === 'number' &&
+                            bk.balanceDueInPersonZar > 0 &&
+                            bk.paymentStatus !== 'Paid' && (
+                              <span className="text-amber-800 font-medium">
+                                {' '}
+                                (R {bk.balanceDueInPersonZar.toLocaleString('en-ZA')} due in person)
+                              </span>
+                            )}
+                        </p>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusText
-                        label={bk.status}
-                        tone={
-                          bk.status === 'Confirmed' || bk.status === 'Completed'
-                            ? 'nominal'
-                            : isAwaitingBookingStatus(bk.status)
-                            ? 'advisory'
-                            : 'alert'
-                        }
-                      />
+                        {bk.status === 'Confirmed' && (
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <input
+                              type="text"
+                              value={enteredCode}
+                              onChange={(e) =>
+                                setHandoffCodeInputs((prev) => ({
+                                  ...prev,
+                                  [bk.id]: e.target.value.toUpperCase(),
+                                }))
+                              }
+                              placeholder={`Verify ${expectedPickupCode}`}
+                              aria-label={`Verify guest handoff code for ${bk.title}`}
+                              className="w-36 rounded border border-slate-300 bg-white px-2 py-1 font-mono text-[11px] uppercase text-[#111827]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const cleaned = enteredCode.trim().toUpperCase();
+                                const matched =
+                                  cleaned === expectedPickupCode ||
+                                  cleaned === expectedPickupCode.replace('PK-', '');
+                                setVerifiedHandoffs((prev) => ({
+                                  ...prev,
+                                  [bk.id]: matched ? 'matched' : 'mismatch',
+                                }));
+                              }}
+                              className="rounded border border-[#1D4ED8] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#1E40AF] hover:bg-[#EFF6FF]"
+                            >
+                              Verify Visitor Handoff
+                            </button>
+                            {handoffStatus === 'matched' && (
+                              <StatusText label="Handoff Code Matched" tone="nominal" />
+                            )}
+                            {handoffStatus === 'mismatch' && (
+                              <StatusText label="Code Mismatch" tone="alert" />
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusText
+                          label={bk.status}
+                          tone={
+                            bk.status === 'Confirmed' || bk.status === 'Completed'
+                              ? 'nominal'
+                              : isAwaitingBookingStatus(bk.status)
+                              ? 'advisory'
+                              : 'alert'
+                          }
+                        />
 
                       {isAwaitingBookingStatus(bk.status) && (
                         <>
@@ -926,7 +997,8 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                       )}
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>
@@ -1868,7 +1940,11 @@ export const ProviderDashboard: React.FC<ProviderDashboardProps> = ({
                 >
                   <div>
                     <p className="font-semibold text-[#111827]">
-                      {bk.bookingReference || bk.id} · Party of {bk.guests} ·{' '}
+                      {bk.bookingReference || bk.id} ·{' '}
+                      <span className="font-mono text-[#1D4ED8]">
+                        Pickup {derivePickupVerificationCode(bk.id, bk.bookingReference)}
+                      </span>{' '}
+                      · Party of {bk.guests} ·{' '}
                       <span className="font-mono">{bk.paymentStatus || 'Pending'}</span>
                     </p>
                     <p className="text-slate-600">

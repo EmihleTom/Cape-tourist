@@ -14,6 +14,7 @@ import {
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { StatusText } from '@/src/components/common/StatusText';
 import { CapeTownMap } from '@/src/components/map/CapeTownMap';
+import { EmergencyContactsModal } from '@/src/components/safety/EmergencyContactsModal';
 import { CAPE_TOWN_DESTINATION_INFO } from '@/src/data/demoData';
 import { storageService } from '@/src/services/firebase/storageService';
 import type {
@@ -22,6 +23,7 @@ import type {
   DestinationAnnouncement,
   IncidentCategory,
   SafetyAdvisory,
+  TrustedContact,
 } from '@/src/types/app';
 
 interface SafetyCentrePageProps {
@@ -29,6 +31,7 @@ interface SafetyCentrePageProps {
   advisories: SafetyAdvisory[];
   announcements: DestinationAnnouncement[];
   weather: CapeTownWeather;
+  trustedContacts?: TrustedContact[];
   onReportIncident: (
     advisory: Omit<SafetyAdvisory, 'id' | 'updatedAt' | 'dataOrigin'>
   ) => Promise<void> | void;
@@ -61,11 +64,14 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
   advisories,
   announcements,
   weather,
+  trustedContacts = [],
   onReportIncident,
   onRevokeIncidentLocation,
 }) => {
   const [severityFilter, setSeverityFilter] = useState<'All' | SafetyAdvisory['severity']>('All');
   const [categoryFilter, setCategoryFilter] = useState<'All' | IncidentCategory>('All');
+  const [resolutionFilter, setResolutionFilter] = useState<'All' | 'Open' | 'Acknowledged' | 'Resolved'>('All');
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
 
@@ -102,7 +108,9 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
   const filtered = advisories.filter((adv) => {
     const matchesSeverity = severityFilter === 'All' || adv.severity === severityFilter;
     const matchesCategory = categoryFilter === 'All' || adv.category === categoryFilter;
-    return matchesSeverity && matchesCategory;
+    const resolvedState = adv.status || 'Open';
+    const matchesResolution = resolutionFilter === 'All' || resolvedState === resolutionFilter;
+    return matchesSeverity && matchesCategory && matchesResolution;
   });
 
   const activeAnnouncements = announcements
@@ -212,23 +220,55 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
               Submit field incidents with optional photos and consented GPS, check live Cape Peninsula weather, and dial official emergency services directly for urgent rescues.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <a
+              href="tel:10111"
+              className="rounded-lg border border-red-400/40 bg-red-950/60 px-4 py-3 hover:bg-red-900/70 transition-colors"
+            >
+              <p className="text-[11px] text-red-200">SAPS Police</p>
+              <p className="mt-1 flex items-center gap-1.5 font-mono text-base font-bold tabular-nums text-white">
+                <PhoneCall className="h-4 w-4 text-red-300" aria-hidden="true" />
+                10111
+              </p>
+            </a>
+            <a
+              href="tel:107"
+              className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3 hover:bg-slate-700 transition-colors"
+            >
               <p className="text-[11px] text-slate-300">City Emergency</p>
               <p className="mt-1 flex items-center gap-1.5 font-mono text-base font-bold tabular-nums text-white">
                 <PhoneCall className="h-4 w-4 text-[#3B82F6]" aria-hidden="true" />
                 107 / 112
               </p>
-            </div>
-            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
+            </a>
+            <a
+              href="tel:+27219370300"
+              className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3 hover:bg-slate-700 transition-colors"
+            >
               <p className="text-[11px] text-slate-300">Mountain Rescue</p>
               <p className="mt-1 font-mono text-base font-bold tabular-nums text-white">021 937 0300</p>
-            </div>
-            <div className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3">
+            </a>
+            <a
+              href="tel:+27870949774"
+              className="rounded-lg border border-white/15 bg-[#1E293B] px-4 py-3 hover:bg-slate-700 transition-colors"
+            >
               <p className="text-[11px] text-slate-300">NSRI Sea Rescue</p>
               <p className="mt-1 font-mono text-base font-bold tabular-nums text-white">087 094 9774</p>
-            </div>
+            </a>
           </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/15 pt-3 text-xs">
+          <span className="text-slate-300">
+            Includes Medical EMS (10177), Visitor Support (086 111 4911), and your personal trusted ICE contacts.
+          </span>
+          <button
+            type="button"
+            onClick={() => setEmergencyModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#3B82F6] px-3 py-1.5 font-semibold text-[#090D16] hover:bg-blue-300 transition-colors whitespace-nowrap"
+          >
+            <PhoneCall className="h-3.5 w-3.5" aria-hidden="true" />
+            Open Full Emergency &amp; ICE Directory
+          </button>
         </div>
       </section>
 
@@ -542,6 +582,20 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
             ))}
           </select>
 
+          <select
+            aria-label="Filter by report resolution progress"
+            value={resolutionFilter}
+            onChange={(e) =>
+              setResolutionFilter(e.target.value as 'All' | 'Open' | 'Acknowledged' | 'Resolved')
+            }
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
+          >
+            <option value="All">All Report Progress</option>
+            <option value="Open">Progress: Open</option>
+            <option value="Acknowledged">Progress: Acknowledged</option>
+            <option value="Resolved">Progress: Resolved</option>
+          </select>
+
           <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-white p-1">
             {(['All', 'Nominal', 'Advisory', 'Elevated'] as const).map((level) => (
               <button
@@ -569,8 +623,16 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        {filtered.map((adv) => {
+        {filtered.length === 0 ? (
+          <p className="md:col-span-2 rounded-xl border border-slate-200 bg-white py-8 text-center text-xs text-slate-500">
+            No safety reports match the selected category, severity, and resolution progress filters.
+          </p>
+        ) : (
+          filtered.map((adv) => {
           const isReporter = adv.reporterId === user.id;
+          const resolutionStage = adv.status || 'Open';
+          const stageIndex =
+            resolutionStage === 'Resolved' ? 2 : resolutionStage === 'Acknowledged' ? 1 : 0;
           const hasConsentedCoords =
             adv.locationConsent === true &&
             typeof adv.sharedLat === 'number' &&
@@ -590,11 +652,16 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
                   <span>{adv.zone}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {adv.status && (
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
-                      {adv.status}
-                    </span>
-                  )}
+                  <StatusText
+                    label={resolutionStage}
+                    tone={
+                      resolutionStage === 'Resolved'
+                        ? 'nominal'
+                        : resolutionStage === 'Acknowledged'
+                        ? 'advisory'
+                        : 'alert'
+                    }
+                  />
                   <StatusText
                     label={adv.severity}
                     tone={
@@ -610,6 +677,35 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
 
               <h3 className="font-display text-base font-bold text-[#111827]">{adv.title}</h3>
               <p className="text-sm text-slate-600 leading-relaxed">{adv.summary}</p>
+
+              {/* 3-Stage Triage & Resolution Progress */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-[11px]">
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(['Open', 'Acknowledged', 'Resolved'] as const).map((step, idx) => {
+                    const reached = idx <= stageIndex;
+                    return (
+                      <div key={step} className="space-y-1">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            reached
+                              ? stageIndex === 2
+                                ? 'bg-[#15803D]'
+                                : 'bg-[#1D4ED8]'
+                              : 'bg-slate-200'
+                          }`}
+                        />
+                        <p
+                          className={`font-semibold ${
+                            reached ? 'text-[#111827]' : 'text-slate-400'
+                          }`}
+                        >
+                          {idx + 1}. {step}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               {adv.assignedOfficerName && (
                 <p className="text-xs font-medium text-[#111827]">
@@ -663,7 +759,8 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
               </div>
             </article>
           );
-        })}
+        })
+        )}
       </div>
 
       {/* Cape Town Destination Info & Preparedness Guide */}
@@ -689,6 +786,13 @@ export const SafetyCentrePage: React.FC<SafetyCentrePageProps> = ({
           </span>
         </div>
       </section>
+
+      <EmergencyContactsModal
+        isOpen={emergencyModalOpen}
+        onClose={() => setEmergencyModalOpen(false)}
+        user={user}
+        trustedContacts={trustedContacts}
+      />
     </div>
   );
 };

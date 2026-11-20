@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, Download, Printer, ShieldCheck, X } from 'lucide-r
 import { StatusText } from '@/src/components/common/StatusText';
 import { paymentService } from '@/src/services/paymentService';
 import type { PaymentRecord } from '@/src/types/app';
+import { derivePickupVerificationCode } from '@/src/utils/bookingCalculations';
 
 interface PaymentReceiptModalProps {
   payment: PaymentRecord | null;
@@ -87,6 +88,12 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({
               <dd className="font-mono font-semibold text-[#111827]">{payment.bookingReference}</dd>
             </div>
             <div>
+              <dt className="text-[11px] text-slate-500">Pickup / Handoff Verification Code</dt>
+              <dd className="font-mono font-bold text-[#1D4ED8] tabular-nums">
+                {derivePickupVerificationCode(payment.bookingId, payment.bookingReference)}
+              </dd>
+            </div>
+            <div className="sm:col-span-2">
               <dt className="text-[11px] text-slate-500">Transaction Reference</dt>
               <dd className="font-mono font-semibold text-[#111827] break-all">
                 {payment.paymentReference}

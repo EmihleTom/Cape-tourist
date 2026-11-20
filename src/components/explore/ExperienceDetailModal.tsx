@@ -26,6 +26,7 @@ import {
 import { PaymentReceiptModal } from '@/src/components/payments/PaymentReceiptModal';
 import type {
   AttractionItem,
+  CapeTownWeather,
   DemoUser,
   DurationUnit,
   PaymentRecord,
@@ -37,12 +38,14 @@ import {
   calculateBookingEndDateTime,
   calculateBookingPriceZar,
 } from '@/src/utils/bookingCalculations';
+import { computeSmartGuidance } from '@/src/utils/safetyGuidance';
 
 interface ExperienceDetailModalProps {
   item: AttractionItem;
   user: DemoUser;
   reviews: ReviewItem[];
   isFavourite: boolean;
+  weather?: CapeTownWeather;
   providerSettings?: ProviderPaymentSettings | null;
   savedCards: SavedPaymentMethod[];
   onToggleFavourite: (item: AttractionItem) => Promise<void> | void;
@@ -58,6 +61,7 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
   user,
   reviews,
   isFavourite,
+  weather,
   providerSettings,
   savedCards,
   onToggleFavourite,
@@ -126,6 +130,31 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
   const calculatedEnd = useMemo(
     () => calculateBookingEndDateTime(selectedDate, selectedTime, durationUnit, durationValue),
     [selectedDate, selectedTime, durationUnit, durationValue]
+  );
+
+  const smartGuidance = useMemo(
+    () =>
+      computeSmartGuidance({
+        title: item.title,
+        zone: item.precinct,
+        category: item.activityCategories?.[0] || item.category,
+        timeSlot: selectedTime,
+        endTime: calculatedEnd.endTime,
+        durationUnit,
+        durationValue,
+        weather,
+      }),
+    [
+      item.title,
+      item.precinct,
+      item.activityCategories,
+      item.category,
+      selectedTime,
+      calculatedEnd.endTime,
+      durationUnit,
+      durationValue,
+      weather,
+    ]
   );
 
   const directionsHref = `https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`;
@@ -351,19 +380,31 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                 {/* Provider, Verification & Age Suitability */}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs space-y-1">
-                    <p className="font-semibold text-[#111827] flex items-center gap-1.5">
-                      <ShieldCheck className="h-4 w-4 text-[#15803D]" aria-hidden="true" />
-                      Provider &amp; Verification
-                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-[#111827] flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4 text-[#15803D]" aria-hidden="true" />
+                        Provider &amp; Verification
+                      </p>
+                      <StatusText
+                        label={
+                          item.dataOrigin === 'live' || item.verifiedProvider
+                            ? 'Safety Verified Operator'
+                            : 'Audit Pending'
+                        }
+                        tone={
+                          item.dataOrigin === 'live' || item.verifiedProvider ? 'nominal' : 'advisory'
+                        }
+                      />
+                    </div>
                     <p className="font-medium text-slate-800">
                       {item.providerName || 'CapeSafe Accredited Operator'}
                     </p>
                     <p className="text-slate-600">
                       {item.dataOrigin === 'live'
-                        ? 'Live Firestore Verified Listing'
+                        ? 'Live Firestore Verified Listing · Pickup handoff code issued on booking'
                         : item.verifiedProvider
-                        ? 'Pre-vetted Directory Partner (Demo)'
-                        : 'Community Listing (Unverified Demo)'}
+                        ? 'Pre-vetted Directory Partner (Demo) · Pickup code enabled'
+                        : 'Community Listing (Pending Full Operator Audit)'}
                     </p>
                   </div>
 
@@ -615,6 +656,28 @@ export const ExperienceDetailModal: React.FC<ExperienceDetailModalProps> = ({
                           ', '
                         )}
                       </strong>
+                    </p>
+                  </div>
+
+                  {/* Smart Day/Night & Coastal/Mountain Weather Guidance */}
+                  <div
+                    className={`rounded-lg border p-3 text-xs space-y-1 ${
+                      smartGuidance.tone === 'alert'
+                        ? 'border-red-200 bg-red-50 text-red-900'
+                        : smartGuidance.tone === 'advisory'
+                        ? 'border-amber-200 bg-amber-50 text-amber-950'
+                        : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 font-semibold">
+                      <span>Timing: {smartGuidance.timeBand}</span>
+                      <span className="font-mono tabular-nums">
+                        +{smartGuidance.bufferMinutes} min buffer
+                      </span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">{smartGuidance.timingTip}</p>
+                    <p className="text-[11px] leading-relaxed opacity-90">
+                      <strong>Weather &amp; Buffer:</strong> {smartGuidance.weatherCaveat} {smartGuidance.bufferNote}
                     </p>
                   </div>
 

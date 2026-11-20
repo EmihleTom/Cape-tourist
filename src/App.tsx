@@ -68,8 +68,13 @@ import { generateReceiptNumber } from '@/src/utils/bookingCalculations';
 export default function App() {
   const initialSnapshot = dataService.getInitialSnapshot();
 
-  const [view, setView] = useState<AuthView>('landing');
-  const [activeSection, setActiveSection] = useState<NavSectionId>('dashboard');
+  const isInitialTransportPath =
+    typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/transport';
+
+  const [view, setView] = useState<AuthView>(isInitialTransportPath ? 'app' : 'landing');
+  const [activeSection, setActiveSection] = useState<NavSectionId>(
+    isInitialTransportPath ? 'transport' : 'dashboard'
+  );
   const [sectionHistory, setSectionHistory] = useState<NavSectionId[]>([]);
   const [touristDashboardTab, setTouristDashboardTab] = useState<'overview' | 'wishlist' | 'payments'>('overview');
   const [exploreFocusItemId, setExploreFocusItemId] = useState<string | null>(null);
@@ -169,7 +174,11 @@ export default function App() {
       if (firebaseUser) {
         setCurrentUser(firebaseUser);
         setAdminPreviewRole(null);
-        setActiveSection('dashboard');
+        if (window.location.pathname.replace(/\/+$/, '') === '/transport') {
+          setActiveSection('transport');
+        } else {
+          setActiveSection('dashboard');
+        }
         setView('app');
       }
     });
@@ -1965,6 +1974,8 @@ export default function App() {
             payments={payments}
             savedCards={savedCards}
             providerPaymentSettings={providerPaymentSettings}
+            weather={weather}
+            trustedContacts={trustedContacts}
             onCreateBooking={handleCreateBooking}
             onCompleteCheckout={handleCompleteCheckout}
             onRemoveSavedCard={handleRemoveSavedCard}
@@ -1978,6 +1989,11 @@ export default function App() {
             user={currentUser}
             activities={tripActivities}
             bookings={bookings}
+            favourites={favourites}
+            attractions={attractions}
+            offerings={providerListings.filter((l) => l.status !== 'Removed')}
+            weather={weather}
+            trustedContacts={trustedContacts}
             onToggleActivity={handleToggleActivity}
             onAddActivity={handleAddActivity}
             onDeleteActivity={handleDeleteActivity}
@@ -1991,6 +2007,7 @@ export default function App() {
             advisories={advisories}
             announcements={announcements}
             weather={weather}
+            trustedContacts={trustedContacts}
             onReportIncident={handlePublishAdvisory}
             onRevokeIncidentLocation={handleRevokeIncidentLocation}
           />
@@ -2012,12 +2029,22 @@ export default function App() {
       case 'transport':
         return (
           <TransportPage
+            user={currentUser}
             routes={transportRoutes}
             transportOfferings={providerListings.filter(
               (l) => l.offeringType === 'Transport' && l.status !== 'Removed'
             )}
+            bookings={bookings}
+            payments={payments}
+            savedCards={savedCards}
+            providerPaymentSettings={providerPaymentSettings}
             weather={weather}
+            trustedContacts={trustedContacts}
             onAddRouteToTrip={handleAddRouteToTrip}
+            onCompleteCheckout={handleCompleteCheckout}
+            onRemoveSavedCard={handleRemoveSavedCard}
+            onCancelBooking={handleCancelBooking}
+            onReportIncident={handlePublishAdvisory}
             onNavigate={setActiveSection}
           />
         );
@@ -2160,6 +2187,7 @@ export default function App() {
           activePortalRole={activePortalRole}
           activeSection={activeSection}
           unreadNotifications={unreadCount}
+          trustedContacts={trustedContacts}
           canGoBack={sectionHistory.length > 0}
           onGoBack={handleGoBack}
           onSelectSection={navigateToSection}

@@ -3,7 +3,10 @@ import { CheckCircle2, Clock, QrCode, RefreshCw, ShieldAlert, Wifi } from 'lucid
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
 import { StatusText } from '@/src/components/common/StatusText';
 import type { BookingItem, CheckInSession, DemoUser } from '@/src/types/app';
-import { isAwaitingBookingStatus } from '@/src/utils/bookingCalculations';
+import {
+  derivePickupVerificationCode,
+  isAwaitingBookingStatus,
+} from '@/src/utils/bookingCalculations';
 
 interface DigitalPassPageProps {
   user: DemoUser;
@@ -272,6 +275,9 @@ export const DigitalPassPage: React.FC<DigitalPassPageProps> = ({
                       <p className="text-xs text-slate-500">
                         {bk.offeringType || bk.category} · {bk.providerName}
                         {bk.bookingReference ? ` · ${bk.bookingReference}` : ''}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] font-bold text-[#1D4ED8] tabular-nums">
+                        Handoff Code: {derivePickupVerificationCode(bk.id, bk.bookingReference)}
                       </p>
                       {bk.paymentStatus && (
                         <p className="text-[11px] text-slate-600">

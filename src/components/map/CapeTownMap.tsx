@@ -73,7 +73,12 @@ const ZONE_COORDINATES: Array<{ match: string; lat: number; lng: number; transit
   { match: 'city bowl', lat: -33.9249, lng: 18.4241, transit: 'MyCiTi Civic Centre Hub' },
   { match: 'woodstock', lat: -33.9273, lng: 18.4573, transit: 'MyCiTi Route 102 (Albert Rd)' },
   { match: 'camps bay', lat: -33.9508, lng: 18.3777, transit: 'MyCiTi Route 106 (Victoria Rd)' },
+  { match: 'clifton', lat: -33.9408, lng: 18.3772, transit: 'MyCiTi Route 106 (Victoria Rd)' },
   { match: 'cape point', lat: -34.3568, lng: 18.4974, transit: 'Peninsula Eco Shuttle / Chartered Coach' },
+  { match: 'airport', lat: -33.9715, lng: 18.6021, transit: 'MyCiTi A01 Airport Express / Accredited Bay' },
+  { match: 'stellenbosch', lat: -33.9378, lng: 18.8594, transit: 'Winelands Safe-Driver Charter Corridor' },
+  { match: 'franschhoek', lat: -33.9114, lng: 19.1202, transit: 'Winelands Safe-Driver Charter Corridor' },
+  { match: 'winelands', lat: -33.9378, lng: 18.8594, transit: 'Winelands Safe-Driver Charter Corridor' },
 ];
 
 export function resolveZoneCoordinates(zone: string): { lat: number; lng: number; transit?: string } {

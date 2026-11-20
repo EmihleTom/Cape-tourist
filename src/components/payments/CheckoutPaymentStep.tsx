@@ -13,6 +13,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { StatusText } from '@/src/components/common/StatusText';
+import { VehiclePhoto } from '@/src/components/transport/VehiclePhoto';
 import {
   paymentService,
   type InitiatedPaymentSession,
@@ -29,6 +30,7 @@ import type {
 import {
   calculateCheckoutAmounts,
   DEFAULT_PROVIDER_PAYMENT_SETTINGS,
+  derivePickupVerificationCode,
   generateBookingReference,
   generatePaymentReference,
 } from '@/src/utils/bookingCalculations';
@@ -56,6 +58,9 @@ export interface CheckoutDraft {
   totalZar: number;
   safetyVerified: boolean;
   accessible: boolean;
+  imageUrl?: string;
+  vehicleTierName?: string;
+  luggageNote?: string;
 }
 
 export interface CheckoutCompletionPayload {
@@ -84,6 +89,8 @@ interface CheckoutPaymentStepProps {
   draft: CheckoutDraft;
   providerSettings?: ProviderPaymentSettings | null;
   savedCards: SavedPaymentMethod[];
+  initialMethod?: PaymentMethodType;
+  preferredInPersonMethod?: 'Cash' | 'Card Machine';
   onRemoveSavedCard: (cardId: string) => Promise<void> | void;
   onCompleteCheckout: (payload: CheckoutCompletionPayload) => Promise<PaymentRecord | void>;
   onBack: () => void;
@@ -94,6 +101,8 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
   draft,
   providerSettings,
   savedCards,
+  initialMethod = 'PayShap',
+  preferredInPersonMethod,
   onRemoveSavedCard,
   onCompleteCheckout,
   onBack,
@@ -116,7 +125,9 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
   );
 
   const [gatewayConfig, setGatewayConfig] = useState<PaymentGatewayConfig | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>('PayShap');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodType>(
+    initialMethod === 'Pay in Person' && !breakdown.payInPersonAllowed ? 'PayShap' : initialMethod
+  );
   const [bookingReference] = useState(
     () => draft.existingBookingReference || generateBookingReference()
   );
@@ -444,18 +455,34 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
       </div>
 
       {/* Mode & Policy Summary */}
-      <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-12">
-        <div className="md:col-span-7 space-y-1.5 text-xs">
+      <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-12 items-center">
+        {draft.imageUrl && (
+          <div className="md:col-span-3">
+            <VehiclePhoto
+              src={draft.imageUrl}
+              alt={`${draft.vehicleTierName || draft.title} vehicle preview`}
+              tierName={draft.vehicleTierName || 'Touring Vehicle'}
+              className="rounded-lg border border-slate-200"
+            />
+          </div>
+        )}
+        <div className={`${draft.imageUrl ? 'md:col-span-5' : 'md:col-span-7'} space-y-1.5 text-xs`}>
           <p className="font-semibold text-[#111827]">
             Provider Payment Policy: <span className="text-[#1D4ED8]">{breakdown.policyLabel}</span>
           </p>
           <p className="text-slate-600">{breakdown.policyDescription}</p>
+          {draft.vehicleTierName && (
+            <p className="font-medium text-[#111827]">
+              Vehicle: {draft.vehicleTierName}
+              {draft.luggageNote ? ` · ${draft.luggageNote}` : ''}
+            </p>
+          )}
           <p className="text-[11px] text-slate-500">
             {draft.date} {draft.timeSlot} → {draft.endDate} {draft.endTime} · {draft.guests} guest(s) · Provider:{' '}
             <strong>{draft.providerName}</strong>
           </p>
         </div>
-        <div className="md:col-span-5 flex flex-col justify-center items-start md:items-end border-t border-slate-200 pt-3 md:border-t-0 md:pt-0">
+        <div className={`${draft.imageUrl ? 'md:col-span-4' : 'md:col-span-5'} flex flex-col justify-center items-start md:items-end border-t border-slate-200 pt-3 md:border-t-0 md:pt-0`}>
           <p className="text-[11px] text-slate-500">
             {breakdown.isDepositOnly ? 'Online Deposit Due Now' : 'Booking Total (ZAR)'}
           </p>
@@ -605,7 +632,13 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
               <p className="font-semibold">{statusMessage}</p>
               {completedRecord && (
                 <p className="mt-0.5 font-mono text-[11px] text-emerald-800">
-                  Payment Status: {completedRecord.paymentStatus} · Ref: {completedRecord.paymentReference}
+                  Payment Status: {completedRecord.paymentStatus} · Ref: {completedRecord.paymentReference} · Pickup Code:{' '}
+                  <strong>
+                    {derivePickupVerificationCode(
+                      completedRecord.bookingId,
+                      completedRecord.bookingReference
+                    )}
+                  </strong>
                 </p>
               )}
             </div>
@@ -1023,6 +1056,7 @@ export const CheckoutPaymentStep: React.FC<CheckoutPaymentStepProps> = ({
                 {effectiveSettings.acceptedInPersonMethods.length > 0
                   ? effectiveSettings.acceptedInPersonMethods.join(' · ')
                   : 'Confirmed on arrival by provider'}
+                {preferredInPersonMethod ? ` (Preferred: ${preferredInPersonMethod})` : ''}
               </dd>
             </div>
             <div>

@@ -26,6 +26,7 @@ import {
   IMG,
 } from '@/src/data/capeTownDirectory';
 import { aiService, buildSafeAiContext } from '@/src/services/aiService';
+import { computeSmartGuidance } from '@/src/utils/safetyGuidance';
 import type {
   ActivityCategory,
   AiExperienceRecommendation,
@@ -133,6 +134,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
   const [stepFreeOnly, setStepFreeOnly] = useState(false);
   const [availableTodayOnly, setAvailableTodayOnly] = useState(false);
   const [favouritesOnly, setFavouritesOnly] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [showcaseTab, setShowcaseTab] = useState<'featured' | 'popular' | 'recent' | 'recommended'>(
     'featured'
   );
@@ -327,6 +329,9 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
       }
       if (availableTodayOnly && item.availableToday === false) return false;
       if (favouritesOnly && !favouriteIdSet.has(item.id)) return false;
+      if (verifiedOnly && item.verifiedProvider === false && item.dataOrigin !== 'live') {
+        return false;
+      }
 
       if (q) {
         const matchesText =
@@ -352,6 +357,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
     stepFreeOnly,
     availableTodayOnly,
     favouritesOnly,
+    verifiedOnly,
     favouriteIdSet,
     q,
     approvedReviews,
@@ -367,12 +373,13 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
         biz.category.toLowerCase().includes(q) ||
         (biz.description || '').toLowerCase().includes(q);
       const matchesStepFree = !stepFreeOnly || Boolean(biz.safetyChecklistComplete);
+      const matchesVerified = !verifiedOnly || biz.status === 'Approved';
       const matchesPrecinct =
         precinctFilter === 'All Precincts' ||
         biz.zone.toLowerCase().includes(precinctFilter.split('(')[0].trim().toLowerCase());
-      return matchesQuery && matchesStepFree && matchesPrecinct;
+      return matchesQuery && matchesStepFree && matchesVerified && matchesPrecinct;
     });
-  }, [businesses, discoveryMode, q, stepFreeOnly, precinctFilter]);
+  }, [businesses, discoveryMode, q, stepFreeOnly, verifiedOnly, precinctFilter]);
 
   const showcaseItems = useMemo(() => {
     if (showcaseTab === 'featured') return allDirectoryItems.filter((i) => i.featured).slice(0, 4);
@@ -515,6 +522,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
     setStepFreeOnly(false);
     setAvailableTodayOnly(false);
     setFavouritesOnly(false);
+    setVerifiedOnly(false);
     setQuery('');
   };
 
@@ -1164,6 +1172,20 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
             />
             Wishlist Only ({favourites.length})
           </button>
+
+          <button
+            type="button"
+            aria-pressed={verifiedOnly}
+            onClick={() => setVerifiedOnly((prev) => !prev)}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              verifiedOnly
+                ? 'border-[#15803D] bg-[#F0FDF4] text-[#15803D]'
+                : 'border-slate-200 bg-white text-slate-600 hover:text-[#111827]'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            Verified Operators Only
+          </button>
         </div>
       </section>
 
@@ -1251,6 +1273,13 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                   const isFav = favouriteIdSet.has(item.id);
                   const isSelected = selectedMapId === item.id;
                   const ratingSummary = getRatingSummary(item.id);
+                  const isVerifiedOp = item.dataOrigin === 'live' || item.verifiedProvider !== false;
+                  const cardGuidance = computeSmartGuidance({
+                    title: item.title,
+                    zone: item.precinct,
+                    category: item.activityCategories?.[0] || item.category,
+                    weather,
+                  });
 
                   return (
                     <article
@@ -1286,7 +1315,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                           <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
                             <span className="truncate">
                               {item.entryType || 'Attraction'} · {item.duration} ·{' '}
-                              {item.dataOrigin === 'live' ? 'Live Partner' : 'Curated Demo'}
+                              {isVerifiedOp ? 'Verified Operator' : 'Audit Pending'}
                             </span>
                             <StatusText
                               label={item.safetyStatus}
@@ -1330,6 +1359,9 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
                             <p>
                               <strong className="font-semibold text-slate-700">Access:</strong>{' '}
                               {item.accessibilitySummary}
+                            </p>
+                            <p className="text-[#1E40AF]">
+                              <strong>Weather &amp; Buffer:</strong> +{cardGuidance.bufferMinutes}m buffer · {cardGuidance.weatherCaveat}
                             </p>
                           </div>
                         </div>
@@ -1652,6 +1684,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           user={user}
           reviews={approvedReviews}
           isFavourite={favouriteIdSet.has(activeDetailItem.id)}
+          weather={weather}
           providerSettings={
             providerPaymentSettings.find((s) => s.providerId === activeDetailItem.providerId) ||
             providerPaymentSettings[0]

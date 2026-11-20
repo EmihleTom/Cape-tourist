@@ -41,12 +41,27 @@ import {
   DEMO_USERS,
 } from '../src/data/demoData.ts';
 import {
+  buildRouteWaypointsForTrip,
+  buildRouteWaypointsFromZoneText,
+  calculateVisitorTransportQuote,
+  VISITOR_PICKUP_POINTS,
+  VISITOR_TRAVEL_PILLARS,
+  VISITOR_VEHICLE_TIERS,
+} from '../src/data/transportPillars.ts';
+import {
   buildItineraryFromConfirmedBooking,
   calculateBookingEndDateTime,
   calculateBookingPriceZar,
   calculateCheckoutAmounts,
   checkOfferingAvailability,
+  derivePickupVerificationCode,
 } from '../src/utils/bookingCalculations.ts';
+import {
+  buildTripShareSummary,
+  computeSmartGuidance,
+  EMERGENCY_CONTACTS,
+  estimateRouteTransfer,
+} from '../src/utils/safetyGuidance.ts';
 import type { BookingItem, CapeTownWeather, ProviderListing, UserRole } from '../src/types/app.ts';
 
 async function runTests() {
@@ -879,8 +894,263 @@ async function runTests() {
     'MyWishlistSection and App.tsx must wire wishlist removal, trip addition, and direct dashboard tab navigation'
   );
 
+  // 15. Cape Town Safety, Trip Planning & Booking Trust Enhancements
+  assert.ok(
+    EMERGENCY_CONTACTS.some((c) => c.number === '10111') &&
+      EMERGENCY_CONTACTS.some((c) => c.number === '107') &&
+      EMERGENCY_CONTACTS.some((c) => c.number.includes('021 937 0300')) &&
+      EMERGENCY_CONTACTS.some((c) => c.number.includes('087 094 9774')),
+    'EMERGENCY_CONTACTS must include 10111 SAPS Police, 107 City Dispatch, WSAR Mountain, and NSRI Sea Rescue'
+  );
+
+  const codeA = derivePickupVerificationCode('bk-101', 'CS-BK-442910');
+  const codeB = derivePickupVerificationCode('bk-101', 'CS-BK-442910');
+  const codeC = derivePickupVerificationCode('bk-102', 'CS-BK-998811');
+  assert.equal(codeA, codeB, 'Pickup verification code must be deterministic');
+  assert.ok(codeA.startsWith('PK-') && codeA.length === 7, 'Pickup code must follow PK-XXXX format');
+  assert.notEqual(codeA, codeC);
+
+  const dayGuidance = computeSmartGuidance({
+    title: 'V&A Waterfront Quay Walk',
+    zone: 'V&A Waterfront',
+    timeSlot: '10:00',
+    weather: sampleWeather,
+  });
+  assert.equal(dayGuidance.timeBand, 'Daylight');
+
+  const nightMountainGuidance = computeSmartGuidance({
+    title: 'Table Mountain Summit Sunset Trail',
+    zone: 'Table Mountain Summit',
+    timeSlot: '19:45',
+    weather: { ...sampleWeather, windGustsKmh: 52, cablewayRisk: 'High' },
+  });
+  assert.equal(nightMountainGuidance.timeBand, 'After Dark');
+  assert.equal(nightMountainGuidance.tone, 'alert');
+  assert.ok(nightMountainGuidance.bufferMinutes >= 45);
+
+  const aquariumGuidance = computeSmartGuidance({
+    title: 'Two Oceans Aquarium',
+    zone: 'V&A Waterfront & Green Point',
+    category: 'Accessibility',
+    weather: sampleWeather,
+  });
+  const gardenGuidance = computeSmartGuidance({
+    title: 'Kirstenbosch National Botanical Garden',
+    zone: 'Newlands & Kirstenbosch',
+    category: 'Accessibility',
+    weather: sampleWeather,
+  });
+  const beachGuidance = computeSmartGuidance({
+    title: 'Camps Bay Beach & Twelve Apostles',
+    zone: 'Atlantic Seaboard (Camps Bay · Clifton · Sea Point)',
+    category: 'Coastal',
+    weather: sampleWeather,
+  });
+  assert.ok(
+    aquariumGuidance.weatherCaveat.includes('Sheltered indoor') &&
+      !aquariumGuidance.bufferNote.includes('life-jacket'),
+    'Indoor venues must receive indoor guidance without marine life-jacket boilerplate'
+  );
+  assert.ok(
+    gardenGuidance.weatherCaveat.includes('garden') &&
+      !gardenGuidance.weatherCaveat.includes('cableway'),
+    'Botanical garden cards must receive garden guidance rather than mountain summit/marine warnings'
+  );
+  assert.ok(
+    beachGuidance.weatherCaveat.includes('Atlantic') && !beachGuidance.bufferNote.includes('life-jacket'),
+    'Beaches must receive surf/tide guidance rather than kayak life-jacket fitting copy'
+  );
+
+  const directoryUrls = CAPE_TOWN_DIRECTORY_ITEMS.map((item) => item.imageUrl);
+  assert.equal(
+    new Set(directoryUrls).size,
+    CAPE_TOWN_DIRECTORY_ITEMS.length,
+    `Expected all ${CAPE_TOWN_DIRECTORY_ITEMS.length} directory cards to have unique imageUrl entries`
+  );
+  for (const item of CAPE_TOWN_DIRECTORY_ITEMS) {
+    const diskPath = item.imageUrl.replace(/^\//, '');
+    assert.ok(fs.existsSync(diskPath), `Missing image asset on disk for ${item.id}: ${diskPath}`);
+  }
+
+  const transferEst = estimateRouteTransfer('V&A Waterfront', 'Cape Point');
+  assert.ok(transferEst.distanceKm > 20 && transferEst.estimatedMinutes > 30 && transferEst.estimatedFareZar > 0);
+  const samePrecinctEst = estimateRouteTransfer('V&A Waterfront', 'V&A Waterfront');
+  assert.equal(samePrecinctEst.estimatedFareZar, 0);
+
+  const shareText = buildTripShareSummary({
+    travelerName: 'Maya van der Merwe',
+    title: 'Peninsula Electric Chauffeur',
+    zone: 'Cape Point',
+    dateLabel: '2026-11-18',
+    timeWindowLabel: '09:00 – 13:00 SAST',
+    pickupCode: codeA,
+    providerName: 'CapeSafe Green Transit',
+    providerVerified: true,
+  });
+  assert.ok(shareText.includes(codeA) && shareText.includes('10111') && shareText.includes('Safety Verified'));
+
+  const safetyCentreSrc = fs.readFileSync('src/pages/features/SafetyCentrePage.tsx', 'utf8');
+  const myTripsSrc = fs.readFileSync('src/pages/features/MyTripsPage.tsx', 'utf8');
+  const transportSrc = fs.readFileSync('src/pages/features/TransportPage.tsx', 'utf8');
+  const digitalPassSrc = fs.readFileSync('src/pages/features/DigitalPassPage.tsx', 'utf8');
+  const receiptModalSrc = fs.readFileSync('src/components/payments/PaymentReceiptModal.tsx', 'utf8');
+
+  assert.ok(
+    appShellSrc.includes('EmergencyContactsModal') &&
+      appShellSrc.includes('10111') &&
+      safetyCentreSrc.includes('tel:10111') &&
+      safetyCentreSrc.includes('resolutionFilter'),
+    'AppShell and SafetyCentrePage must surface 10111 emergency access and resolution state filtering'
+  );
+  assert.ok(
+    myTripsSrc.includes('Saved Itinerary Builder') &&
+      myTripsSrc.includes('TripStatusShareModal') &&
+      myTripsSrc.includes('.slice(0, 190)') &&
+      bookingsPageSrc.includes('TripStatusShareModal') &&
+      transportSrc.includes('TripStatusShareModal'),
+    'MyTripsPage, BookingsPage, and TransportPage must include Saved Itinerary Builder (Firestore-safe) and TripStatusShareModal'
+  );
+  assert.ok(
+    bookingsPageSrc.includes('derivePickupVerificationCode') &&
+      digitalPassSrc.includes('derivePickupVerificationCode') &&
+      receiptModalSrc.includes('derivePickupVerificationCode') &&
+      providerDashSrc.includes('Verify Visitor Handoff'),
+    'Pickup handoff verification codes must be synced across Tourist Checkout/Passes/Receipts and Provider Handoff Verifier'
+  );
+  assert.ok(
+    explorePageSrc.includes('Verified Operators Only') &&
+      safetyDashSrc.includes('{idx + 1}. {stepName}') &&
+      safetyDashSrc.includes("['Open', 'Acknowledged', 'Resolved']") &&
+      adminDashSrc.includes("['All', 'Verified', 'Unverified', 'Removed']"),
+    'ExplorePage, SafetyManagementDashboard, and AdminDashboard must expose clear operator verification and resolution state filters'
+  );
+
+  // 16. Visitor Transport Planner, Animated Route Playback & Ride Safety Integration
+  assert.ok(VISITOR_PICKUP_POINTS.length >= 6, 'Must define at least 6 Cape Town pickup hubs');
+  const pillarJoined = VISITOR_TRAVEL_PILLARS.map((p) => `${p.pillarTag} ${p.title}`.toLowerCase()).join(' | ');
+  for (const pillarKeyword of ['table mountain', 'cape point', 'stellenbosch', 'franschhoek', 'langa']) {
+    assert.ok(pillarJoined.includes(pillarKeyword), `Missing KaapConnect travel pillar: ${pillarKeyword}`);
+  }
+
+  const winelandsPillar = VISITOR_TRAVEL_PILLARS.find((p) => p.id === 'pillar-winelands')!;
+  const hourlyQuote = calculateVisitorTransportQuote({
+    pillar: winelandsPillar,
+    startDate: '2026-11-18',
+    startTime: '10:00',
+    durationOption: 'hourly',
+    hourlyCount: 3,
+  });
+  assert.equal(hourlyQuote.endDate, '2026-11-18');
+  assert.equal(hourlyQuote.endTime, '13:00');
+  assert.equal(hourlyQuote.totalZar, winelandsPillar.hourlyRateZar * 3);
+
+  const halfDayQuote = calculateVisitorTransportQuote({
+    pillar: winelandsPillar,
+    startDate: '2026-11-18',
+    startTime: '09:00',
+    durationOption: 'half_day',
+    hourlyCount: 1,
+  });
+  assert.equal(halfDayQuote.endTime, '13:00');
+  assert.equal(halfDayQuote.totalZar, winelandsPillar.halfDayRateZar);
+
+  const fullDayQuote = calculateVisitorTransportQuote({
+    pillar: winelandsPillar,
+    startDate: '2026-11-18',
+    startTime: '08:30',
+    durationOption: 'full_day',
+    hourlyCount: 1,
+  });
+  assert.equal(fullDayQuote.endTime, '16:30');
+  assert.equal(fullDayQuote.totalZar, winelandsPillar.fullDayRateZar);
+
+  const nightQuote = calculateVisitorTransportQuote({
+    pillar: winelandsPillar,
+    startDate: '2026-11-18',
+    startTime: '19:30',
+    durationOption: 'night_session',
+    hourlyCount: 1,
+  });
+  assert.equal(nightQuote.endTime, '21:30');
+  assert.equal(nightQuote.totalZar, winelandsPillar.nightSessionRateZar);
+
+  const builtRoute = buildRouteWaypointsForTrip(VISITOR_PICKUP_POINTS[0], winelandsPillar);
+  assert.ok(builtRoute.waypoints.length >= 4);
+  assert.ok(builtRoute.totalDistanceKm > 25 && builtRoute.totalDriveMinutes > 25);
+  assert.ok(builtRoute.googleMapsUrl.includes('https://www.google.com/maps/dir/'));
+
+  const zoneRoute = buildRouteWaypointsFromZoneText('Peninsula Electric Shuttle', 'Cape Point');
+  assert.ok(zoneRoute.waypoints.length >= 2);
+  assert.ok(resolveZoneCoordinates('Stellenbosch Winelands').lat < -33.8);
+
+  const animatedPreviewSrc = fs.readFileSync('src/components/transport/AnimatedRoutePreview.tsx', 'utf8');
+  const tripIncidentModalSrc = fs.readFileSync('src/components/transport/TripIncidentReportModal.tsx', 'utf8');
+  assert.ok(
+    animatedPreviewSrc.includes('Animated Route Playback') &&
+      animatedPreviewSrc.includes('Play Route') &&
+      animatedPreviewSrc.includes('prefers-reduced-motion'),
+    'AnimatedRoutePreview must provide Play/Pause, scrubber, waypoints, and reduced-motion support'
+  );
+  assert.ok(
+    tripIncidentModalSrc.includes('Transport & Transit') &&
+      tripIncidentModalSrc.includes('tel:10111') &&
+      tripIncidentModalSrc.includes('Submit Linked Safety Report'),
+    'TripIncidentReportModal must support trip-linked incident reporting and 10111 dispatch'
+  );
+  assert.ok(
+    transportSrc.includes('Simple Duration &amp; Trip Planner') &&
+      transportSrc.includes('AnimatedRoutePreview') &&
+      transportSrc.includes('TripIncidentReportModal') &&
+      transportSrc.includes('Pay on Arrival — Cash') &&
+      transportSrc.includes('Pay on Arrival — Card Machine') &&
+      transportSrc.includes("['All', 'Upcoming', 'Active', 'Past']") &&
+      appSrc.includes("window.location.pathname.replace(/\\/+$/, '') === '/transport'"),
+    'TransportPage and App.tsx must provide Visitor duration planner, route playback, arrival cash/card preferences, Upcoming/Active/Past filter tabs, trip-linked incident reporting, and /transport entry support'
+  );
+
+  // 17. Vehicle Tier Photos, Fleet Specs & Booking Summary Integration
+  assert.equal(VISITOR_VEHICLE_TIERS.length, 3, 'Must define City Sedan, Comfort SUV, and Group MPV tiers');
+  const tierNames = VISITOR_VEHICLE_TIERS.map((t) => t.name);
+  assert.deepEqual(tierNames, ['City Sedan', 'Comfort SUV', 'Group MPV']);
+  for (const tier of VISITOR_VEHICLE_TIERS) {
+    assert.ok(tier.imageUrl.startsWith('/src/assets/images/vehicle_'), `Expected local vehicle image on ${tier.id}`);
+    assert.equal(fs.existsSync(tier.imageUrl.slice(1)), true, `Missing generated image file on disk: ${tier.imageUrl}`);
+    assert.ok(tier.luggageSummary.length > 5 && tier.maxPassengers >= 3 && tier.gpsMonitored);
+  }
+  for (const pillar of VISITOR_TRAVEL_PILLARS) {
+    assert.ok(pillar.imageUrl.startsWith('/src/assets/images/'), `Missing pillar photo on ${pillar.id}`);
+    assert.equal(fs.existsSync(pillar.imageUrl.slice(1)), true, `Missing pillar image file on disk: ${pillar.imageUrl}`);
+  }
+
+  const mpvTier = VISITOR_VEHICLE_TIERS.find((t) => t.id === 'group-mpv')!;
+  const mpvHalfDay = calculateVisitorTransportQuote({
+    pillar: winelandsPillar,
+    startDate: '2026-11-18',
+    startTime: '09:00',
+    durationOption: 'half_day',
+    hourlyCount: 1,
+    vehicleTier: mpvTier,
+  });
+  assert.equal(mpvHalfDay.totalZar, Math.round(winelandsPillar.halfDayRateZar * mpvTier.rateMultiplier));
+
+  const vehiclePhotoSrc = fs.readFileSync('src/components/transport/VehiclePhoto.tsx', 'utf8');
+  const checkoutSrc = fs.readFileSync('src/components/payments/CheckoutPaymentStep.tsx', 'utf8');
+  assert.ok(
+    vehiclePhotoSrc.includes('onError') &&
+      vehiclePhotoSrc.includes('aspect-[4/3]') &&
+      vehiclePhotoSrc.includes('referrerPolicy="no-referrer"'),
+    'VehiclePhoto must implement 4:3 framing, referrerPolicy, and error fallback'
+  );
+  assert.ok(
+    transportSrc.includes('Vehicle Tier &amp; Fleet Preview') &&
+      transportSrc.includes('Luggage Space') &&
+      transportSrc.includes('confirmedRideSummary') &&
+      checkoutSrc.includes('draft.imageUrl'),
+    'TransportPage and CheckoutPaymentStep must display selected vehicle photos, luggage space, passenger limits, and confirmation visuals'
+  );
+
   console.log(
-    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Wishlist + Provider/Admin governance), TouristDashboard My Wishlist & My Payments tabs, Admin/Provider/Safety Ops dashboard touch-ups, Responsive Multi-Device breakpoints & adaptive navigation, Advanced AI/Moderation/Privacy/Language/Accessibility/Challenges/Offline APIs, and QA regressions verified.'
+    'PASSED: Firebase config, live Firestore ping, Auth/Reset/Logout, 4-role RBAC, all 19 collection keys, Weather, Storage rules, Google Maps setup, Travel Management calculations/availability/workflows, PayShap/Card/Pay-in-Person checkout & refund/webhook endpoints, Discover Cape Town 12-category Marketplace (24 attractions + 16 bookable activities + AI Matcher + Directions + Wishlist + Provider/Admin governance), TouristDashboard My Wishlist & My Payments tabs, Admin/Provider/Safety Ops dashboard touch-ups, Responsive Multi-Device breakpoints & adaptive navigation, Emergency 10111 & Live Trip Share, Smart Day/Night & Weather Guidance, Booking Pickup Verification Codes, Saved Itinerary Builder, Clear Verification/Resolution States, Visitor Transport Planner (/transport) with Vehicle Tier Photos & Fleet Specs, and QA regressions verified.'
   );
 }
 

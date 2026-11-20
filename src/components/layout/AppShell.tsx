@@ -7,6 +7,7 @@ import {
   Home,
   LogOut,
   Menu,
+  Phone,
   RefreshCw,
   Search,
   Wallet,
@@ -15,8 +16,9 @@ import {
 import { BrandMark } from '@/src/components/common/BrandMark';
 import { ImageWithFallback } from '@/src/components/common/ImageWithFallback';
 import { PWAInstallButton } from '@/src/components/pwa/PWAInstallButton';
+import { EmergencyContactsModal } from '@/src/components/safety/EmergencyContactsModal';
 import { NAV_GROUPS, NAV_ITEMS, ROLE_LABELS } from '@/src/data/navigation';
-import type { DemoUser, NavSectionId, UserRole } from '@/src/types/app';
+import type { DemoUser, NavSectionId, TrustedContact, UserRole } from '@/src/types/app';
 
 interface QuickJumpDestination {
   id: string;
@@ -32,6 +34,7 @@ interface AppShellProps {
   activePortalRole?: UserRole;
   activeSection: NavSectionId;
   unreadNotifications: number;
+  trustedContacts?: TrustedContact[];
   canGoBack?: boolean;
   onGoBack?: () => void;
   onSelectSection: (section: NavSectionId, options?: { dashboardTab?: string }) => void;
@@ -48,6 +51,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   activePortalRole,
   activeSection,
   unreadNotifications,
+  trustedContacts = [],
   canGoBack = false,
   onGoBack,
   onSelectSection,
@@ -59,6 +63,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   children,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [emergencyModalOpen, setEmergencyModalOpen] = useState(false);
   const [verificationMsg, setVerificationMsg] = useState('');
   const [sidebarFilter, setSidebarFilter] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -747,6 +752,16 @@ export const AppShell: React.FC<AppShellProps> = ({
               </div>
               <button
                 type="button"
+                onClick={() => setEmergencyModalOpen(true)}
+                aria-label="Open Cape Town Emergency Contacts 10111"
+                className="inline-flex min-h-[40px] sm:min-h-[34px] items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors whitespace-nowrap shrink-0 tabular-nums"
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>10111</span>
+                <span className="hidden xl:inline font-semibold">Emergency</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => handleNavigate('check-in')}
                 className="min-h-[40px] sm:min-h-[34px] rounded-lg bg-[#1D4ED8] px-3 sm:px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1E40AF] transition-colors whitespace-nowrap shrink-0"
               >
@@ -846,6 +861,14 @@ export const AppShell: React.FC<AppShellProps> = ({
           </button>
         </nav>
       )}
+
+      <EmergencyContactsModal
+        isOpen={emergencyModalOpen}
+        onClose={() => setEmergencyModalOpen(false)}
+        user={user}
+        trustedContacts={trustedContacts}
+        onNavigate={(sec) => handleNavigate(sec)}
+      />
     </div>
   );
 };

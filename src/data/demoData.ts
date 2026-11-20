@@ -103,7 +103,7 @@ export const DEMO_ATTRACTIONS: AttractionItem[] = [
     accessibilitySummary: 'Step-free paved promenade and tactile crossings',
     duration: '2.5 hrs',
     priceZar: 0,
-    imageUrl: HERO_IMAGE_URL,
+    imageUrl: '/src/assets/images/waterfront_harbour_cruise_1794827757144.jpg',
     description:
       'Patrolled harbourfront walkways, MyCiTi A01 terminal access, maritime museums, and clear sightlines toward Table Mountain.',
     coordinates: '33.9036° S, 18.4205° E',
@@ -171,7 +171,7 @@ export const DEMO_ATTRACTIONS: AttractionItem[] = [
     accessibilitySummary: 'Level boarding cabins and paved summit loop paths',
     duration: '2.5 hrs',
     priceZar: 420,
-    imageUrl: HERO_IMAGE_URL,
+    imageUrl: '/src/assets/images/table_mountain_cableway_1794827755977.jpg',
     description:
       'Rotating-floor cable car ascending 1,067m above Cape Town. Afternoon southeaster gusts monitored every 30 minutes.',
     coordinates: '33.9573° S, 18.4031° E',
@@ -188,7 +188,7 @@ export const DEMO_ATTRACTIONS: AttractionItem[] = [
     accessibilitySummary: 'Accessible lookout bays with paved picnic terraces',
     duration: '1.5 hrs',
     priceZar: 64,
-    imageUrl: BOULDERS_IMAGE_URL,
+    imageUrl: '/src/assets/images/chapmans_peak_drive_1795166909975.jpg',
     description:
       '9km cliffside marine drive featuring 114 curves, rockfall monitoring sensors, and sheltered Atlantic whale-watching overlooks.',
     coordinates: '34.0870° S, 18.3600° E',
@@ -931,6 +931,7 @@ export const DEMO_PROVIDER_LISTINGS: ProviderListing[] = [
     safetyChecklistComplete: true,
     status: 'Active',
     blockedDates: [],
+    imageUrl: '/src/assets/images/vehicle_group_mpv_1795166350241.jpg',
     dataOrigin: 'demo',
   },
   {

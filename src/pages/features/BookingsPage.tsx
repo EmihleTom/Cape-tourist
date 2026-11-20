@@ -8,10 +8,13 @@ import {
   Compass,
   CreditCard,
   Info,
+  KeyRound,
   Receipt,
   RefreshCw,
+  Share2,
   ShieldAlert,
   ShieldCheck,
+  SunMoon,
   XCircle,
 } from 'lucide-react';
 import { DemoDataNotice } from '@/src/components/common/DemoDataNotice';
@@ -22,8 +25,15 @@ import {
   type CheckoutDraft,
 } from '@/src/components/payments/CheckoutPaymentStep';
 import { PaymentReceiptModal } from '@/src/components/payments/PaymentReceiptModal';
+import {
+  TripStatusShareModal,
+  type TripSharePayload,
+} from '@/src/components/safety/TripStatusShareModal';
+import { VehiclePhoto } from '@/src/components/transport/VehiclePhoto';
+import { inferVehicleTierFromText } from '@/src/data/transportPillars';
 import type {
   BookingItem,
+  CapeTownWeather,
   DemoUser,
   DurationUnit,
   NavSectionId,
@@ -32,13 +42,16 @@ import type {
   ProviderListing,
   ProviderPaymentSettings,
   SavedPaymentMethod,
+  TrustedContact,
 } from '@/src/types/app';
 import {
   calculateBookingEndDateTime,
   calculateBookingPriceZar,
   checkOfferingAvailability,
+  derivePickupVerificationCode,
   isAwaitingBookingStatus,
 } from '@/src/utils/bookingCalculations';
+import { computeSmartGuidance } from '@/src/utils/safetyGuidance';
 
 interface BookingsPageProps {
   user: DemoUser;
@@ -47,6 +60,8 @@ interface BookingsPageProps {
   payments: PaymentRecord[];
   savedCards: SavedPaymentMethod[];
   providerPaymentSettings: ProviderPaymentSettings[];
+  weather?: CapeTownWeather;
+  trustedContacts?: TrustedContact[];
   onCreateBooking: (
     booking: Omit<BookingItem, 'id' | 'status' | 'dataOrigin'>
   ) => Promise<void> | void;
@@ -69,6 +84,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
   payments,
   savedCards,
   providerPaymentSettings,
+  weather,
+  trustedContacts = [],
   onCompleteCheckout,
   onRemoveSavedCard,
   onCancelBooking,
@@ -83,6 +100,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
     | 'Cancelled'
   >('All');
   const [typeFilter, setTypeFilter] = useState<'All' | OfferingType>('All');
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   // Smart Booking Builder State
   const [selectedOfferingId, setSelectedOfferingId] = useState<string>(
@@ -96,9 +114,10 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
   const [bookingFeedback, setBookingFeedback] = useState('');
   const [bookingError, setBookingError] = useState('');
 
-  // Secure Checkout & Receipt State
+  // Secure Checkout, Receipt & Live Trip Share State
   const [checkoutDraft, setCheckoutDraft] = useState<CheckoutDraft | null>(null);
   const [activeReceipt, setActiveReceipt] = useState<PaymentRecord | null>(null);
+  const [sharePayload, setSharePayload] = useState<TripSharePayload | null>(null);
 
   // Cancellation Note & Error State
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -140,15 +159,33 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
     return checkOfferingAvailability(selectedOffering, startDate, guests);
   }, [selectedOffering, startDate, guests]);
 
-  const filteredOfferings = offerings.filter(
-    (o) => typeFilter === 'All' || (o.offeringType || 'Activity') === typeFilter
+  const smartGuidance = useMemo(
+    () =>
+      computeSmartGuidance({
+        title: selectedOffering?.experienceTitle || '',
+        zone: selectedOffering?.zone || 'Cape Town',
+        category: selectedOffering?.category || selectedOffering?.offeringType || '',
+        timeSlot: startTime,
+        endTime: calculatedEnd.endTime,
+        durationUnit,
+        durationValue,
+        weather,
+      }),
+    [selectedOffering, startTime, calculatedEnd.endTime, durationUnit, durationValue, weather]
   );
+
+  const filteredOfferings = offerings.filter((o) => {
+    const matchesType = typeFilter === 'All' || (o.offeringType || 'Activity') === typeFilter;
+    const matchesVerified = !verifiedOnly || Boolean(o.safetyChecklistComplete);
+    return matchesType && matchesVerified;
+  });
 
   const filteredBookings = bookings.filter((b) => {
     const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
     const matchesType =
       typeFilter === 'All' || (b.offeringType || 'Activity') === typeFilter;
-    return matchesStatus && matchesType;
+    const matchesVerified = !verifiedOnly || Boolean(b.safetyVerified);
+    return matchesStatus && matchesType && matchesVerified;
   });
 
   const handleProceedToCheckout = (e: React.FormEvent) => {
@@ -164,6 +201,11 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       setBookingError(availability.reason || 'Selected offering is currently unavailable.');
       return;
     }
+
+    const inferredTier =
+      (selectedOffering.offeringType || 'Activity') === 'Transport'
+        ? inferVehicleTierFromText(selectedOffering.experienceTitle)
+        : null;
 
     setCheckoutDraft({
       offeringId: selectedOffering.id,
@@ -185,12 +227,19 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       totalZar: calculatedTotalZar,
       safetyVerified: selectedOffering.safetyChecklistComplete,
       accessible: Boolean(selectedOffering.accessible),
+      imageUrl: selectedOffering.imageUrl || inferredTier?.imageUrl,
+      vehicleTierName: inferredTier?.name,
+      luggageNote: inferredTier?.luggageSummary,
     });
   };
 
   const handleOpenRetryCheckout = (booking: BookingItem, matchedPayment?: PaymentRecord) => {
     setBookingError('');
     setBookingFeedback('');
+    const inferredTier =
+      (booking.offeringType || 'Activity') === 'Transport'
+        ? inferVehicleTierFromText(booking.title)
+        : null;
     setCheckoutDraft({
       existingBookingId: booking.id,
       existingPaymentId: matchedPayment?.id || booking.paymentId,
@@ -214,6 +263,9 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       totalZar: booking.priceZar,
       safetyVerified: booking.safetyVerified,
       accessible: booking.accessible,
+      imageUrl: inferredTier?.imageUrl,
+      vehicleTierName: inferredTier?.name,
+      luggageNote: inferredTier?.luggageSummary,
     });
   };
 
@@ -268,22 +320,38 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1 self-start lg:self-auto">
-          {(['All', 'Accommodation', 'Transport', 'Activity'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              aria-pressed={typeFilter === t}
-              onClick={() => setTypeFilter(t)}
-              className={`min-h-[38px] rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
-                typeFilter === t
-                  ? 'bg-[#1D4ED8] text-white'
-                  : 'text-slate-600 hover:text-[#111827]'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+          <button
+            type="button"
+            aria-pressed={verifiedOnly}
+            onClick={() => setVerifiedOnly((v) => !v)}
+            className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+              verifiedOnly
+                ? 'border-[#15803D] bg-[#F0FDF4] text-[#15803D]'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            {verifiedOnly ? 'Verified Operators: On' : 'Verified Operators Only'}
+          </button>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full rounded-lg border border-slate-200 bg-slate-50 p-1">
+            {(['All', 'Accommodation', 'Transport', 'Activity'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={typeFilter === t}
+                onClick={() => setTypeFilter(t)}
+                className={`min-h-[38px] rounded-md px-3 py-1.5 text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                  typeFilter === t
+                    ? 'bg-[#1D4ED8] text-white'
+                    : 'text-slate-600 hover:text-[#111827]'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -330,6 +398,11 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 const isSelected = selectedOffering?.id === offering.id;
                 const avail = checkOfferingAvailability(offering, startDate, guests);
                 const unitName = (offering.durationUnit || 'sessions').slice(0, -1);
+                const transportTier =
+                  (offering.offeringType || 'Activity') === 'Transport'
+                    ? inferVehicleTierFromText(offering.experienceTitle)
+                    : null;
+                const cardPhoto = offering.imageUrl || transportTier?.imageUrl;
 
                 return (
                   <article
@@ -341,25 +414,37 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     }`}
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="inline-flex items-center gap-1 font-semibold text-[#1D4ED8]">
-                            {OFFERING_ICONS[offering.offeringType || 'Activity']}
-                            {offering.offeringType || 'Activity'}
-                          </span>
-                          <span aria-hidden="true">·</span>
-                          <span className="text-slate-600">{offering.zone || 'Cape Town'}</span>
-                          <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
-                            {offering.dataOrigin === 'live' ? 'Live' : 'Demo'}
-                          </span>
-                        </div>
-                        <h3 className="font-display text-base font-bold text-[#111827]">
-                          {offering.experienceTitle}
-                        </h3>
-                        <p className="text-xs text-slate-600">
-                          Provider: <strong className="text-slate-800">{offering.providerName || 'CapeSafe Partner'}</strong>
-                          {offering.description ? ` · ${offering.description}` : ''}
-                        </p>
+                      <div className="flex gap-3 min-w-0">
+                        {cardPhoto && (
+                          <div className="w-24 shrink-0">
+                            <VehiclePhoto
+                              src={cardPhoto}
+                              alt={`${offering.experienceTitle} preview`}
+                              tierName={transportTier?.name || offering.category || 'Touring Option'}
+                              variant="thumb"
+                              className="rounded-lg border border-slate-200"
+                            />
+                          </div>
+                        )}
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <span className="inline-flex items-center gap-1 font-semibold text-[#1D4ED8]">
+                              {OFFERING_ICONS[offering.offeringType || 'Activity']}
+                              {offering.offeringType || 'Activity'}
+                            </span>
+                            <span aria-hidden="true">·</span>
+                            <span className="text-slate-600">{offering.zone || 'Cape Town'}</span>
+                            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">
+                              {offering.dataOrigin === 'live' ? 'Live' : 'Demo'}
+                            </span>
+                          </div>
+                          <h3 className="font-display text-base font-bold text-[#111827]">
+                            {offering.experienceTitle}
+                          </h3>
+                          <p className="text-xs text-slate-600">
+                            Provider: <strong className="text-slate-800">{offering.providerName || 'CapeSafe Partner'}</strong>
+                            {offering.description ? ` · ${offering.description}` : ''}
+                          </p>
 
                         <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px]">
                           <span className="font-mono text-slate-700 tabular-nums">
@@ -406,6 +491,7 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                         >
                           {isSelected ? 'Selected' : 'Select Offering'}
                         </button>
+                      </div>
                       </div>
                     </div>
                   </article>
@@ -544,6 +630,30 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 </div>
               </div>
 
+              {/* Smart Day/Night, Weather & Buffer Guidance */}
+              <div
+                className={`space-y-1.5 rounded-lg border p-3 text-[11px] ${
+                  smartGuidance.tone === 'alert'
+                    ? 'border-red-200 bg-red-50/80 text-red-950'
+                    : smartGuidance.tone === 'advisory'
+                    ? 'border-amber-200 bg-amber-50/80 text-amber-950'
+                    : 'border-slate-200 bg-[#EFF6FF]/60 text-slate-800'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 font-semibold">
+                  <span className="inline-flex items-center gap-1.5 text-[#111827]">
+                    <SunMoon className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
+                    Smart Timing: {smartGuidance.timeBand}
+                  </span>
+                  <span className="font-mono text-[#1E40AF] tabular-nums">
+                    +{smartGuidance.bufferMinutes} min buffer
+                  </span>
+                </div>
+                <p className="leading-snug">{smartGuidance.timingTip}</p>
+                <p className="leading-snug">{smartGuidance.weatherCaveat}</p>
+                <p className="font-medium text-[#111827]">{smartGuidance.bufferNote}</p>
+              </div>
+
               <button
                 type="submit"
                 disabled={!availability.available}
@@ -628,6 +738,17 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
               const paymentMethod = matchedPayment?.paymentMethod || booking.paymentMethod;
               const balanceDue =
                 matchedPayment?.balanceDueInPerson ?? booking.balanceDueInPersonZar ?? 0;
+              const pickupCode = derivePickupVerificationCode(booking.id, booking.bookingReference);
+              const bookingGuidance = computeSmartGuidance({
+                title: booking.title,
+                zone: booking.zone || 'Cape Town',
+                category: booking.offeringType || booking.category,
+                timeSlot: booking.timeSlot,
+                endTime: booking.endTime,
+                durationUnit: booking.durationUnit,
+                durationValue: booking.durationValue,
+                weather,
+              });
               const canRetryPayment =
                 (paymentStatus === 'Failed' ||
                   paymentStatus === 'Payment Pending' ||
@@ -635,6 +756,8 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                 booking.status !== 'Cancelled' &&
                 booking.status !== 'Rejected' &&
                 booking.status !== 'Completed';
+              const canShareBooking =
+                booking.status !== 'Cancelled' && booking.status !== 'Rejected';
 
               return (
                 <article
@@ -646,6 +769,12 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                       {booking.bookingReference && (
                         <span className="font-mono font-semibold text-[#111827]">
                           {booking.bookingReference}
+                        </span>
+                      )}
+                      {canShareBooking && (
+                        <span className="inline-flex items-center gap-1 rounded border border-blue-200 bg-[#EFF6FF] px-2 py-0.5 font-mono text-[11px] font-bold text-[#1E40AF] tabular-nums">
+                          <KeyRound className="h-3 w-3" aria-hidden="true" />
+                          Pickup Code: {pickupCode}
                         </span>
                       )}
                       <span className="font-semibold text-[#1D4ED8]">
@@ -679,6 +808,14 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     <p className="text-xs text-slate-600">
                       Provider: <strong className="text-slate-800">{booking.providerName}</strong>
                       <span aria-hidden="true"> · </span>
+                      <span
+                        className={`font-semibold ${
+                          booking.safetyVerified ? 'text-[#15803D]' : 'text-amber-800'
+                        }`}
+                      >
+                        {booking.safetyVerified ? 'Verified Operator' : 'Safety Audit Pending'}
+                      </span>
+                      <span aria-hidden="true"> · </span>
                       <span className="tabular-nums">{booking.guests} guest(s)</span>
                       {paymentMethod && (
                         <>
@@ -687,8 +824,12 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                         </>
                       )}
                       {booking.confirmedBy && (
-                        <span className="text-[#15803D]"> · Verified by {booking.confirmedBy}</span>
+                        <span className="text-[#15803D]"> · Confirmed by {booking.confirmedBy}</span>
                       )}
+                    </p>
+                    <p className="text-[11px] text-slate-600">
+                      <strong className="text-[#111827]">{bookingGuidance.timeBand}</strong> (+
+                      {bookingGuidance.bufferMinutes} min buffer) · {bookingGuidance.weatherCaveat}
                     </p>
                     {balanceDue > 0 && paymentStatus !== 'Paid' && (
                       <p className="text-[11px] font-medium text-amber-800">
@@ -732,6 +873,29 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {canShareBooking && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSharePayload({
+                              title: booking.title,
+                              zone: booking.zone || 'Cape Town',
+                              dateLabel: booking.date,
+                              timeWindowLabel: booking.endTime
+                                ? `${booking.timeSlot}–${booking.endTime} SAST`
+                                : `${booking.timeSlot} SAST`,
+                              pickupCode,
+                              providerName: booking.providerName,
+                              providerVerified: booking.safetyVerified,
+                            })
+                          }
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-[#111827] hover:bg-slate-50 transition-colors whitespace-nowrap"
+                        >
+                          <Share2 className="h-3.5 w-3.5 text-[#1D4ED8]" aria-hidden="true" />
+                          Share Trip Status
+                        </button>
+                      )}
+
                       {matchedPayment && (
                         <button
                           type="button"
@@ -822,6 +986,14 @@ export const BookingsPage: React.FC<BookingsPageProps> = ({
       </section>
 
       <PaymentReceiptModal payment={activeReceipt} onClose={() => setActiveReceipt(null)} />
+
+      <TripStatusShareModal
+        payload={sharePayload}
+        travelerName={user.name}
+        userEmergencyContact={user.emergencyContact}
+        trustedContacts={trustedContacts}
+        onClose={() => setSharePayload(null)}
+      />
     </div>
   );
 };

@@ -386,3 +386,28 @@ export function isAwaitingBookingStatus(status: BookingItem['status']): boolean 
   );
 }
 
+const PICKUP_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+/**
+ * Generates a deterministic short confirmation/pickup handoff code (e.g. "PK-7K4M")
+ * shared consistently between the tourist reservation ledger, Digital Pass,
+ * payment receipt, and service provider / driver manifest.
+ */
+export function derivePickupVerificationCode(
+  bookingId: string,
+  bookingReference?: string
+): string {
+  const seedInput = (bookingReference || bookingId || 'CS-HANDOFF').trim().toUpperCase();
+  let hash = 2166136261;
+  for (let i = 0; i < seedInput.length; i += 1) {
+    hash ^= seedInput.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  let code = '';
+  let state = hash >>> 0;
+  for (let idx = 0; idx < 4; idx += 1) {
+    code += PICKUP_CODE_ALPHABET[state % PICKUP_CODE_ALPHABET.length];
+    state = Math.imul(state ^ (idx + 7), 2246822519) >>> 0;
+  }
+  return `PK-${code}`;
+}

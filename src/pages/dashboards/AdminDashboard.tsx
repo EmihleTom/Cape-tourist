@@ -191,7 +191,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [incStatusFilter, setIncStatusFilter] = useState<
     'All' | 'Open' | 'Acknowledged' | 'Resolved'
   >('All');
+  const [incSeverityFilter, setIncSeverityFilter] = useState<
+    'All' | SafetyAdvisory['severity']
+  >('All');
   const [incZoneFilter, setIncZoneFilter] = useState<string>('All');
+  const [listingVerifyFilter, setListingVerifyFilter] = useState<
+    'All' | 'Verified' | 'Unverified' | 'Removed'
+  >('All');
   const [incOfficers, setIncOfficers] = useState<Record<string, string>>({});
   const [incStatuses, setIncStatuses] = useState<Record<string, SafetyAdvisory['status']>>({});
   const [incNotes, setIncNotes] = useState<Record<string, string>>({});
@@ -264,6 +270,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return advisories.filter((inc) => {
       const status = inc.status || 'Open';
       if (incStatusFilter !== 'All' && status !== incStatusFilter) return false;
+      if (incSeverityFilter !== 'All' && inc.severity !== incSeverityFilter) return false;
       if (incZoneFilter !== 'All' && inc.zone !== incZoneFilter) return false;
       if (!q) return true;
       return (
@@ -273,7 +280,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         (inc.assignedOfficerName || '').toLowerCase().includes(q)
       );
     });
-  }, [advisories, incStatusFilter, incZoneFilter, incSearch]);
+  }, [advisories, incStatusFilter, incSeverityFilter, incZoneFilter, incSearch]);
+
+  const filteredDirectoryListings = useMemo(() => {
+    return listings.filter((item) => {
+      if (listingVerifyFilter === 'Removed') return item.status === 'Removed';
+      if (listingVerifyFilter === 'Verified') {
+        return item.status !== 'Removed' && Boolean(item.verifiedListing);
+      }
+      if (listingVerifyFilter === 'Unverified') {
+        return item.status !== 'Removed' && !item.verifiedListing;
+      }
+      return true;
+    });
+  }, [listings, listingVerifyFilter]);
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
@@ -738,6 +758,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-3 text-xs text-[#111827] focus:border-[#1D4ED8] focus:outline-none"
                   />
                 </div>
+                <select
+                  aria-label="Filter incidents by severity"
+                  value={incSeverityFilter}
+                  onChange={(e) =>
+                    setIncSeverityFilter(e.target.value as 'All' | SafetyAdvisory['severity'])
+                  }
+                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-[#111827]"
+                >
+                  <option value="All">All Severities</option>
+                  <option value="Elevated">Elevated</option>
+                  <option value="Advisory">Advisory</option>
+                  <option value="Nominal">Nominal</option>
+                </select>
                 <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
                   {(['All', 'Open', 'Acknowledged', 'Resolved'] as const).map((st) => (
                     <button
@@ -815,6 +848,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
 
                       <p className="text-xs text-slate-700">{inc.summary}</p>
+
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                        {(['Open', 'Acknowledged', 'Resolved'] as const).map((stepName, idx) => {
+                          const currentStep =
+                            currentStatus === 'Resolved'
+                              ? 2
+                              : currentStatus === 'Acknowledged'
+                              ? 1
+                              : 0;
+                          const isCompleted = idx < currentStep;
+                          const isCurrent = idx === currentStep;
+                          return (
+                            <span
+                              key={stepName}
+                              className={`rounded px-2 py-0.5 font-semibold ${
+                                isCurrent
+                                  ? stepName === 'Resolved'
+                                    ? 'bg-[#15803D] text-white'
+                                    : 'bg-[#111827] text-white'
+                                  : isCompleted
+                                  ? 'bg-emerald-50 text-[#15803D] border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              {idx + 1}. {stepName}
+                            </span>
+                          );
+                        })}
+                      </div>
 
                       <div className="grid gap-2.5 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-12 sm:items-end">
                         <div className="sm:col-span-3">
@@ -1447,22 +1509,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {onUpdateListing && (
             <section className="rounded-xl border border-slate-200 bg-white p-5 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Store className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
-                  <h2 className="font-display text-base font-bold text-[#111827]">
-                    Directory Offerings Verification &amp; Moderation ({listings.length})
-                  </h2>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Store className="h-4 w-4 text-[#1D4ED8]" aria-hidden="true" />
+                    <h2 className="font-display text-base font-bold text-[#111827]">
+                      Directory Offerings Verification &amp; Moderation ({filteredDirectoryListings.length})
+                    </h2>
+                  </div>
+                  <span className="text-xs text-slate-500">
+                    Verify accurate operator listings or remove misleading / outdated offerings from Discover Cape Town
+                  </span>
                 </div>
-                <span className="text-xs text-slate-500">
-                  Verify accurate operator listings or remove misleading / outdated offerings from Discover Cape Town
-                </span>
+                <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+                  {(['All', 'Verified', 'Unverified', 'Removed'] as const).map((lf) => (
+                    <button
+                      key={lf}
+                      type="button"
+                      aria-pressed={listingVerifyFilter === lf}
+                      onClick={() => setListingVerifyFilter(lf)}
+                      className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
+                        listingVerifyFilter === lf
+                          ? 'bg-[#111827] text-white'
+                          : 'text-slate-600 hover:text-[#111827]'
+                      }`}
+                    >
+                      {lf}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="divide-y divide-slate-200">
-                {listings.length === 0 ? (
-                  <p className="py-4 text-xs text-slate-500">No provider offerings submitted yet.</p>
+                {filteredDirectoryListings.length === 0 ? (
+                  <p className="py-4 text-xs text-slate-500">No provider offerings matched this filter.</p>
                 ) : (
-                  listings.map((item) => (
+                  filteredDirectoryListings.map((item) => (
                     <div
                       key={item.id}
                       className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
